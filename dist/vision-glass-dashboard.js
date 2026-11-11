@@ -15,6 +15,10 @@ class VisionGlassDashboard extends HTMLElement {
     this._userThemeOverride = null; // 'light' | 'dark' | null (auto)
     this._timer = null;
     this._initialRenderDone = false;
+    this._alarmoCode = '';
+    this._batteryFilter = 'all'; // 'all' | 'critical' | 'low' | 'good'
+    this._tempHistory = {};
+    this._historyFetched = false;
   }
 
   static getStubConfig() {
@@ -205,6 +209,285 @@ class VisionGlassDashboard extends HTMLElement {
     this._hass.callService(domain, service, data);
   }
 
+  _openRoomModal(room) {
+    this._activeModal = { type: 'room', room };
+    const modalEl = this.shadowRoot.getElementById('modalContainer');
+    if (modalEl) {
+      modalEl.classList.remove('hidden');
+      this._renderRoomModal(room);
+    }
+  }
+
+  async _fetchClimateHistory() {
+    if (!this._hass || !this._hass.callWS) return;
+    const entities = [
+      'sensor.bewegungsmelder_wohnzimmer_temperatur',
+      'sensor.bewegungsmelder_arbeitszimmer_temperatur',
+      'sensor.bewegungsmelder_schlafzimmer_temperature',
+      'sensor.bewegungsmelder_kuche_temperature',
+      'sensor.badezimmer_temperatur',
+      'sensor.bewegungsmelder_flur_temperatur'
+    ];
+    try {
+      const startTime = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const res = await this._hass.callWS({
+        type: 'history/history_during_period',
+        start_time: startTime,
+        entity_ids: entities,
+        minimal_response: true,
+        significant_changes_only: false
+      });
+      if (res) {
+        Object.keys(res).forEach(eId => {
+          const list = res[eId];
+          if (Array.isArray(list)) {
+            const vals = list.map(item => parseFloat(item.s)).filter(v => !isNaN(v) && v > 5 && v < 40);
+            if (vals.length > 0) {
+              this._tempHistory[eId] = vals;
+            }
+          }
+        });
+        if (this._activeModal === 'climate') {
+          this._renderModalContent('climate');
+        }
+      }
+    } catch (e) {
+      // Graceful fallback
+    }
+  }
+
+  _generateSvgCurve(vals, currentVal, width = 290, height = 55) {
+    if (!vals || vals.length < 2) {
+      const c = parseFloat(currentVal) || 21.0;
+      vals = [c - 0.4, c - 0.2, c + 0.1, c - 0.1, c + 0.3, c];
+    }
+    const min = Math.min(...vals);
+    const max = Math.max(...vals);
+    const range = (max - min) === 0 ? 1 : (max - min);
+    const padY = 8;
+    const innerH = height - (padY * 2);
+
+    const stepX = width / (vals.length - 1);
+    const pts = vals.map((v, i) => {
+      const x = i * stepX;
+      const y = height - padY - ((v - min) / range * innerH);
+      return { x, y };
+    });
+
+    let pathD = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[i];
+      const p1 = pts[i + 1];
+      const mx = (p0.x + p1.x) / 2;
+      pathD += ` C ${mx.toFixed(1)} ${p0.y.toFixed(1)}, ${mx.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+    }
+
+    const lastPt = pts[pts.length - 1];
+    const areaD = `${pathD} L ${width} ${height} L 0 ${height} Z`;
+
+    return {
+      pathD,
+      areaD,
+      lastPt,
+      min: min.toFixed(1).replace('.', ','),
+      max: max.toFixed(1).replace('.', ',')
+    };
+  }
+
+  _renderRoomModal(room) {
+    const body = this.shadowRoot.getElementById('modalBody');
+    const title = this.shadowRoot.getElementById('modalTitle');
+    if (!body || !title || !this._hass) return;
+
+    title.textContent = `${room.name} – Raumübersicht & Geräte`;
+
+    const lightObj = room.light_entity ? this._hass.states[room.light_entity] : null;
+    const climateObj = room.climate_entity ? this._hass.states[room.climate_entity] : null;
+    const presObj = room.presence_entity ? this._hass.states[room.presence_entity] : null;
+    const winObj = room.window_entity ? this._hass.states[room.window_entity] : null;
+    const switchObj = room.switch_entity ? this._hass.states[room.switch_entity] : null;
+    const mediaObj = room.media_entity ? this._hass.states[room.media_entity] : null;
+    const tempObj = room.temp_entity ? this._hass.states[room.temp_entity] : null;
+
+    const curTemp = climateObj && climateObj.attributes.current_temperature
+      ? climateObj.attributes.current_temperature
+      : (tempObj ? tempObj.state : '--');
+
+    const isLightOn = lightObj && lightObj.state === 'on';
+    const isHeat = climateObj && climateObj.state === 'heat';
+    const isPres = presObj && presObj.state === 'on';
+    const isWinOpen = winObj && winObj.state === 'on';
+
+    const roomSlug = room.id.toLowerCase();
+    const otherSwitches = [];
+    const otherSensors = [];
+
+    Object.keys(this._hass.states).forEach(eId => {
+      if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity) return;
+
+      const eIdLower = eId.toLowerCase();
+      const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
+
+      if (eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase())) {
+        if (eId.startsWith('switch.') || eId.startsWith('light.')) {
+          otherSwitches.push({ id: eId, state: this._hass.states[eId] });
+        } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
+          otherSensors.push({ id: eId, state: this._hass.states[eId] });
+        }
+      }
+    });
+
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 20px;">
+          <div>
+            <div style="font-size:22px;font-weight:700;">${room.name}</div>
+            <div style="font-size:13px;color:var(--text-secondary);margin-top:3px;">
+              ${isPres ? '🟢 Person anwesend' : '⚪ Keine Bewegung'} • ${isWinOpen ? '⚠️ Fenster geöffnet' : '✔️ Fenster geschlossen'}
+            </div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:24px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
+            <div style="font-size:12px;color:var(--text-secondary);">Raumtemperatur</div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+          ${room.light_entity ? `
+            <div class="control-row">
+              <div>
+                <div style="font-weight:600;font-size:14px;">💡 Beleuchtung</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${isLightOn ? 'Eingeschaltet' : 'Ausgeschaltet'}</div>
+              </div>
+              <button class="toggle-pill ${isLightOn ? 'active-amber' : ''}" id="roomModalLightToggle">
+                ${isLightOn ? 'EIN' : 'AUS'}
+              </button>
+            </div>
+          ` : ''}
+
+          ${room.climate_entity ? `
+            <div class="control-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <span style="font-weight:600;font-size:14px;">🌡️ Thermostat</span>
+                <span style="font-size:13px;">Ziel: <strong style="color:var(--accent);">${climateObj ? climateObj.attributes.temperature : 21}°C</strong></span>
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;">
+                <button class="btn-step" id="roomModalTempMinus">-</button>
+                <button class="btn-step" id="roomModalTempPlus">+</button>
+                <button class="btn-micro ${isHeat ? 'active' : ''}" id="roomModalHeatToggle">
+                  ${isHeat ? 'HEIZEN' : 'AUS'}
+                </button>
+              </div>
+            </div>
+          ` : ''}
+
+          ${room.switch_entity ? `
+            <div class="control-row">
+              <div>
+                <div style="font-weight:600;font-size:14px;">🔌 ${(switchObj && switchObj.attributes.friendly_name) || 'Steckdose'}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${switchObj && switchObj.state === 'on' ? 'Aktiv' : 'Aus'}</div>
+              </div>
+              <button class="toggle-pill ${switchObj && switchObj.state === 'on' ? 'active-blue' : ''}" id="roomModalSwitchToggle">
+                ${switchObj && switchObj.state === 'on' ? 'EIN' : 'AUS'}
+              </button>
+            </div>
+          ` : ''}
+
+          ${room.media_entity ? `
+            <div class="control-row">
+              <div>
+                <div style="font-weight:600;font-size:14px;">🎵 ${(mediaObj && mediaObj.attributes.friendly_name) || 'Medien'}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${mediaObj ? mediaObj.state : 'Aus'}</div>
+              </div>
+              <button class="btn-micro ${mediaObj && mediaObj.state === 'playing' ? 'active' : ''}" id="roomModalMediaToggle">
+                ${mediaObj && mediaObj.state === 'playing' ? 'PAUSE' : 'PLAY'}
+              </button>
+            </div>
+          ` : ''}
+        </div>
+
+        ${otherSwitches.length > 0 ? `
+          <div style="font-size:14px;font-weight:700;margin-top:8px;">Weitere Geräte & Schalter in diesem Raum (${otherSwitches.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;max-height:220px;overflow-y:auto;">
+            ${otherSwitches.map(s => {
+              const isOn = s.state && s.state.state === 'on';
+              const name = (s.state && s.state.attributes.friendly_name) || s.id;
+              const domain = s.id.split('.')[0];
+              return `
+                <div class="control-row">
+                  <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="${name}">
+                    ${domain === 'light' ? '💡' : '🔌'} ${name}
+                  </div>
+                  <button class="toggle-pill ${isOn ? 'active' : ''}" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
+                    ${isOn ? 'EIN' : 'AUS'}
+                  </button>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+
+        ${otherSensors.length > 0 ? `
+          <div style="font-size:14px;font-weight:700;margin-top:8px;">Messwerte & Sensoren (${otherSensors.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;max-height:160px;overflow-y:auto;">
+            ${otherSensors.slice(0, 16).map(s => {
+              const name = (s.state && s.state.attributes.friendly_name) || s.id;
+              const val = s.state ? s.state.state : '--';
+              const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
+              return `
+                <div class="control-row" style="padding:8px 12px;">
+                  <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;" title="${name}">${name}</span>
+                  <span style="font-size:12px;font-weight:700;">${val} ${unit}</span>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    if (room.light_entity && body.querySelector('#roomModalLightToggle')) {
+      body.querySelector('#roomModalLightToggle').onclick = () => {
+        this._callService('light', 'toggle', { entity_id: room.light_entity });
+      };
+    }
+    if (room.climate_entity && climateObj) {
+      const curT = climateObj.attributes.temperature || 21.0;
+      if (body.querySelector('#roomModalTempMinus')) {
+        body.querySelector('#roomModalTempMinus').onclick = () => {
+          this._callService('climate', 'set_temperature', { entity_id: room.climate_entity, temperature: curT - 0.5 });
+        };
+      }
+      if (body.querySelector('#roomModalTempPlus')) {
+        body.querySelector('#roomModalTempPlus').onclick = () => {
+          this._callService('climate', 'set_temperature', { entity_id: room.climate_entity, temperature: curT + 0.5 });
+        };
+      }
+      if (body.querySelector('#roomModalHeatToggle')) {
+        body.querySelector('#roomModalHeatToggle').onclick = () => {
+          this._callService('climate', 'set_hvac_mode', { entity_id: room.climate_entity, hvac_mode: isHeat ? 'off' : 'heat' });
+        };
+      }
+    }
+    if (room.switch_entity && body.querySelector('#roomModalSwitchToggle')) {
+      body.querySelector('#roomModalSwitchToggle').onclick = () => {
+        this._callService('switch', 'toggle', { entity_id: room.switch_entity });
+      };
+    }
+    if (room.media_entity && body.querySelector('#roomModalMediaToggle')) {
+      body.querySelector('#roomModalMediaToggle').onclick = () => {
+        this._callService('media_player', 'media_play_pause', { entity_id: room.media_entity });
+      };
+    }
+    body.querySelectorAll('[data-dyn-toggle]').forEach(b => {
+      b.onclick = () => {
+        const ent = b.getAttribute('data-dyn-toggle');
+        const dom = b.getAttribute('data-dyn-domain');
+        this._callService(dom, 'toggle', { entity_id: ent });
+      };
+    });
+  }
+
   _updateAll() {
     if (!this._hass) return;
     this._applyThemeClass();
@@ -240,6 +523,20 @@ class VisionGlassDashboard extends HTMLElement {
     }
 
     // 3. Update Chips
+    // Persons Chips
+    const chipPA = this.shadowRoot.getElementById('chipPersonAndreas');
+    if (chipPA) {
+      const pA = this._hass.states['person.andreas'];
+      const isHome = pA && pA.state === 'home';
+      chipPA.innerHTML = `<span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span> 👤 Andreas: ${isHome ? 'Zuhause' : (pA ? (pA.state === 'not_home' ? 'Abwesend' : pA.state) : 'Unbekannt')}`;
+    }
+    const chipPS = this.shadowRoot.getElementById('chipPersonShanty');
+    if (chipPS) {
+      const pS = this._hass.states['person.shanty'];
+      const isHome = pS && pS.state === 'home';
+      chipPS.innerHTML = `<span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span> 👤 Shanty: ${isHome ? 'Zuhause' : (pS ? (pS.state === 'not_home' ? 'Abwesend' : pS.state) : 'Unbekannt')}`;
+    }
+
     // Lights Chip
     const allLightsState = this._hass.states[this._config.all_lights_entity];
     const chipLights = this.shadowRoot.getElementById('chipLights');
@@ -286,29 +583,35 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // Lock Chip
-    const lockEntity = this._config.lock_entity;
+    // Lock & Door Chip (3 states)
+    const lockEntity = this._config.lock_entity || 'lock.wohnungsschloss';
     const chipLock = this.shadowRoot.getElementById('chipLock');
-    if (chipLock && lockEntity && this._hass.states[lockEntity]) {
-      const isLocked = this._hass.states[lockEntity].state === 'locked';
-      chipLock.innerHTML = isLocked
-        ? `<span class="chip-dot dot-green"></span> Schloss: Verriegelt`
-        : `<span class="chip-dot dot-amber"></span> Schloss: Entriegelt`;
+    if (chipLock) {
+      const lockObj = this._hass.states[lockEntity];
+      const doorObj = this._hass.states['binary_sensor.turkontakt_hausture_contact'];
+      const isLocked = lockObj && lockObj.state === 'locked';
+      const isDoorOpen = doorObj && doorObj.state === 'on';
+
+      if (isDoorOpen) {
+        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> 🚪 Tür offen`;
+      } else if (!isLocked) {
+        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> 🔓 Schloss entriegelt`;
+      } else {
+        chipLock.innerHTML = `<span class="chip-dot dot-green"></span> 🔒 Tür zu & verriegelt`;
+      }
     }
 
-    // Washing Machine Chip
-    const wmSwitch = this._config.washing_machine_switch;
-    const wmPower = this._config.washing_machine_power;
-    const chipWasher = this.shadowRoot.getElementById('chipWasher');
-    if (chipWasher) {
-      const swState = wmSwitch && this._hass.states[wmSwitch] ? this._hass.states[wmSwitch].state : 'off';
-      const pwrState = wmPower && this._hass.states[wmPower] ? parseFloat(this._hass.states[wmPower].state) : 0;
-      if (swState === 'on' && pwrState > 5) {
-        chipWasher.innerHTML = `🧺 Waschmaschine: ${Math.round(pwrState)} W`;
-      } else if (swState === 'on') {
-        chipWasher.innerHTML = `🧺 Waschmaschine: Bereit`;
+    // Alarmo Chip
+    const chipAlarmo = this.shadowRoot.getElementById('chipAlarmo');
+    if (chipAlarmo) {
+      const al = this._hass.states['alarm_control_panel.alarmo'];
+      const ast = al ? al.state : 'disarmed';
+      if (ast === 'disarmed') {
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-green"></span> 🛡️ Alarmo: Unscharf`;
+      } else if (ast === 'triggered') {
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-amber"></span> 🚨 Alarmo: ALARM!`;
       } else {
-        chipWasher.innerHTML = `🧺 Waschmaschine: Aus`;
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-blue"></span> 🛡️ Alarmo: Scharf`;
       }
     }
 
@@ -322,7 +625,11 @@ class VisionGlassDashboard extends HTMLElement {
 
     // 6. Update Active Modal if open
     if (this._activeModal) {
-      this._renderModalContent(this._activeModal);
+      if (typeof this._activeModal === 'string') {
+        this._renderModalContent(this._activeModal);
+      } else if (this._activeModal.type === 'room') {
+        this._renderRoomModal(this._activeModal.room);
+      }
     }
   }
 
@@ -567,30 +874,65 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'climate') {
-      title.textContent = '🌡️ Raumklima & Thermostate';
+      title.textContent = '🌡️ Heizung, Raumklima & Temperaturkurven';
       const thermostats = [
-        { id: 'climate.better_thermostat_wohnzimmer', name: 'Wohnzimmer' },
-        { id: 'climate.better_thermostat_arbeitszimmer', name: 'Arbeitszimmer' },
-        { id: 'climate.better_thermostat_schlafzimmer', name: 'Schlafzimmer' },
-        { id: 'climate.better_thermostat_kuche', name: 'Küche' },
-        { id: 'climate.better_thermostat_badezimmer', name: 'Badezimmer' },
-        { id: 'climate.better_thermostat_flur', name: 'Flur' }
+        { id: 'climate.better_thermostat_wohnzimmer', name: 'Wohnzimmer', tempSensor: 'sensor.bewegungsmelder_wohnzimmer_temperatur' },
+        { id: 'climate.better_thermostat_arbeitszimmer', name: 'Arbeitszimmer', tempSensor: 'sensor.bewegungsmelder_arbeitszimmer_temperatur' },
+        { id: 'climate.better_thermostat_schlafzimmer', name: 'Schlafzimmer', tempSensor: 'sensor.bewegungsmelder_schlafzimmer_temperature' },
+        { id: 'climate.better_thermostat_kuche', name: 'Küche', tempSensor: 'sensor.bewegungsmelder_kuche_temperature' },
+        { id: 'climate.better_thermostat_badezimmer', name: 'Badezimmer', tempSensor: 'sensor.badezimmer_temperatur' },
+        { id: 'climate.better_thermostat_flur', name: 'Flur', tempSensor: 'sensor.bewegungsmelder_flur_temperatur' }
       ];
 
+      if (!this._historyFetched) {
+        this._historyFetched = true;
+        this._fetchClimateHistory();
+      }
+
       body.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
-          ${thermostats.map(t => {
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px;max-height:65vh;overflow-y:auto;padding-right:4px;">
+          ${thermostats.map((t, idx) => {
             const s = this._hass.states[t.id];
-            const cur = s && s.attributes.current_temperature ? s.attributes.current_temperature : '--';
+            const cur = s && s.attributes.current_temperature ? s.attributes.current_temperature : (this._hass.states[t.tempSensor] ? this._hass.states[t.tempSensor].state : '--');
             const target = s && s.attributes.temperature ? s.attributes.temperature : 21.0;
             const isHeat = s && s.state === 'heat';
+
+            const historyVals = this._tempHistory[t.tempSensor];
+            const curve = this._generateSvgCurve(historyVals, cur, 290, 55);
+
             return `
-              <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+              <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-weight:600;font-size:15px;">${t.name}</span>
-                  <span style="font-size:13px;color:var(--text-secondary);">Ist: <strong>${cur}°C</strong></span>
+                  <div>
+                    <span style="font-weight:700;font-size:16px;">${t.name}</span>
+                    <div style="font-size:12px;color:var(--text-secondary);">Better Thermostat</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="font-size:18px;font-weight:700;color:var(--text-primary);">${cur}°C</span>
+                    <div style="font-size:11px;color:var(--text-secondary);">Ist-Temperatur</div>
+                  </div>
                 </div>
-                <div style="display:flex;justify-content:space-between;align-items:center;">
+
+                <!-- SVG Temperature Curve (24h Trend) -->
+                <div style="position:relative;width:100%;height:55px;margin:2px 0;">
+                  <svg viewBox="0 0 290 55" style="width:100%;height:55px;overflow:visible;">
+                    <defs>
+                      <linearGradient id="curveGrad_${idx}" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stop-color="#38bdf8" stop-opacity="0.35"/>
+                        <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.0"/>
+                      </linearGradient>
+                    </defs>
+                    <path d="${curve.areaD}" fill="url(#curveGrad_${idx})" />
+                    <path d="${curve.pathD}" fill="none" stroke="#38bdf8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                    <circle cx="${curve.lastPt.x}" cy="${curve.lastPt.y}" r="4" fill="#38bdf8" stroke="#ffffff" stroke-width="1.5" />
+                  </svg>
+                  <div style="position:absolute;top:2px;left:4px;font-size:10px;color:var(--text-secondary);font-weight:600;">Max: ${curve.max}°C</div>
+                  <div style="position:absolute;bottom:2px;left:4px;font-size:10px;color:var(--text-secondary);font-weight:600;">Min: ${curve.min}°C</div>
+                  <div style="position:absolute;bottom:2px;right:4px;font-size:10px;color:var(--accent);font-weight:600;">24h Verlauf</div>
+                </div>
+
+                <!-- Steppers & Mode -->
+                <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-subtle);padding-top:10px;">
                   <span style="font-size:13px;">Ziel: <strong style="font-size:16px;color:var(--accent);">${target}°C</strong></span>
                   <div style="display:flex;gap:8px;">
                     <button class="btn-step" data-climate="${t.id}" data-delta="-0.5">-</button>
@@ -631,8 +973,32 @@ class VisionGlassDashboard extends HTMLElement {
       });
     } else if (type === 'security') {
       title.textContent = '🔒 Sicherheit, Schloss & Kontakte';
-      const lockState = this._hass.states['lock.wohnungsschloss'];
-      const isLocked = lockState && lockState.state === 'locked';
+      const lockObj = this._hass.states['lock.wohnungsschloss'];
+      const doorObj = this._hass.states['binary_sensor.turkontakt_hausture_contact'];
+      const isLocked = lockObj && lockObj.state === 'locked';
+      const isDoorOpen = doorObj && doorObj.state === 'on';
+
+      let stateText = '';
+      let stateColor = '#10b981';
+      let stateIcon = '🔒';
+      let stateBg = 'rgba(16, 185, 129, 0.15)';
+
+      if (isDoorOpen) {
+        stateText = 'Tür ist GEÖFFNET (Offen)';
+        stateColor = '#ef4444';
+        stateIcon = '🚪 ⚠️';
+        stateBg = 'rgba(239, 68, 68, 0.20)';
+      } else if (!isLocked) {
+        stateText = 'Tür geschlossen • Aktuell ENTRIEGELT';
+        stateColor = '#f59e0b';
+        stateIcon = '🔓';
+        stateBg = 'rgba(245, 158, 11, 0.18)';
+      } else {
+        stateText = 'Tür geschlossen & Sicher VERRIEGELT';
+        stateColor = '#10b981';
+        stateIcon = '🔒 ✔️';
+        stateBg = 'rgba(16, 185, 129, 0.15)';
+      }
 
       const contacts = [
         { id: 'binary_sensor.turkontakt_hausture_contact', name: 'Haustüre', icon: '🚪' },
@@ -645,16 +1011,28 @@ class VisionGlassDashboard extends HTMLElement {
       ];
 
       body.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:14px;">
-          <div class="control-row">
-            <div>
-              <div style="font-size:16px;font-weight:700;">Wohnungsschloss (SwitchBot Lock Ultra)</div>
-              <div style="font-size:13px;color:var(--text-secondary);">${isLocked ? '✔️ Sicher verriegelt' : '⚠️ Aktuell ENTRIEGELT'}</div>
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- Big 3-State Card -->
+          <div style="background:${stateBg};border:1px solid ${stateColor};border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Wohnungseingang Status</div>
+                <div style="font-size:20px;font-weight:700;color:${stateColor};margin-top:2px;">${stateText}</div>
+              </div>
+              <div style="font-size:40px;">${stateIcon}</div>
             </div>
-            <button class="btn-micro ${isLocked ? 'active-green' : 'active-amber'}" id="toggleLockBtn">
-              ${isLocked ? 'VERRIEGELT' : 'ENTRIEGELT'}
-            </button>
+            <!-- Distinct Action Buttons -->
+            <div style="display:flex;gap:12px;margin-top:6px;">
+              <button class="btn-micro ${isLocked ? 'active-green' : ''}" id="btnLockAction" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
+                🔒 Verriegeln
+              </button>
+              <button class="btn-micro ${!isLocked ? 'active-amber' : ''}" id="btnUnlockAction" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
+                🔓 Entriegeln
+              </button>
+            </div>
           </div>
+
+          <div style="font-size:15px;font-weight:700;margin-top:4px;">Fenster- & Türkontakte</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${contacts.map(c => {
               const cs = this._hass.states[c.id];
@@ -673,9 +1051,220 @@ class VisionGlassDashboard extends HTMLElement {
         </div>
       `;
 
-      body.querySelector('#toggleLockBtn').onclick = () => {
-        this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: 'lock.wohnungsschloss' });
+      body.querySelector('#btnLockAction').onclick = () => {
+        this._callService('lock', 'lock', { entity_id: 'lock.wohnungsschloss' });
       };
+      body.querySelector('#btnUnlockAction').onclick = () => {
+        this._callService('lock', 'unlock', { entity_id: 'lock.wohnungsschloss' });
+      };
+    } else if (type === 'alarmo') {
+      title.textContent = '🛡️ Alarmanlage (Alarmo)';
+      const alarmo = this._hass.states['alarm_control_panel.alarmo'];
+      const st = alarmo ? alarmo.state : 'disarmed';
+
+      const stMap = {
+        'disarmed': { label: 'Unscharf (Deaktiviert)', color: '#10b981', icon: '🟢', bg: 'rgba(16, 185, 129, 0.15)' },
+        'armed_home': { label: 'Scharf (Zuhause)', color: '#0284c7', icon: '🏠', bg: 'rgba(2, 132, 199, 0.15)' },
+        'armed_away': { label: 'Scharf (Abwesend)', color: '#f59e0b', icon: '🚶', bg: 'rgba(245, 158, 11, 0.15)' },
+        'armed_night': { label: 'Scharf (Nacht)', color: '#6366f1', icon: '🌙', bg: 'rgba(99, 102, 241, 0.15)' },
+        'arming': { label: 'Schärfung läuft...', color: '#f59e0b', icon: '⏳', bg: 'rgba(245, 158, 11, 0.2)' },
+        'triggered': { label: '🚨 ALARM AUSGELÖST!', color: '#ef4444', icon: '🚨', bg: 'rgba(239, 68, 68, 0.25)' }
+      };
+
+      const info = stMap[st] || { label: st, color: '#94a3b8', icon: '🛡️', bg: 'rgba(255,255,255,0.1)' };
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <!-- Status Banner -->
+          <div style="background:${info.bg};border:1px solid ${info.color};border-radius:20px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:13px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Status</div>
+              <div style="font-size:22px;font-weight:700;color:${info.color};margin-top:2px;">${info.label}</div>
+            </div>
+            <div style="font-size:36px;">${info.icon}</div>
+          </div>
+
+          <!-- Mode Buttons -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+            <button class="btn-micro ${st === 'disarmed' ? 'active-green' : ''}" id="btnAlarmoDisarm" style="padding:12px;font-weight:700;">
+              🟢 Unscharf
+            </button>
+            <button class="btn-micro ${st === 'armed_home' ? 'active' : ''}" id="btnAlarmoHome" style="padding:12px;font-weight:700;">
+              🏠 Zuhause
+            </button>
+            <button class="btn-micro ${st === 'armed_away' ? 'active-amber' : ''}" id="btnAlarmoAway" style="padding:12px;font-weight:700;">
+              🚶 Abwesend
+            </button>
+            <button class="btn-micro ${st === 'armed_night' ? 'active' : ''}" id="btnAlarmoNight" style="padding:12px;font-weight:700;">
+              🌙 Nacht
+            </button>
+          </div>
+
+          <!-- Optional PIN display & Keypad -->
+          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:240px;">
+              <span style="font-size:13px;color:var(--text-secondary);">PIN Code:</span>
+              <span style="font-size:20px;letter-spacing:4px;font-family:monospace;font-weight:700;" id="alarmoPinDisplay">${this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : 'Keine Eingabe'}</span>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(3, 68px);gap:10px;">
+              ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, 'OK'].map(k => `
+                <button class="btn-micro keypad-btn" data-key="${k}" style="height:44px;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;">
+                  ${k}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+        </div>
+      `;
+
+      body.querySelector('#btnAlarmoDisarm').onclick = () => {
+        const data = { entity_id: 'alarm_control_panel.alarmo' };
+        if (this._alarmoCode) data.code = this._alarmoCode;
+        this._callService('alarm_control_panel', 'alarm_disarm', data);
+        this._alarmoCode = '';
+      };
+      body.querySelector('#btnAlarmoHome').onclick = () => {
+        const data = { entity_id: 'alarm_control_panel.alarmo' };
+        if (this._alarmoCode) data.code = this._alarmoCode;
+        this._callService('alarm_control_panel', 'alarm_arm_home', data);
+        this._alarmoCode = '';
+      };
+      body.querySelector('#btnAlarmoAway').onclick = () => {
+        const data = { entity_id: 'alarm_control_panel.alarmo' };
+        if (this._alarmoCode) data.code = this._alarmoCode;
+        this._callService('alarm_control_panel', 'alarm_arm_away', data);
+        this._alarmoCode = '';
+      };
+      body.querySelector('#btnAlarmoNight').onclick = () => {
+        const data = { entity_id: 'alarm_control_panel.alarmo' };
+        if (this._alarmoCode) data.code = this._alarmoCode;
+        this._callService('alarm_control_panel', 'alarm_arm_night', data);
+        this._alarmoCode = '';
+      };
+
+      body.querySelectorAll('.keypad-btn').forEach(b => {
+        b.onclick = () => {
+          const k = b.getAttribute('data-key');
+          if (k === 'C') {
+            this._alarmoCode = '';
+          } else if (k === 'OK') {
+            // Keep code
+          } else {
+            if (this._alarmoCode.length < 8) this._alarmoCode += k;
+          }
+          const disp = body.querySelector('#alarmoPinDisplay');
+          if (disp) disp.textContent = this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : 'Keine Eingabe';
+        };
+      });
+    } else if (type === 'battery') {
+      title.textContent = '🔋 Batteriestatus & Geräte-Wartung';
+
+      let batteryDevices = [];
+      const seenDevices = new Set();
+
+      Object.keys(this._hass.states).forEach(entityId => {
+        const stateObj = this._hass.states[entityId];
+        if (!stateObj) return;
+
+        const isBatteryClass = stateObj.attributes && stateObj.attributes.device_class === 'battery';
+        const isBatteryName = (entityId.startsWith('sensor.') && (entityId.includes('battery') || entityId.includes('batterie')));
+        const hasBatteryLevel = stateObj.attributes && stateObj.attributes.battery_level != null;
+
+        if (isBatteryClass || isBatteryName || hasBatteryLevel) {
+          if (entityId.startsWith('binary_sensor.') && entityId.includes('battery_low')) return;
+
+          let val = null;
+          if (hasBatteryLevel) {
+            val = parseFloat(stateObj.attributes.battery_level);
+          } else {
+            val = parseFloat(stateObj.state);
+          }
+
+          if (isNaN(val) || val < 0 || val > 100) return;
+
+          const name = (stateObj.attributes && stateObj.attributes.friendly_name) || entityId;
+          const key = name.toLowerCase().replace(/[\s_-]+/g, '');
+          if (seenDevices.has(key)) return;
+          seenDevices.add(key);
+
+          batteryDevices.push({
+            id: entityId,
+            name: name,
+            level: Math.round(val),
+            unit: '%'
+          });
+        }
+      });
+
+      batteryDevices.sort((a, b) => a.level - b.level);
+
+      const critical = batteryDevices.filter(d => d.level < 20);
+      const low = batteryDevices.filter(d => d.level >= 20 && d.level <= 40);
+      const good = batteryDevices.filter(d => d.level > 40);
+
+      const filter = this._batteryFilter || 'all';
+      let displayedDevices = batteryDevices;
+      if (filter === 'critical') displayedDevices = critical;
+      else if (filter === 'low') displayedDevices = low;
+      else if (filter === 'good') displayedDevices = good;
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- Summary Cards -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
+            <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'all' ? 'border-color:var(--accent);' : ''}" id="filterAll">
+              <span style="font-size:12px;color:var(--text-secondary);">Gesamt</span>
+              <span style="font-size:22px;font-weight:700;">${batteryDevices.length}</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'critical' ? 'border-color:#ef4444;' : ''}" id="filterCritical">
+              <span style="font-size:12px;color:#ef4444;font-weight:600;">Kritisch (<20%)</span>
+              <span style="font-size:22px;font-weight:700;color:#ef4444;">${critical.length}</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'low' ? 'border-color:#f59e0b;' : ''}" id="filterLow">
+              <span style="font-size:12px;color:#f59e0b;font-weight:600;">Niedrig (20-40%)</span>
+              <span style="font-size:22px;font-weight:700;color:#f59e0b;">${low.length}</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'good' ? 'border-color:#10b981;' : ''}" id="filterGood">
+              <span style="font-size:12px;color:#10b981;font-weight:600;">Gut (>40%)</span>
+              <span style="font-size:22px;font-weight:700;color:#10b981;">${good.length}</span>
+            </div>
+          </div>
+
+          <!-- Device List -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;max-height:55vh;overflow-y:auto;padding-right:4px;">
+            ${displayedDevices.map(d => {
+              let color = '#10b981';
+              let icon = '🔋';
+              if (d.level < 20) {
+                color = '#ef4444';
+                icon = '🪫';
+              } else if (d.level <= 40) {
+                color = '#f59e0b';
+                icon = '🔋';
+              }
+              return `
+                <div class="control-row" style="flex-direction:column;align-items:stretch;gap:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px;" title="${d.name}">
+                      ${icon} ${d.name}
+                    </div>
+                    <span style="font-weight:700;font-size:14px;color:${color};">${d.level}%</span>
+                  </div>
+                  <div style="height:6px;border-radius:9999px;background:rgba(255,255,255,0.12);overflow:hidden;">
+                    <div style="width:${d.level}%;height:100%;background:${color};border-radius:9999px;transition:width 0.4s;"></div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+      `;
+
+      body.querySelector('#filterAll').onclick = () => { this._batteryFilter = 'all'; this._renderModalContent('battery'); };
+      body.querySelector('#filterCritical').onclick = () => { this._batteryFilter = 'critical'; this._renderModalContent('battery'); };
+      body.querySelector('#filterLow').onclick = () => { this._batteryFilter = 'low'; this._renderModalContent('battery'); };
+      body.querySelector('#filterGood').onclick = () => { this._batteryFilter = 'good'; this._renderModalContent('battery'); };
+
     } else if (type === 'switches') {
       title.textContent = '🔌 Geräte & Steckdosen';
       const switches = [
@@ -976,10 +1565,12 @@ class VisionGlassDashboard extends HTMLElement {
           flex-direction: column;
           justify-content: space-between;
           padding: 20px;
+          cursor: pointer;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
         }
         .room-card:hover {
-          transform: translateY(-2px);
+          transform: translateY(-3px);
+          box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
         }
 
         .room-bg-image {
@@ -1244,10 +1835,12 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <div class="chips-container">
+            <div class="chip" id="chipPersonAndreas" title="Status Andreas">👤 Andreas laden...</div>
+            <div class="chip" id="chipPersonShanty" title="Status Shanty">👤 Shanty laden...</div>
             <div class="chip" id="chipLights">💡 Lichter laden...</div>
             <div class="chip" id="chipClimate">🌡️ Klima laden...</div>
             <div class="chip" id="chipLock">🔒 Schloss laden...</div>
-            <div class="chip" id="chipWasher">🧺 Waschmaschine...</div>
+            <div class="chip" id="chipAlarmo">🛡️ Alarmo laden...</div>
             <div class="chip" id="chipWeather">🌦️ Wetter...</div>
             <button class="theme-toggle" id="themeToggleBtn" title="Tag/Nacht umschalten">☀️</button>
           </div>
@@ -1276,7 +1869,7 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- Rooms Grid -->
           <div class="rooms-grid" id="roomsContainer">
             ${this._config.rooms.map((room, idx) => `
-              <div class="room-card" id="roomCard_${idx}">
+              <div class="room-card" id="roomCard_${idx}" data-room-idx="${idx}">
                 ${room.picture ? `<div class="room-bg-image" style="background-image:url('${room.picture}');"></div>` : ''}
                 <div class="room-header">
                   <div>
@@ -1301,9 +1894,11 @@ class VisionGlassDashboard extends HTMLElement {
         <!-- Floating Glass Dock -->
         <div class="dock-container">
           <div class="dock-item" id="dockLighting" title="Beleuchtung">💡</div>
-          <div class="dock-item" id="dockClimate" title="Heizung & Klima">🌡️</div>
-          <div class="dock-item" id="dockSecurity" title="Sicherheit & Schloss">🔒</div>
+          <div class="dock-item" id="dockClimate" title="Heizung & Temperaturkurven">🌡️</div>
+          <div class="dock-item" id="dockSecurity" title="Sicherheit & Wohnungsschloss">🔒</div>
+          <div class="dock-item" id="dockAlarmo" title="Alarmanlage (Alarmo)">🛡️</div>
           <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">🔌</div>
+          <div class="dock-item" id="dockBattery" title="Batteriestatus & Wartung">🔋</div>
           <div class="dock-item" id="dockWeather" title="Wetter & Vorhersage">🌦️</div>
         </div>
 
@@ -1324,27 +1919,39 @@ class VisionGlassDashboard extends HTMLElement {
     this.shadowRoot.getElementById('themeToggleBtn').addEventListener('click', () => this._toggleDayNight());
 
     // Top Bar Chips
+    this.shadowRoot.getElementById('chipPersonAndreas').addEventListener('click', () => this._openModal('security'));
+    this.shadowRoot.getElementById('chipPersonShanty').addEventListener('click', () => this._openModal('security'));
     this.shadowRoot.getElementById('chipLights').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('chipClimate').addEventListener('click', () => this._openModal('climate'));
-    this.shadowRoot.getElementById('chipLock').addEventListener('click', () => {
-      const lockState = this._hass && this._hass.states[this._config.lock_entity];
-      const isLocked = lockState && lockState.state === 'locked';
-      this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: this._config.lock_entity });
-    });
-    this.shadowRoot.getElementById('chipWasher').addEventListener('click', () => this._openModal('switches'));
+    this.shadowRoot.getElementById('chipLock').addEventListener('click', () => this._openModal('security'));
+    this.shadowRoot.getElementById('chipAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('chipWeather').addEventListener('click', () => this._openModal('weather'));
 
     // Dock Items
     this.shadowRoot.getElementById('dockLighting').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('dockClimate').addEventListener('click', () => this._openModal('climate'));
     this.shadowRoot.getElementById('dockSecurity').addEventListener('click', () => this._openModal('security'));
+    this.shadowRoot.getElementById('dockAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
+    this.shadowRoot.getElementById('dockBattery').addEventListener('click', () => this._openModal('battery'));
     this.shadowRoot.getElementById('dockWeather').addEventListener('click', () => this._openModal('weather'));
 
     // Modal Close
     this.shadowRoot.getElementById('modalCloseBtn').addEventListener('click', () => this._closeModal());
     this.shadowRoot.getElementById('modalContainer').addEventListener('click', (e) => {
       if (e.target.id === 'modalContainer') this._closeModal();
+    });
+
+    // Room Card Click (Opens Room Detail Overlay)
+    this.shadowRoot.querySelectorAll('.room-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.action-circle')) return;
+        const idx = parseInt(card.getAttribute('data-room-idx'));
+        const room = this._config.rooms[idx];
+        if (room) {
+          this._openRoomModal(room);
+        }
+      });
     });
 
     // Room Action Circles
