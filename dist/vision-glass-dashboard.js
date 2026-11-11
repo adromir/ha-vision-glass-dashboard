@@ -19,6 +19,13 @@ class VisionGlassDashboard extends HTMLElement {
     this._batteryFilter = 'all'; // 'all' | 'critical' | 'low' | 'good'
     this._tempHistory = {};
     this._historyFetched = false;
+    this._hourlyForecast = [];
+    this._dailyForecast = [];
+    this._forecastSubscribed = false;
+    this._statsTab = 'temperature'; // 'temperature' | 'illuminance' | 'occupancy_heating' | 'battery'
+    this._statsRoom = 'wohnzimmer';
+    this._statsHistory = {};
+    this._statsHistoryFetched = false;
   }
 
   static getStubConfig() {
@@ -217,6 +224,286 @@ class VisionGlassDashboard extends HTMLElement {
       modalEl.classList.remove('hidden');
       this._renderRoomModal(room);
     }
+  }
+
+  async _fetchWeatherForecast() {
+    if (!this._hass) return;
+    const wEntity = this._config.weather_entity || 'weather.hannover_hannover';
+
+    if (this._hass.connection && this._hass.connection.subscribeMessage && !this._forecastSubscribed) {
+      this._forecastSubscribed = true;
+      try {
+        this._hass.connection.subscribeMessage(
+          (msg) => {
+            if (msg && msg.forecast) {
+              this._hourlyForecast = msg.forecast;
+              if (this._activeModal === 'weather') this._renderModalContent('weather');
+            }
+          },
+          { type: 'weather/subscribe_forecast', forecast_type: 'hourly', entity_id: wEntity }
+        );
+      } catch (e) {}
+
+      try {
+        this._hass.connection.subscribeMessage(
+          (msg) => {
+            if (msg && msg.forecast) {
+              this._dailyForecast = msg.forecast;
+              if (this._activeModal === 'weather') this._renderModalContent('weather');
+            }
+          },
+          { type: 'weather/subscribe_forecast', forecast_type: 'daily', entity_id: wEntity }
+        );
+      } catch (e) {}
+    }
+
+    if ((!this._hourlyForecast || this._hourlyForecast.length === 0) && this._hass.callWS) {
+      try {
+        const hourlyRes = await this._hass.callWS({
+          type: 'call_service',
+          domain: 'weather',
+          service: 'get_forecasts',
+          service_data: { type: 'hourly', entity_id: wEntity },
+          return_response: true
+        });
+        if (hourlyRes && hourlyRes.response && hourlyRes.response[wEntity]) {
+          this._hourlyForecast = hourlyRes.response[wEntity].forecast || [];
+        }
+      } catch (e) {}
+
+      try {
+        const dailyRes = await this._hass.callWS({
+          type: 'call_service',
+          domain: 'weather',
+          service: 'get_forecasts',
+          service_data: { type: 'daily', entity_id: wEntity },
+          return_response: true
+        });
+        if (dailyRes && dailyRes.response && dailyRes.response[wEntity]) {
+          this._dailyForecast = dailyRes.response[wEntity].forecast || [];
+        }
+      } catch (e) {}
+
+      if (this._activeModal === 'weather') {
+        this._renderModalContent('weather');
+      }
+    }
+  }
+
+  async _fetchStatsHistory() {
+    if (!this._hass || !this._hass.callWS) return;
+    const entities = [
+      'sensor.bewegungsmelder_wohnzimmer_temperatur',
+      'sensor.prasenzmelder_wohnzimmer_temperature',
+      'sensor.wohnzimmer_front_temperatur',
+      'sensor.fritz_smart_thermo_301_3_temperatur',
+      'sensor.ir_wohnzimmer_temperature',
+      'sensor.bewegungsmelder_arbeitszimmer_temperatur',
+      'sensor.prasenzmelder_arbeitszimmer_temperature',
+      'sensor.arbeitszimmer_temperatur',
+      'sensor.badezimmer_temperatur',
+      'sensor.bewegungsmelder_bad_temperatur',
+      'sensor.prasenzmelder_badezimmer_temperature',
+      'sensor.bewegungsmelder_kuche_temperature',
+      'sensor.prasenzmelder_kuche_temperature',
+      'sensor.kuche_temperatur',
+      'sensor.schlafzimmer_temperatur',
+      'sensor.prasenzmelder_schlafzimmer_temperature',
+      'sensor.flur_temperatur',
+      'sensor.bewegungsmelder_flur_temperatur',
+      'sensor.prasenzmelder_flur_temperature',
+      'sensor.prasenzmelder_arbeitszimmer_illuminance',
+      'sensor.prasenzmelder_badezimmer_illuminance',
+      'sensor.prasenzmelder_flur_illuminance',
+      'sensor.bewegungsmelder_wohnzimmer_illuminance',
+      'sensor.bewegungsmelder_kuche_illuminance',
+      'sensor.prasenzmelder_schlafzimmer_illuminance',
+      'binary_sensor.living_room_occupied',
+      'binary_sensor.studyroom_occupied',
+      'binary_sensor.bathroom_occupied',
+      'binary_sensor.kuche_occupied',
+      'binary_sensor.bedroom_occupied',
+      'binary_sensor.hallway_occupied',
+      'sensor.wohnzimmer_better_thermostat_wohnzimmer_heizleistung',
+      'sensor.arbeitszimmer_better_thermostat_arbeitszimmer_heizleistung',
+      'sensor.badezimmer_better_thermostat_badezimmer_heizleistung',
+      'sensor.kuche_better_thermostat_kuche_heizleistung',
+      'sensor.schlafzimmer_better_thermostat_schlafzimmer_heizleistung',
+      'sensor.flur_better_thermostat_flur_heizleistung',
+      'sensor.wohnungsschloss_batterie',
+      'sensor.wohnzimmer_front_batterie',
+      'sensor.wohnzimmer_balkon_batterie',
+      'sensor.arbeitszimmer_batterie',
+      'sensor.badezimmer_batterie',
+      'sensor.kuche_batterie',
+      'sensor.schlafzimmer_batterie',
+      'sensor.flur_batterie',
+      'sensor.turkontakt_hausture_battery',
+      'sensor.prasenzmelder_arbeitszimmer_battery',
+      'sensor.prasenzmelder_wohnzimmer_battery',
+      'sensor.prasenzmelder_kuche_battery',
+      'sensor.prasenzmelder_flur_battery',
+      'sensor.prasenzmelder_badezimmer_battery',
+      'sensor.prasenzmelder_schlafzimmer_battery'
+    ];
+
+    try {
+      const startTime = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
+      const res = await this._hass.callWS({
+        type: 'history/history_during_period',
+        start_time: startTime,
+        entity_ids: entities,
+        minimal_response: true,
+        significant_changes_only: false
+      });
+      if (res) {
+        Object.keys(res).forEach(eId => {
+          const list = res[eId];
+          if (Array.isArray(list)) {
+            this._statsHistory[eId] = list;
+          }
+        });
+        this._statsHistoryFetched = true;
+        if (this._activeModal === 'stats') {
+          this._renderModalContent('stats');
+        }
+      }
+    } catch (e) {}
+  }
+
+  _renderMultiLineSvgChart({ series, width = 640, height = 230, unit = '°C', timeSpanHours = 24 }) {
+    const padL = 48;
+    const padR = 24;
+    const padT = 24;
+    const padB = 32;
+    const plotW = width - padL - padR;
+    const plotH = height - padT - padB;
+
+    const tEnd = Date.now();
+    const tStart = tEnd - (timeSpanHours * 3600 * 1000);
+    const timeSpan = tEnd - tStart;
+
+    let allVals = [];
+    const processedSeries = series.map((s) => {
+      let rawPoints = [];
+      const historyList = this._statsHistory && this._statsHistory[s.id];
+      if (Array.isArray(historyList) && historyList.length > 0) {
+        historyList.forEach(item => {
+          const v = parseFloat(item.s);
+          if (!isNaN(v)) {
+            const t = item.lu ? (item.lu * 1000) : (item.last_updated ? new Date(item.last_updated).getTime() : null);
+            if (t) rawPoints.push({ t, v });
+          }
+        });
+      }
+
+      const curValNum = parseFloat(s.currentVal);
+      if (!isNaN(curValNum)) {
+        rawPoints.push({ t: tEnd, v: curValNum });
+      }
+
+      rawPoints.sort((a, b) => a.t - b.t);
+
+      if (rawPoints.length < 2) {
+        const fallbackV = !isNaN(curValNum) ? curValNum : 21.0;
+        rawPoints = [
+          { t: tStart, v: fallbackV },
+          { t: tStart + timeSpan * 0.33, v: fallbackV },
+          { t: tStart + timeSpan * 0.66, v: fallbackV },
+          { t: tEnd, v: fallbackV }
+        ];
+      } else {
+        if (rawPoints[0].t > tStart) {
+          rawPoints.unshift({ t: tStart, v: rawPoints[0].v });
+        }
+      }
+
+      rawPoints.forEach(p => allVals.push(p.v));
+      return {
+        ...s,
+        points: rawPoints
+      };
+    });
+
+    if (allVals.length === 0) allVals = [20, 22];
+    let minVal = Math.min(...allVals);
+    let maxVal = Math.max(...allVals);
+    if (minVal === maxVal) {
+      minVal -= 1;
+      maxVal += 1;
+    }
+
+    const valSpan = maxVal - minVal;
+    const minBound = minVal - (valSpan * 0.08);
+    const maxBound = maxVal + (valSpan * 0.08);
+    const rangeBound = maxBound - minBound;
+
+    const gridRows = [0, 0.33, 0.66, 1].map(ratio => {
+      const y = padT + (plotH * ratio);
+      const val = maxBound - (ratio * rangeBound);
+      return { y, label: val.toFixed(1).replace('.', ',') + unit };
+    });
+
+    const timeTicks = [
+      { ratio: 0, label: '-24h' },
+      { ratio: 0.25, label: '-18h' },
+      { ratio: 0.5, label: '-12h' },
+      { ratio: 0.75, label: '-6h' },
+      { ratio: 1, label: 'Jetzt' }
+    ];
+
+    let seriesMarkup = '';
+    processedSeries.forEach((s) => {
+      const pts = s.points.map(p => {
+        const x = padL + Math.max(0, Math.min(plotW, ((p.t - tStart) / timeSpan) * plotW));
+        const y = padT + plotH - (((p.v - minBound) / rangeBound) * plotH);
+        return { x, y, v: p.v };
+      });
+
+      if (pts.length < 2) return;
+
+      let pathD = `M ${pts[0].x.toFixed(1)} ${pts[0].y.toFixed(1)}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const p0 = pts[i];
+        const p1 = pts[i + 1];
+        const mx = (p0.x + p1.x) / 2;
+        pathD += ` C ${mx.toFixed(1)} ${p0.y.toFixed(1)}, ${mx.toFixed(1)} ${p1.y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`;
+      }
+
+      const lastPt = pts[pts.length - 1];
+      const curDisplay = s.currentVal != null ? `${s.currentVal}${unit}` : '';
+
+      seriesMarkup += `
+        <path d="${pathD}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" opacity="0.9" />
+        <circle cx="${lastPt.x.toFixed(1)}" cy="${lastPt.y.toFixed(1)}" r="4" fill="${s.color}" stroke="#ffffff" stroke-width="1.8" />
+        ${curDisplay ? `<text x="${(lastPt.x - 6).toFixed(1)}" y="${Math.max(padT + 12, lastPt.y - 7).toFixed(1)}" text-anchor="end" fill="${s.color}" font-size="10.5px" font-weight="700">${curDisplay}</text>` : ''}
+      `;
+    });
+
+    const svg = `
+      <svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;overflow:visible;" preserveAspectRatio="xMidYMid meet">
+        ${gridRows.map(g => `
+          <line x1="${padL}" y1="${g.y.toFixed(1)}" x2="${padL + plotW}" y2="${g.y.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-dasharray="3,3" stroke-width="1" />
+          <text x="${padL - 8}" y="${(g.y + 3).toFixed(1)}" text-anchor="end" fill="var(--text-secondary)" font-size="10px" font-weight="600">${g.label}</text>
+        `).join('')}
+
+        ${timeTicks.map(t => {
+          const x = padL + (plotW * t.ratio);
+          return `
+            <line x1="${x.toFixed(1)}" y1="${padT + plotH}" x2="${x.toFixed(1)}" y2="${padT + plotH + 5}" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
+            <text x="${x.toFixed(1)}" y="${(padT + plotH + 18).toFixed(1)}" text-anchor="${t.ratio === 0 ? 'start' : (t.ratio === 1 ? 'end' : 'middle')}" fill="var(--text-secondary)" font-size="10px" font-weight="600">${t.label}</text>
+          `;
+        }).join('')}
+
+        ${seriesMarkup}
+      </svg>
+    `;
+
+    return {
+      svg,
+      min: minVal.toFixed(1).replace('.', ','),
+      max: maxVal.toFixed(1).replace('.', ',')
+    };
   }
 
   async _fetchClimateHistory() {
@@ -841,6 +1128,11 @@ class VisionGlassDashboard extends HTMLElement {
     const modalEl = this.shadowRoot.getElementById('modalContainer');
     if (modalEl) {
       modalEl.classList.remove('hidden');
+      if (type === 'weather') {
+        this._fetchWeatherForecast();
+      } else if (type === 'stats') {
+        this._fetchStatsHistory();
+      }
       this._renderModalContent(type);
     }
   }
@@ -1339,40 +1631,505 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'weather') {
-      title.textContent = '🌦️ Wetter Hannover (DWD)';
+      title.textContent = '🌦️ Wetter, Vorhersage & Regenradar';
       const w = this._hass.states['weather.hannover_hannover'];
       if (!w) {
         body.innerHTML = '<div>Keine Wetterdaten verfügbar.</div>';
         return;
       }
       const a = w.attributes;
+      const hourlyItems = (this._hourlyForecast && this._hourlyForecast.length > 0)
+        ? this._hourlyForecast.slice(0, 24)
+        : [];
+      const dailyItems = (this._dailyForecast && this._dailyForecast.length > 0)
+        ? this._dailyForecast.slice(0, 7)
+        : [];
+
       body.innerHTML = `
-        <div style="display:flex;gap:24px;align-items:center;margin-bottom:20px;">
-          <div style="font-size:56px;">${this._getWeatherEmoji(w.state)}</div>
-          <div>
-            <div style="font-size:32px;font-weight:700;">${a.temperature}°C</div>
-            <div style="font-size:16px;color:var(--text-secondary);">${this._translateWeather(w.state)}</div>
+        <div style="display:flex;flex-direction:column;gap:18px;">
+          <!-- Current Weather Hero -->
+          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:22px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;gap:20px;align-items:center;">
+              <div style="font-size:58px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.25));">${this._getWeatherEmoji(w.state)}</div>
+              <div>
+                <div style="font-size:36px;font-weight:800;letter-spacing:-0.5px;">${a.temperature}°C</div>
+                <div style="font-size:16px;color:var(--text-secondary);font-weight:500;">${this._translateWeather(w.state)} • Hannover</div>
+              </div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Heute</div>
+              <div style="font-size:18px;font-weight:700;margin-top:2px;">
+                ${dailyItems[0] && dailyItems[0].templow != null ? `${Math.round(dailyItems[0].templow)}° / ` : ''}${dailyItems[0] ? `${Math.round(dailyItems[0].temperature)}°C` : `${a.temperature}°C`}
+              </div>
+              <div style="font-size:11px;color:var(--accent);margin-top:4px;">Deutscher Wetterdienst</div>
+            </div>
           </div>
-        </div>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
-          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
-            <span style="font-size:12px;color:var(--text-secondary);">Luftfeuchtigkeit</span>
-            <span style="font-size:18px;font-weight:600;">${a.humidity}%</span>
+
+          <!-- Key Metrics Grid -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
+            <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
+              <span style="font-size:11px;color:var(--text-secondary);">Luftfeuchtigkeit</span>
+              <span style="font-size:17px;font-weight:700;">${a.humidity}%</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
+              <span style="font-size:11px;color:var(--text-secondary);">Luftdruck</span>
+              <span style="font-size:17px;font-weight:700;">${a.pressure} hPa</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
+              <span style="font-size:11px;color:var(--text-secondary);">Wind</span>
+              <span style="font-size:17px;font-weight:700;">${a.wind_speed} km/h (${a.wind_bearing})</span>
+            </div>
+            <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
+              <span style="font-size:11px;color:var(--text-secondary);">Sichtweite</span>
+              <span style="font-size:17px;font-weight:700;">${a.visibility} km</span>
+            </div>
           </div>
-          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
-            <span style="font-size:12px;color:var(--text-secondary);">Luftdruck</span>
-            <span style="font-size:18px;font-weight:600;">${a.pressure} mbar</span>
+
+          <!-- Hourly Forecast Carousel (24 Hours) -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+              ⏱️ <span>Stündliche Vorhersage (Nächste 24 Stunden)</span>
+            </div>
+            ${hourlyItems.length > 0 ? `
+              <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 4px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;">
+                ${hourlyItems.map((item, hIdx) => {
+                  const d = new Date(item.datetime);
+                  const timeStr = hIdx === 0 ? 'Jetzt' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+                  const emoji = this._getWeatherEmoji(item.condition);
+                  const t = Math.round(item.temperature);
+                  const rain = item.precipitation != null && item.precipitation > 0 ? `${item.precipitation.toFixed(1)} mm` : '';
+                  return `
+                    <div class="control-row" style="flex-direction:column;align-items:center;gap:6px;min-width:68px;padding:10px 8px;scroll-snap-align:start;flex-shrink:0;">
+                      <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${timeStr}</span>
+                      <span style="font-size:24px;">${emoji}</span>
+                      <span style="font-size:15px;font-weight:700;">${t}°</span>
+                      ${rain ? `<span style="font-size:10px;color:#38bdf8;font-weight:600;">💧${rain}</span>` : '<span style="font-size:10px;color:transparent;">•</span>'}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : `
+              <div class="control-row" style="font-size:13px;color:var(--text-secondary);">
+                Stündliche Wettervorhersage wird geladen...
+              </div>
+            `}
           </div>
-          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
-            <span style="font-size:12px;color:var(--text-secondary);">Wind</span>
-            <span style="font-size:18px;font-weight:600;">${a.wind_speed} km/h (${a.wind_bearing})</span>
+
+          <!-- 7-Day Forecast Trend -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+              📅 <span>7-Tage Wettertrend</span>
+            </div>
+            ${dailyItems.length > 0 ? `
+              <div style="display:flex;flex-direction:column;gap:8px;">
+                ${dailyItems.map((item, idx) => {
+                  const d = new Date(item.datetime);
+                  const dayName = idx === 0 ? 'Heute' : (idx === 1 ? 'Morgen' : d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }));
+                  const emoji = this._getWeatherEmoji(item.condition);
+                  const condText = this._translateWeather(item.condition);
+                  const maxT = Math.round(item.temperature);
+                  const minT = item.templow != null ? Math.round(item.templow) : (maxT - 4);
+                  const rain = item.precipitation ? `${item.precipitation.toFixed(1)} mm` : '0 mm';
+                  return `
+                    <div class="control-row" style="padding:10px 16px;display:grid;grid-template-columns:105px 36px 1fr 140px;align-items:center;gap:10px;">
+                      <span style="font-weight:700;font-size:14px;">${dayName}</span>
+                      <span style="font-size:22px;">${emoji}</span>
+                      <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${condText}</span>
+                      <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+                        <span style="font-size:12px;color:var(--text-secondary);width:26px;text-align:right;">${minT}°</span>
+                        <div style="width:48px;height:4px;border-radius:2px;background:linear-gradient(90deg, #38bdf8, #f59e0b);"></div>
+                        <span style="font-size:14px;font-weight:700;width:26px;">${maxT}°</span>
+                        <span style="font-size:11px;color:#38bdf8;font-weight:600;margin-left:4px;">💧${rain}</span>
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            ` : `
+              <div class="control-row" style="font-size:13px;color:var(--text-secondary);">
+                Tagesvorhersage wird geladen...
+              </div>
+            `}
           </div>
-          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
-            <span style="font-size:12px;color:var(--text-secondary);">Sichtweite</span>
-            <span style="font-size:18px;font-weight:600;">${a.visibility} km</span>
+
+          <!-- Live Weather Map & Radar -->
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;">
+              <div style="display:flex;align-items:center;gap:6px;">
+                📡 <span>Live Niederschlagsradar Hannover & Region</span>
+              </div>
+              <a href="https://www.windy.com/?52.3889,9.8297,9" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;">
+                Vollbild öffnen &nearr;
+              </a>
+            </div>
+            <div style="position:relative;width:100%;height:320px;border-radius:20px;overflow:hidden;border:1px solid var(--border-glass);background:rgba(0,0,0,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.25);">
+              <iframe
+                src="https://embed.windy.com/embed2.html?lat=52.3889&lon=9.8297&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1"
+                width="100%"
+                height="100%"
+                frameborder="0"
+                style="border:none;"
+                loading="lazy"
+                title="Niederschlagsradar Hannover">
+              </iframe>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-secondary);margin-top:2px;">
+              <span>📍 Misburg-Nord / Hannover (52.39° N, 9.83° O)</span>
+              <span>Deutscher Wetterdienst (DWD) & Windy Radar</span>
+            </div>
           </div>
         </div>
       `;
+    } else if (type === 'stats') {
+      title.textContent = '📊 Statistiken & Verläufe';
+
+      const tab = this._statsTab || 'temperature';
+      const selectedRoom = this._statsRoom || 'wohnzimmer';
+
+      const roomSensorsConfig = {
+        wohnzimmer: {
+          name: 'Wohnzimmer',
+          sensors: [
+            { id: 'sensor.bewegungsmelder_wohnzimmer_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
+            { id: 'sensor.prasenzmelder_wohnzimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' },
+            { id: 'sensor.wohnzimmer_front_temperatur', name: 'Heizung Front (TRV)', color: '#f59e0b' },
+            { id: 'sensor.fritz_smart_thermo_301_3_temperatur', name: 'Heizung Balkon (TRV)', color: '#10b981' },
+            { id: 'sensor.ir_wohnzimmer_temperature', name: 'IR-Sensor', color: '#f43f5e' }
+          ]
+        },
+        arbeitszimmer: {
+          name: 'Arbeitszimmer',
+          sensors: [
+            { id: 'sensor.bewegungsmelder_arbeitszimmer_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
+            { id: 'sensor.prasenzmelder_arbeitszimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' },
+            { id: 'sensor.arbeitszimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' }
+          ]
+        },
+        badezimmer: {
+          name: 'Badezimmer',
+          sensors: [
+            { id: 'sensor.badezimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
+            { id: 'sensor.bewegungsmelder_bad_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
+            { id: 'sensor.prasenzmelder_badezimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ]
+        },
+        kuche: {
+          name: 'Küche',
+          sensors: [
+            { id: 'sensor.kuche_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
+            { id: 'sensor.bewegungsmelder_kuche_temperature', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
+            { id: 'sensor.prasenzmelder_kuche_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ]
+        },
+        schlafzimmer: {
+          name: 'Schlafzimmer',
+          sensors: [
+            { id: 'sensor.schlafzimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
+            { id: 'sensor.prasenzmelder_schlafzimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ]
+        },
+        flur: {
+          name: 'Flur',
+          sensors: [
+            { id: 'sensor.flur_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
+            { id: 'sensor.bewegungsmelder_flur_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
+            { id: 'sensor.prasenzmelder_flur_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ]
+        }
+      };
+
+      let tabContent = '';
+
+      if (tab === 'temperature') {
+        const currentRoomConf = roomSensorsConfig[selectedRoom] || roomSensorsConfig.wohnzimmer;
+        const seriesData = currentRoomConf.sensors.map(s => {
+          const stateObj = this._hass.states[s.id];
+          return {
+            ...s,
+            currentVal: stateObj ? stateObj.state : null
+          };
+        });
+
+        const chart = this._renderMultiLineSvgChart({
+          series: seriesData,
+          width: 640,
+          height: 230,
+          unit: '°C',
+          timeSpanHours: 24
+        });
+
+        tabContent = `
+          <!-- Room Selector Tabs -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            ${Object.keys(roomSensorsConfig).map(rKey => {
+              const r = roomSensorsConfig[rKey];
+              const isSel = selectedRoom === rKey;
+              return `
+                <button class="btn-micro ${isSel ? 'active' : ''}" data-stat-room="${rKey}">
+                  ${r.name}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Combined Multi-Line Chart -->
+          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Alle Temperatursensoren</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Vergleich aller ${seriesData.length} Messstellen über 24 Stunden</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Trend</span>
+                <div style="font-size:11px;color:var(--text-secondary);">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
+              </div>
+            </div>
+
+            <!-- SVG Multi-Line Chart -->
+            <div style="width:100%;overflow-x:auto;">
+              ${chart.svg}
+            </div>
+          </div>
+
+          <!-- Sensor Legend & Details -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+            ${seriesData.map(s => {
+              return `
+                <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
+                  <div style="flex:1;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
+                      <span style="font-weight:600;font-size:13px;">${s.name}</span>
+                    </div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+                  </div>
+                  <div style="text-align:right;">
+                    <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else if (tab === 'illuminance') {
+        const illumSensors = [
+          { id: 'sensor.prasenzmelder_arbeitszimmer_illuminance', name: 'Arbeitszimmer (mmWave)', color: '#38bdf8' },
+          { id: 'sensor.prasenzmelder_badezimmer_illuminance', name: 'Badezimmer (mmWave)', color: '#10b981' },
+          { id: 'sensor.prasenzmelder_flur_illuminance', name: 'Flur (mmWave)', color: '#f59e0b' },
+          { id: 'sensor.bewegungsmelder_wohnzimmer_illuminance', name: 'Wohnzimmer (PIR)', color: '#a855f7' },
+          { id: 'sensor.bewegungsmelder_kuche_illuminance', name: 'Küche (PIR)', color: '#f43f5e' },
+          { id: 'sensor.prasenzmelder_schlafzimmer_illuminance', name: 'Schlafzimmer (mmWave)', color: '#6366f1' }
+        ];
+
+        const seriesData = illumSensors.map(s => {
+          const stateObj = this._hass.states[s.id];
+          return {
+            ...s,
+            currentVal: stateObj ? stateObj.state : null
+          };
+        });
+
+        const chart = this._renderMultiLineSvgChart({
+          series: seriesData,
+          width: 640,
+          height: 230,
+          unit: ' lx',
+          timeSpanHours: 24
+        });
+
+        tabContent = `
+          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="font-weight:700;font-size:16px;">Helligkeitsverläufe (Lux) • Alle Räume</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Tageslicht & Raumbeleuchtungs-Verlauf der letzten 24h</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Lux-Kurven</span>
+                <div style="font-size:11px;color:var(--text-secondary);">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
+              </div>
+            </div>
+
+            <!-- SVG Multi-Line Chart -->
+            <div style="width:100%;overflow-x:auto;">
+              ${chart.svg}
+            </div>
+          </div>
+
+          <!-- Sensor Legend -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+            ${seriesData.map(s => `
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
+                <div style="flex:1;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
+                    <span style="font-weight:600;font-size:13px;">${s.name}</span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+                </div>
+                <div style="text-align:right;">
+                  <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal} lx` : '--'}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (tab === 'occupancy_heating') {
+        const roomsList = [
+          { name: 'Wohnzimmer', occ: 'binary_sensor.living_room_occupied', climate: 'climate.better_thermostat_wohnzimmer', pwr: 'sensor.wohnzimmer_better_thermostat_wohnzimmer_heizleistung' },
+          { name: 'Arbeitszimmer', occ: 'binary_sensor.studyroom_occupied', climate: 'climate.better_thermostat_arbeitszimmer', pwr: 'sensor.arbeitszimmer_better_thermostat_arbeitszimmer_heizleistung' },
+          { name: 'Badezimmer', occ: 'binary_sensor.bathroom_occupied', climate: 'climate.better_thermostat_badezimmer', pwr: 'sensor.badezimmer_better_thermostat_badezimmer_heizleistung' },
+          { name: 'Küche', occ: 'binary_sensor.kuche_occupied', climate: 'climate.better_thermostat_kuche', pwr: 'sensor.kuche_better_thermostat_kuche_heizleistung' },
+          { name: 'Schlafzimmer', occ: 'binary_sensor.bedroom_occupied', climate: 'climate.better_thermostat_schlafzimmer', pwr: 'sensor.schlafzimmer_better_thermostat_schlafzimmer_heizleistung' },
+          { name: 'Flur', occ: 'binary_sensor.hallway_occupied', climate: 'climate.better_thermostat_flur', pwr: 'sensor.flur_better_thermostat_flur_heizleistung' }
+        ];
+
+        tabContent = `
+          <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">
+            Live-Übersicht der YAML-Belegungshelfer und der Better Thermostat Heizaktivität.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+            ${roomsList.map(r => {
+              const occObj = this._hass.states[r.occ];
+              const isOcc = occObj && occObj.state === 'on';
+              const climObj = this._hass.states[r.climate];
+              const isHeat = climObj && (climObj.state === 'heat' || (climObj.attributes && climObj.attributes.hvac_action === 'heating'));
+              const pwrObj = this._hass.states[r.pwr];
+              const pwrVal = pwrObj ? parseFloat(pwrObj.state) : 0;
+
+              return `
+                <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;">
+                    <span style="font-weight:700;font-size:15px;">${r.name}</span>
+                    <span class="toggle-pill ${isOcc ? 'active-green' : ''}" style="cursor:default;">
+                      ${isOcc ? '🟢 Belegt' : '⚪ Frei'}
+                    </span>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-subtle);padding-top:8px;">
+                    <div>
+                      <div style="font-size:12px;color:var(--text-secondary);">Thermostat Status</div>
+                      <div style="font-size:14px;font-weight:600;color:${isHeat ? 'var(--accent-amber)' : 'var(--text-primary)'};">
+                        ${isHeat ? '🔥 Heizen aktiv' : '⚪ Bereit / Eco'}
+                      </div>
+                    </div>
+                    <div style="text-align:right;">
+                      <div style="font-size:12px;color:var(--text-secondary);">Heizleistung</div>
+                      <div style="font-size:14px;font-weight:700;color:var(--accent);">${pwrVal.toFixed(4)} K/min</div>
+                    </div>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        `;
+      } else if (tab === 'battery') {
+        const keyBatterySensors = [
+          { id: 'sensor.wohnungsschloss_batterie', name: 'Wohnungsschloss', color: '#10b981' },
+          { id: 'sensor.wohnzimmer_front_batterie', name: 'Thermostat Wohnzimmer Front', color: '#38bdf8' },
+          { id: 'sensor.arbeitszimmer_batterie', name: 'Thermostat Arbeitszimmer', color: '#f59e0b' },
+          { id: 'sensor.badezimmer_batterie', name: 'Thermostat Bad (Niedrig)', color: '#ef4444' },
+          { id: 'sensor.turkontakt_hausture_battery', name: 'Türkontakt Haustüre', color: '#a855f7' }
+        ];
+
+        const seriesData = keyBatterySensors.map(s => {
+          const stateObj = this._hass.states[s.id];
+          return {
+            ...s,
+            currentVal: stateObj ? stateObj.state : null
+          };
+        });
+
+        const chart = this._renderMultiLineSvgChart({
+          series: seriesData,
+          width: 640,
+          height: 230,
+          unit: '%',
+          timeSpanHours: 24
+        });
+
+        tabContent = `
+          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <span style="font-weight:700;font-size:16px;">Batterieverläufe (24h Entladung)</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Verlaufskurven wichtiger Batteriegeräte</div>
+              </div>
+              <div style="text-align:right;">
+                <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Status</span>
+              </div>
+            </div>
+
+            <!-- SVG Multi-Line Chart -->
+            <div style="width:100%;overflow-x:auto;">
+              ${chart.svg}
+            </div>
+          </div>
+
+          <!-- Sensor Legend -->
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+            ${seriesData.map(s => `
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:13px;">${s.name}</div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+                </div>
+                <div style="text-align:right;">
+                  <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}%` : '--'}</span>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      }
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <!-- Category Tabs -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">🌡️ Raumtemperaturen</button>
+            <button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">💡 Helligkeit (Lux)</button>
+            <button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">🚶 Belegung & ♨️ Heizung</button>
+            <button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">🔋 Batteriekurven</button>
+          </div>
+
+          <!-- Active Tab Content -->
+          ${tabContent}
+
+          <!-- Direct Link to Dashboard Statistics View -->
+          <div style="border-top:1px solid var(--border-subtle);padding-top:14px;display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:12px;color:var(--text-secondary);">Detaillierte Langzeitanalyse & Zoom im Dashboard:</span>
+            <a href="/vision-glass/stats" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;" class="btn-micro">
+              <span>📊 Vollständige Statistiken öffnen</span>
+              <span>&rsaquo;</span>
+            </a>
+          </div>
+        </div>
+      `;
+
+      // Event handlers for stats tabs
+      body.querySelector('#btnStatsTabTemp').onclick = () => {
+        this._statsTab = 'temperature';
+        this._renderModalContent('stats');
+      };
+      body.querySelector('#btnStatsTabIllum').onclick = () => {
+        this._statsTab = 'illuminance';
+        this._renderModalContent('stats');
+      };
+      body.querySelector('#btnStatsTabOcc').onclick = () => {
+        this._statsTab = 'occupancy_heating';
+        this._renderModalContent('stats');
+      };
+      body.querySelector('#btnStatsTabBat').onclick = () => {
+        this._statsTab = 'battery';
+        this._renderModalContent('stats');
+      };
+
+      body.querySelectorAll('[data-stat-room]').forEach(btn => {
+        btn.onclick = () => {
+          this._statsRoom = btn.getAttribute('data-stat-room');
+          this._renderModalContent('stats');
+        };
+      });
     }
   }
 
@@ -1964,12 +2721,13 @@ class VisionGlassDashboard extends HTMLElement {
         <!-- Floating Glass Dock -->
         <div class="dock-container">
           <div class="dock-item" id="dockLighting" title="Beleuchtung">💡</div>
-          <div class="dock-item" id="dockClimate" title="Heizung & Temperaturkurven">🌡️</div>
+          <div class="dock-item" id="dockClimate" title="Heizung & Schnellregler">🌡️</div>
+          <div class="dock-item" id="dockStats" title="Statistiken & Verläufe">📊</div>
           <div class="dock-item" id="dockSecurity" title="Sicherheit & Wohnungsschloss">🔒</div>
           <div class="dock-item" id="dockAlarmo" title="Alarmanlage (Alarmo)">🛡️</div>
           <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">🔌</div>
           <div class="dock-item" id="dockBattery" title="Batteriestatus & Wartung">🔋</div>
-          <div class="dock-item" id="dockWeather" title="Wetter & Vorhersage">🌦️</div>
+          <div class="dock-item" id="dockWeather" title="Wetter, Vorhersage & Radar">🌦️</div>
         </div>
 
         <!-- Popup Modal Container -->
@@ -2003,6 +2761,7 @@ class VisionGlassDashboard extends HTMLElement {
     // Dock Items
     this.shadowRoot.getElementById('dockLighting').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('dockClimate').addEventListener('click', () => this._openModal('climate'));
+    this.shadowRoot.getElementById('dockStats').addEventListener('click', () => this._openModal('stats'));
     this.shadowRoot.getElementById('dockSecurity').addEventListener('click', () => this._openModal('security'));
     this.shadowRoot.getElementById('dockAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
