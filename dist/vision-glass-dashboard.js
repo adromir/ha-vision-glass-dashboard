@@ -26,6 +26,172 @@ class VisionGlassDashboard extends HTMLElement {
     this._statsRoom = 'wohnzimmer';
     this._statsHistory = {};
     this._statsHistoryFetched = false;
+    this._roomEntitiesCache = {};
+    this._updateRaf = null;
+    this._lang = (typeof localStorage !== 'undefined' && localStorage.getItem('vg_dashboard_lang')) || null;
+  }
+
+  static get I18N() {
+    return {
+      de: {
+        welcome: 'Willkommen',
+        smart_home_center: 'Smart Home Zentrale',
+        today: 'Heute',
+        tomorrow: 'Morgen',
+        now: 'Jetzt',
+        deactivated: 'Deaktiviert',
+        disarmed: 'Deaktiviert',
+        armed_home: 'Scharf (Zuhause)',
+        armed_away: 'Scharf (Abwesend)',
+        armed_night: 'Scharf (Nacht)',
+        arming: 'Schärfung läuft...',
+        alarm_triggered: 'ALARM AUSGELÖST!',
+        door_open: 'Tür offen',
+        door_closed_unlocked: 'Tür zu & entriegelt',
+        door_closed_locked: 'Tür zu & verriegelt',
+        lock_door: 'Verriegeln',
+        unlock_door: 'Entriegeln',
+        lights_on: 'Lichter an',
+        lights_off: 'Alle Lichter aus',
+        lights_loading: 'Lichter laden...',
+        climate_loading: 'Klima laden...',
+        lock_loading: 'Schloss laden...',
+        alarmo_loading: 'Alarmo laden...',
+        weather_loading: 'Wetter...',
+        climate: 'Klima',
+        lock: 'Schloss',
+        alarmo: 'Alarmo',
+        weather: 'Wetter',
+        lighting: 'Beleuchtung',
+        stats: 'Statistiken & Verläufe',
+        security: 'Sicherheit & Wohnungsschloss',
+        switches: 'Geräte & Steckdosen',
+        battery: 'Batteriestatus & Wartung',
+        residents: 'Bewohner & Anwesenheit',
+        all: 'Gesamt',
+        critical: 'Kritisch (<20%)',
+        low: 'Niedrig (20-40%)',
+        good: 'Gut (>40%)',
+        on: 'EIN',
+        off: 'AUS',
+        heat: 'HEIZEN',
+        target: 'Ziel',
+        temp: 'Temp',
+        humidity: 'Feuchte',
+        lux: 'Lux',
+        occupied: 'Belegt',
+        idle: 'Bereit',
+        person_present: 'Person anwesend',
+        no_motion: 'Keine Bewegung',
+        window_open: 'Fenster geöffnet',
+        window_closed: 'Fenster geschlossen',
+        windows_open_count: 'offen',
+        windows_all_closed: 'Fenster zu',
+        door_locked_short: 'Zu',
+        door_unlocked_short: 'Offen',
+        overview_devices: 'Raumübersicht & Geräte',
+        other_devices: 'Weitere Geräte & Schalter in diesem Raum',
+        measurements_sensors: 'Messwerte & Sensoren',
+        multimedia_hub: 'Multimedia-Zentrale',
+        multimedia_desc: 'Schaltet TV, AVR-Receiver, Subwoofer & Shield zusammen',
+        pin_code: 'PIN Code',
+        no_entry: 'Keine Eingabe',
+        home: 'Zuhause',
+        away: 'Abwesend',
+        unknown: 'Unbekannt',
+        agenda_garbage: 'TERMINE & MÜLLABFUHR',
+        sunset: 'Sonnenuntergang',
+        radar_precip: 'Niederschlagsradar',
+        hourly_forecast: 'Stündliche Vorhersage (24h)',
+        daily_trend: '7-Tage Wettertrend',
+        all_lights_turn_off: 'Alle Lichter ausschalten',
+        all_lights_turn_on: 'Alle Lichter einschalten',
+        battery_level: 'Batterie',
+        device_details: 'Details in Home Assistant öffnen',
+        lang_switch: 'Sprache wechseln / Change language (DE / EN)',
+        day_mode: 'Tagmodus aktiv (Klick für Nachtmodus)',
+        night_mode: 'Nachtmodus aktiv (Klick für Tagmodus)'
+      },
+      en: {
+        welcome: 'Welcome',
+        smart_home_center: 'Smart Home Center',
+        today: 'Today',
+        tomorrow: 'Tomorrow',
+        now: 'Now',
+        deactivated: 'Deactivated',
+        disarmed: 'Deactivated',
+        armed_home: 'Armed (Home)',
+        armed_away: 'Armed (Away)',
+        armed_night: 'Armed (Night)',
+        arming: 'Arming in progress...',
+        alarm_triggered: 'ALARM TRIGGERED!',
+        door_open: 'Door open',
+        door_closed_unlocked: 'Door closed & unlocked',
+        door_closed_locked: 'Door closed & locked',
+        lock_door: 'Lock',
+        unlock_door: 'Unlock',
+        lights_on: 'lights on',
+        lights_off: 'All lights off',
+        lights_loading: 'Loading lights...',
+        climate_loading: 'Loading climate...',
+        lock_loading: 'Loading lock...',
+        alarmo_loading: 'Loading alarmo...',
+        weather_loading: 'Weather...',
+        climate: 'Climate',
+        lock: 'Lock',
+        alarmo: 'Alarmo',
+        weather: 'Weather',
+        lighting: 'Lighting',
+        stats: 'Statistics & History',
+        security: 'Security & Door Lock',
+        switches: 'Devices & Sockets',
+        battery: 'Battery Status & Maintenance',
+        residents: 'Residents & Presence',
+        all: 'All',
+        critical: 'Critical (<20%)',
+        low: 'Low (20-40%)',
+        good: 'Good (>40%)',
+        on: 'ON',
+        off: 'OFF',
+        heat: 'HEAT',
+        target: 'Target',
+        temp: 'Temp',
+        humidity: 'Humidity',
+        lux: 'Lux',
+        occupied: 'Occupied',
+        idle: 'Ready',
+        person_present: 'Person present',
+        no_motion: 'No motion',
+        window_open: 'Window open',
+        window_closed: 'Window closed',
+        windows_open_count: 'open',
+        windows_all_closed: 'Windows closed',
+        door_locked_short: 'Locked',
+        door_unlocked_short: 'Unlocked',
+        overview_devices: 'Room Overview & Devices',
+        other_devices: 'Additional Devices & Switches in this room',
+        measurements_sensors: 'Readings & Sensors',
+        multimedia_hub: 'Multimedia Hub',
+        multimedia_desc: 'Controls TV, AVR Receiver, Subwoofer & Shield together',
+        pin_code: 'PIN Code',
+        no_entry: 'No input',
+        home: 'Home',
+        away: 'Away',
+        unknown: 'Unknown',
+        agenda_garbage: 'AGENDA & RECYCLING',
+        sunset: 'Sunset',
+        radar_precip: 'Precipitation Radar',
+        hourly_forecast: 'Hourly Forecast (24h)',
+        daily_trend: '7-Day Weather Trend',
+        all_lights_turn_off: 'Turn all lights off',
+        all_lights_turn_on: 'Turn all lights on',
+        battery_level: 'Battery',
+        device_details: 'Open details in Home Assistant',
+        lang_switch: 'Change language / Sprache wechseln (DE / EN)',
+        day_mode: 'Day mode active (click for night mode)',
+        night_mode: 'Night mode active (click for day mode)'
+      }
+    };
   }
 
   static get ICONS() {
@@ -419,9 +585,47 @@ class VisionGlassDashboard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
-    if (this._initialRenderDone) {
+    if (!this._initialRenderDone) return;
+    if (this._updateRaf) return;
+    this._updateRaf = requestAnimationFrame(() => {
+      this._updateRaf = null;
       this._updateAll();
+    });
+  }
+
+  _getLang() {
+    if (this._lang) return this._lang;
+    if (this._hass) {
+      const hl = this._hass.language || (this._hass.locale && this._hass.locale.language) || '';
+      if (hl.toLowerCase().startsWith('en')) return 'en';
     }
+    return 'de';
+  }
+
+  _t(key) {
+    const lang = this._getLang();
+    return (VisionGlassDashboard.I18N[lang] && VisionGlassDashboard.I18N[lang][key]) ||
+           (VisionGlassDashboard.I18N['de'] && VisionGlassDashboard.I18N['de'][key]) ||
+           key;
+  }
+
+  _toggleLang() {
+    const cur = this._getLang();
+    this._lang = cur === 'de' ? 'en' : 'de';
+    try {
+      localStorage.setItem('vg_dashboard_lang', this._lang);
+    } catch (e) {}
+    this._render();
+    this._updateAll();
+  }
+
+  _fireMoreInfo(entityId) {
+    const event = new CustomEvent('hass-more-info', {
+      bubbles: true,
+      composed: true,
+      detail: { entityId }
+    });
+    this.dispatchEvent(event);
   }
 
   connectedCallback() {
@@ -481,6 +685,85 @@ class VisionGlassDashboard extends HTMLElement {
   _callService(domain, service, data) {
     if (!this._hass) return;
     this._hass.callService(domain, service, data);
+  }
+
+  _openPersonModal(targetEntityId) {
+    this._activeModal = { type: 'person', targetEntityId };
+    const modalEl = this.shadowRoot.getElementById('modalContainer');
+    if (modalEl) {
+      modalEl.classList.remove('hidden');
+      this._renderPersonModal(targetEntityId);
+    }
+  }
+
+  _renderPersonModal(targetEntityId) {
+    const body = this.shadowRoot.getElementById('modalBody');
+    const title = this.shadowRoot.getElementById('modalTitle');
+    if (!body || !title || !this._hass) return;
+
+    title.innerHTML = `${this._icon('user', { size: 22, cls: 'icon-security', style: 'margin-right:8px;' })} ${this._t('residents')}`;
+
+    const persons = [
+      { id: 'person.andreas', name: 'Andreas', defaultPic: '/api/image/serve/77e1449b97a3b297a3359c4bf2290f43/512x512', batteryEntity: 'sensor.andreas_smartphone_battery' },
+      { id: 'person.shanty', name: 'Shanty', defaultPic: null, batteryEntity: 'sensor.shanty_smartphone_battery' }
+    ];
+
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;">
+          ${persons.map(p => {
+            const stateObj = this._hass.states[p.id];
+            const isHome = stateObj && stateObj.state === 'home';
+            const statusLabel = isHome ? this._t('home') : (stateObj ? (stateObj.state === 'not_home' ? this._t('away') : stateObj.state) : this._t('unknown'));
+            const pic = (stateObj && stateObj.attributes && stateObj.attributes.entity_picture) || p.defaultPic;
+            const batObj = p.batteryEntity ? this._hass.states[p.batteryEntity] : null;
+            const batVal = batObj ? batObj.state : null;
+            const isTarget = targetEntityId === p.id;
+
+            return `
+              <div class="control-row" style="flex-direction:column;align-items:stretch;gap:12px;padding:16px;${isTarget ? 'border:1.5px solid var(--accent);' : ''}">
+                <div style="display:flex;align-items:center;gap:12px;">
+                  ${pic ? `
+                    <img src="${pic}" style="width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid ${isHome ? '#10b981' : 'rgba(255,255,255,0.4)'};box-shadow:0 3px 10px rgba(0,0,0,0.15);" alt="${p.name}" />
+                  ` : `
+                    <div style="width:54px;height:54px;border-radius:50%;background:linear-gradient(135deg,#c084fc,#8b5cf6);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:20px;color:#fff;border:2px solid ${isHome ? '#10b981' : 'rgba(255,255,255,0.4)'};">
+                      ${p.name.charAt(0)}
+                    </div>
+                  `}
+                  <div style="flex:1;">
+                    <div style="font-size:17px;font-weight:700;">${p.name}</div>
+                    <div style="display:flex;align-items:center;gap:6px;margin-top:2px;font-size:13px;color:var(--text-secondary);">
+                      <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
+                      <strong style="color:${isHome ? '#10b981' : 'var(--text-secondary)'};">${statusLabel}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;padding-top:8px;border-top:1px solid var(--border-subtle);font-size:12px;color:var(--text-secondary);">
+                  <span>Entity: <code>${p.id}</code></span>
+                  ${batVal != null ? `
+                    <span style="display:inline-flex;align-items:center;gap:4px;">
+                      ${this._icon('battery-full', { size: 14, cls: 'icon-battery' })} ${batVal}%
+                    </span>
+                  ` : ''}
+                </div>
+
+                <button class="btn-micro btn-moreinfo" data-entity="${p.id}" style="width:100%;text-align:center;margin-top:4px;">
+                  ${this._t('device_details')}
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+
+    body.querySelectorAll('.btn-moreinfo').forEach(btn => {
+      btn.onclick = () => {
+        const eid = btn.getAttribute('data-entity');
+        if (eid) this._fireMoreInfo(eid);
+      };
+    });
   }
 
   _openRoomModal(room) {
@@ -585,13 +868,78 @@ class VisionGlassDashboard extends HTMLElement {
     if (visEl && a.visibility != null) visEl.textContent = `${a.visibility} km`;
   }
 
+  _updateAlarmoModalValues() {
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!body || !this._hass) return;
+    const alarmo = this._hass.states['alarm_control_panel.alarmo'];
+    const st = alarmo ? alarmo.state : 'disarmed';
+    const stMap = {
+      'disarmed': { label: this._t('deactivated'), color: '#10b981', iconName: 'shield-check', bg: 'rgba(16, 185, 129, 0.15)' },
+      'armed_home': { label: this._t('armed_home'), color: '#0284c7', iconName: 'home', bg: 'rgba(2, 132, 199, 0.15)' },
+      'armed_away': { label: this._t('armed_away'), color: '#f59e0b', iconName: 'user-walk', bg: 'rgba(245, 158, 11, 0.15)' },
+      'armed_night': { label: this._t('armed_night'), color: '#6366f1', iconName: 'moon', bg: 'rgba(99, 102, 241, 0.15)' },
+      'arming': { label: this._t('arming'), color: '#f59e0b', iconName: 'clock', bg: 'rgba(245, 158, 11, 0.2)' },
+      'triggered': { label: this._t('alarm_triggered'), color: '#ef4444', iconName: 'siren', bg: 'rgba(239, 68, 68, 0.25)' }
+    };
+    const info = stMap[st] || { label: st, color: '#94a3b8', iconName: 'shield', bg: 'rgba(255,255,255,0.1)' };
+    const banner = body.querySelector('#alarmoStatusBanner');
+    if (banner) {
+      banner.style.background = info.bg;
+      banner.style.borderColor = info.color;
+      const lbl = banner.querySelector('#alarmoStatusLabel');
+      if (lbl) {
+        lbl.style.color = info.color;
+        lbl.textContent = info.label;
+      }
+      const iconWrap = banner.querySelector('#alarmoStatusIcon');
+      if (iconWrap) {
+        iconWrap.innerHTML = this._icon(info.iconName, { size: 36, color: info.color });
+      }
+    }
+    const btnD = body.querySelector('#btnAlarmoDisarm');
+    if (btnD) btnD.className = `btn-micro ${st === 'disarmed' ? 'active-green' : ''}`;
+    const btnH = body.querySelector('#btnAlarmoHome');
+    if (btnH) btnH.className = `btn-micro ${st === 'armed_home' ? 'active' : ''}`;
+    const btnA = body.querySelector('#btnAlarmoAway');
+    if (btnA) btnA.className = `btn-micro ${st === 'armed_away' ? 'active-amber' : ''}`;
+    const btnN = body.querySelector('#btnAlarmoNight');
+    if (btnN) btnN.className = `btn-micro ${st === 'armed_night' ? 'active' : ''}`;
+  }
+
+  _updateRoomModalValues() {
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!body || !this._hass || !this._activeModal || !this._activeModal.room) return;
+    const room = this._activeModal.room;
+    const lightObj = room.light_entity ? this._hass.states[room.light_entity] : null;
+    const climateObj = room.climate_entity ? this._hass.states[room.climate_entity] : null;
+    const isLightOn = lightObj && lightObj.state === 'on';
+    const isHeat = climateObj && climateObj.state === 'heat';
+    const lToggle = body.querySelector('#roomModalLightToggle');
+    if (lToggle) {
+      lToggle.className = `toggle-pill ${isLightOn ? 'active-amber' : ''}`;
+      lToggle.textContent = isLightOn ? this._t('on') : this._t('off');
+    }
+    const hToggle = body.querySelector('#roomModalHeatToggle');
+    if (hToggle) {
+      hToggle.className = `btn-micro ${isHeat ? 'active' : ''}`;
+      hToggle.textContent = isHeat ? this._t('heat') : this._t('off');
+    }
+    const mmToggle = body.querySelector('#roomModalMultimediaToggle');
+    if (mmToggle) {
+      const mmObj = (room.multimedia_switch && this._hass.states[room.multimedia_switch]) || (room.id === 'wohnzimmer' && this._hass.states['switch.livingroom_multimedia']);
+      const isMmOn = mmObj && mmObj.state === 'on';
+      mmToggle.className = `toggle-pill ${isMmOn ? 'active-blue' : ''}`;
+      mmToggle.textContent = isMmOn ? this._t('on') : this._t('off');
+    }
+  }
+
   _renderHourlyItemsHtml(hourlyItems) {
     if (!hourlyItems || hourlyItems.length === 0) {
       return '<div class="control-row" style="font-size:13px;color:var(--text-secondary);">Stündliche Wettervorhersage wird geladen...</div>';
     }
     return hourlyItems.map((item, hIdx) => {
       const d = new Date(item.datetime);
-      const timeStr = hIdx === 0 ? 'Jetzt' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const timeStr = hIdx === 0 ? this._t('now') : d.toLocaleTimeString(this._getLang() === 'en' ? 'en-US' : 'de-DE', { hour: '2-digit', minute: '2-digit' });
       const weatherIcon = this._getWeatherIcon(item.condition, 24);
       const t = Math.round(item.temperature);
       const rain = item.precipitation != null && item.precipitation > 0 ? `${item.precipitation.toFixed(1)} mm` : '';
@@ -612,8 +960,8 @@ class VisionGlassDashboard extends HTMLElement {
     }
     return dailyItems.map((item, idx) => {
       const d = new Date(item.datetime);
-      const dayName = idx === 0 ? 'Heute' : (idx === 1 ? 'Morgen' : d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }));
-      const emoji = this._getWeatherEmoji(item.condition);
+      const dayName = idx === 0 ? this._t('today') : (idx === 1 ? this._t('tomorrow') : d.toLocaleDateString(this._getLang() === 'en' ? 'en-US' : 'de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }));
+      const weatherIcon = this._getWeatherIcon(item.condition, 22);
       const condText = this._translateWeather(item.condition);
       const maxT = Math.round(item.temperature);
       const minT = item.templow != null ? Math.round(item.templow) : (maxT - 4);
@@ -1088,21 +1436,34 @@ class VisionGlassDashboard extends HTMLElement {
     const luxObj = luxEntity && this._hass.states[luxEntity];
     const curLux = luxObj && luxObj.state && !isNaN(parseFloat(luxObj.state)) ? Math.round(parseFloat(luxObj.state)) : null;
 
-    Object.keys(this._hass.states).forEach(eId => {
-      if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
+    if (!this._roomEntitiesCache[roomSlug]) {
+      const matchSwitches = [];
+      const matchSensors = [];
+      Object.keys(this._hass.states).forEach(eId => {
+        if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
 
-      const eIdLower = eId.toLowerCase();
-      const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
+        const eIdLower = eId.toLowerCase();
+        const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
 
-      const matches = eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase()) || aliases.some(a => eIdLower.includes(a));
+        const matches = eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase()) || aliases.some(a => eIdLower.includes(a));
 
-      if (matches) {
-        if (eId.startsWith('switch.') || eId.startsWith('light.')) {
-          otherSwitches.push({ id: eId, state: this._hass.states[eId] });
-        } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
-          otherSensors.push({ id: eId, state: this._hass.states[eId] });
+        if (matches) {
+          if (eId.startsWith('switch.') || eId.startsWith('light.')) {
+            matchSwitches.push(eId);
+          } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
+            matchSensors.push(eId);
+          }
         }
-      }
+      });
+      this._roomEntitiesCache[roomSlug] = { switches: matchSwitches, sensors: matchSensors };
+    }
+
+    const cached = this._roomEntitiesCache[roomSlug];
+    cached.switches.forEach(id => {
+      if (this._hass.states[id]) otherSwitches.push({ id, state: this._hass.states[id] });
+    });
+    cached.sensors.forEach(id => {
+      if (this._hass.states[id]) otherSensors.push({ id, state: this._hass.states[id] });
     });
 
     body.innerHTML = `
@@ -1322,12 +1683,18 @@ class VisionGlassDashboard extends HTMLElement {
     if (!this._hass) return;
     this._applyThemeClass();
 
-    // 1. Update Date Header
+    // 1. Update Date & Header
     const now = new Date();
+    const isEn = this._getLang() === 'en';
+    const locale = isEn ? 'en-US' : 'de-DE';
     const dateTitleEl = this.shadowRoot.getElementById('dateTitle');
     if (dateTitleEl) {
       const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-      dateTitleEl.textContent = now.toLocaleDateString('de-DE', options);
+      dateTitleEl.textContent = now.toLocaleDateString(locale, options);
+    }
+    const subHeaderEl = this.shadowRoot.getElementById('subHeader');
+    if (subHeaderEl) {
+      subHeaderEl.textContent = `${this._t('welcome')} Andreas Pilz • ${this._t('smart_home_center')}`;
     }
 
     // 2. Update Weather
@@ -1361,14 +1728,14 @@ class VisionGlassDashboard extends HTMLElement {
       const sidebarMiniSun = this.shadowRoot.getElementById('sidebarMiniSun');
       if (sidebarMiniSun && sunObj && sunObj.attributes && sunObj.attributes.next_setting) {
         const d = new Date(sunObj.attributes.next_setting);
-        sidebarMiniSun.innerHTML = `${this._icon('sunset', { size: 13, cls: 'icon-light', style: 'margin-right:3px;' })} ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+        sidebarMiniSun.innerHTML = `${this._icon('sunset', { size: 13, cls: 'icon-light', style: 'margin-right:3px;' })} ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
       }
     }
 
     // Sidebar Date
     const sidebarDateSub = this.shadowRoot.getElementById('sidebarDateSub');
     if (sidebarDateSub) {
-      sidebarDateSub.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'short' });
+      sidebarDateSub.textContent = now.toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'short' });
     }
 
     // Sidebar Glance Bar (active lights, open windows, door lock)
@@ -1388,9 +1755,9 @@ class VisionGlassDashboard extends HTMLElement {
       const isLocked = lockS && lockS.state === 'locked';
 
       glanceEl.innerHTML = `
-        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;" id="glanceLights" title="Beleuchtungs-Übersicht">${this._icon('light', { size: 13, cls: 'icon-light' })} ${lightsOn} an</span>
-        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;${windowsOpen > 0 ? 'color:#f59e0b;font-weight:700;' : ''}" id="glanceWindows" title="Fenster-Übersicht">${windowsOpen > 0 ? `${this._icon('window-open', { size: 13, cls: 'icon-climate' })} ${windowsOpen} offen` : `${this._icon('window', { size: 13, cls: 'icon-security' })} Fenster zu`}</span>
-        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;" id="glanceLock" title="Schloss-Übersicht">${isLocked ? `${this._icon('lock-closed', { size: 13, cls: 'icon-security' })} Zu` : `${this._icon('lock-open', { size: 13, cls: 'icon-light' })} Offen`}</span>
+        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;" id="glanceLights" title="${this._t('lighting')}">${this._icon('light', { size: 13, cls: 'icon-light' })} ${lightsOn} ${this._t('on')}</span>
+        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;${windowsOpen > 0 ? 'color:#f59e0b;font-weight:700;' : ''}" id="glanceWindows" title="${this._t('security')}">${windowsOpen > 0 ? `${this._icon('window-open', { size: 13, cls: 'icon-climate' })} ${windowsOpen} ${this._t('windows_open_count')}` : `${this._icon('window', { size: 13, cls: 'icon-security' })} ${this._t('windows_all_closed')}`}</span>
+        <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;" id="glanceLock" title="${this._t('lock')}">${isLocked ? `${this._icon('lock-closed', { size: 13, cls: 'icon-security' })} ${this._t('door_locked_short')}` : `${this._icon('lock-open', { size: 13, cls: 'icon-light' })} ${this._t('door_unlocked_short')}`}</span>
       `;
       const gL = glanceEl.querySelector('#glanceLights');
       if (gL) gL.onclick = (e) => { e.stopPropagation(); this._openModal('lighting'); };
@@ -1407,7 +1774,7 @@ class VisionGlassDashboard extends HTMLElement {
       const pA = this._hass.states['person.andreas'];
       const isHome = pA && pA.state === 'home';
       const pic = (pA && pA.attributes && pA.attributes.entity_picture) || '/api/image/serve/77e1449b97a3b297a3359c4bf2290f43/512x512';
-      const statusText = isHome ? 'Zuhause' : (pA ? (pA.state === 'not_home' ? 'Abwesend' : pA.state) : 'Unbekannt');
+      const statusText = isHome ? this._t('home') : (pA ? (pA.state === 'not_home' ? this._t('away') : pA.state) : this._t('unknown'));
       chipPA.innerHTML = `
         <img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Andreas" />
         <span class="chip-name">Andreas</span>
@@ -1420,7 +1787,7 @@ class VisionGlassDashboard extends HTMLElement {
       const pS = this._hass.states['person.shanty'];
       const isHome = pS && pS.state === 'home';
       const pic = (pS && pS.attributes && pS.attributes.entity_picture) || null;
-      const statusText = isHome ? 'Zuhause' : (pS ? (pS.state === 'not_home' ? 'Abwesend' : pS.state) : 'Unbekannt');
+      const statusText = isHome ? this._t('home') : (pS ? (pS.state === 'not_home' ? this._t('away') : pS.state) : this._t('unknown'));
       chipPS.innerHTML = `
         ${pic ? `<img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Shanty" />`
               : `<div class="chip-avatar chip-avatar-initial" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">S</div>`}
@@ -1441,9 +1808,9 @@ class VisionGlassDashboard extends HTMLElement {
         }
       });
       if (activeLightsCount > 0) {
-        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} Licht${activeLightsCount > 1 ? 'er' : ''} an`;
+        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} ${this._t('lights_on')}`;
       } else {
-        chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> ${this._icon('light', { size: 14, style: 'margin-right:4px;' })} Alle Lichter aus`;
+        chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> ${this._icon('light', { size: 14, style: 'margin-right:4px;' })} ${this._t('lights_off')}`;
       }
     }
 
@@ -1468,9 +1835,9 @@ class VisionGlassDashboard extends HTMLElement {
       if (temps.length > 0) {
         const minT = Math.min(...temps).toFixed(1).replace('.', ',');
         const maxT = Math.max(...temps).toFixed(1).replace('.', ',');
-        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Raumklima ${minT} - ${maxT} °C`;
+        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate')} ${minT} - ${maxT} °C`;
       } else {
-        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Raumklima 22°C`;
+        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate')} 22°C`;
       }
     }
 
@@ -1484,11 +1851,11 @@ class VisionGlassDashboard extends HTMLElement {
       const isDoorOpen = doorObj && doorObj.state === 'on';
 
       if (isDoorOpen) {
-        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('door-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Tür offen`;
+        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('door-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('door_open')}`;
       } else if (!isLocked) {
-        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('lock-open', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} Schloss entriegelt`;
+        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('lock-open', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('door_closed_unlocked')}`;
       } else {
-        chipLock.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} Tür zu & verriegelt`;
+        chipLock.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('door_closed_locked')}`;
       }
     }
 
@@ -1498,11 +1865,11 @@ class VisionGlassDashboard extends HTMLElement {
       const al = this._hass.states['alarm_control_panel.alarmo'];
       const ast = al ? al.state : 'disarmed';
       if (ast === 'disarmed') {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('shield-check', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} Alarmo: Unscharf`;
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('shield-check', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('deactivated')}`;
       } else if (ast === 'triggered') {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('siren', { size: 14, cls: 'icon-temp', style: 'margin-right:4px;' })} Alarmo: ALARM!`;
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('siren', { size: 14, cls: 'icon-temp', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('alarm_triggered')}`;
       } else {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} Alarmo: Scharf`;
+        chipAlarmo.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('armed_away')}`;
       }
     }
 
@@ -1514,16 +1881,18 @@ class VisionGlassDashboard extends HTMLElement {
     // 5. Update Agenda
     this._updateAgenda();
 
-    // 6. Update Active Modal if open
+    // 6. Update Active Modal if open (targeted fast in-place updates, zero teardown)
     if (this._activeModal) {
       if (this._activeModal === 'weather') {
         this._updateWeatherModalValues();
+      } else if (this._activeModal === 'alarmo') {
+        this._updateAlarmoModalValues();
       } else if (this._activeModal === 'stats') {
         // preserve stats modal without re-render flicker
-      } else if (typeof this._activeModal === 'string') {
-        this._renderModalContent(this._activeModal);
+      } else if (this._activeModal.type === 'person') {
+        this._renderPersonModal(this._activeModal.targetEntityId);
       } else if (this._activeModal.type === 'room') {
-        this._renderRoomModal(this._activeModal.room);
+        this._updateRoomModalValues();
       }
     }
   }
@@ -1985,17 +2354,17 @@ class VisionGlassDashboard extends HTMLElement {
         this._callService('lock', 'unlock', { entity_id: 'lock.wohnungsschloss' });
       };
     } else if (type === 'alarmo') {
-      title.innerHTML = `${this._icon('shield', { size: 22, cls: 'icon-alarmo', style: 'margin-right:8px;' })} Alarmanlage (Alarmo)`;
+      title.innerHTML = `${this._icon('shield', { size: 22, cls: 'icon-alarmo', style: 'margin-right:8px;' })} ${this._t('alarmo')}`;
       const alarmo = this._hass.states['alarm_control_panel.alarmo'];
       const st = alarmo ? alarmo.state : 'disarmed';
 
       const stMap = {
-        'disarmed': { label: 'Unscharf (Deaktiviert)', color: '#10b981', iconName: 'shield-check', bg: 'rgba(16, 185, 129, 0.15)' },
-        'armed_home': { label: 'Scharf (Zuhause)', color: '#0284c7', iconName: 'home', bg: 'rgba(2, 132, 199, 0.15)' },
-        'armed_away': { label: 'Scharf (Abwesend)', color: '#f59e0b', iconName: 'user-walk', bg: 'rgba(245, 158, 11, 0.15)' },
-        'armed_night': { label: 'Scharf (Nacht)', color: '#6366f1', iconName: 'moon', bg: 'rgba(99, 102, 241, 0.15)' },
-        'arming': { label: 'Schärfung läuft...', color: '#f59e0b', iconName: 'clock', bg: 'rgba(245, 158, 11, 0.2)' },
-        'triggered': { label: 'ALARM AUSGELÖST!', color: '#ef4444', iconName: 'siren', bg: 'rgba(239, 68, 68, 0.25)' }
+        'disarmed': { label: this._t('deactivated'), color: '#10b981', iconName: 'shield-check', bg: 'rgba(16, 185, 129, 0.15)' },
+        'armed_home': { label: this._t('armed_home'), color: '#0284c7', iconName: 'home', bg: 'rgba(2, 132, 199, 0.15)' },
+        'armed_away': { label: this._t('armed_away'), color: '#f59e0b', iconName: 'user-walk', bg: 'rgba(245, 158, 11, 0.15)' },
+        'armed_night': { label: this._t('armed_night'), color: '#6366f1', iconName: 'moon', bg: 'rgba(99, 102, 241, 0.15)' },
+        'arming': { label: this._t('arming'), color: '#f59e0b', iconName: 'clock', bg: 'rgba(245, 158, 11, 0.2)' },
+        'triggered': { label: this._t('alarm_triggered'), color: '#ef4444', iconName: 'siren', bg: 'rgba(239, 68, 68, 0.25)' }
       };
 
       const info = stMap[st] || { label: st, color: '#94a3b8', iconName: 'shield', bg: 'rgba(255,255,255,0.1)' };
@@ -2003,35 +2372,35 @@ class VisionGlassDashboard extends HTMLElement {
       body.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:18px;">
           <!-- Status Banner -->
-          <div style="background:${info.bg};border:1px solid ${info.color};border-radius:20px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;">
+          <div id="alarmoStatusBanner" style="background:${info.bg};border:1.5px solid ${info.color};border-radius:20px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 4px 15px rgba(0,0,0,0.08);">
             <div>
               <div style="font-size:13px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;font-weight:600;">Status</div>
-              <div style="font-size:22px;font-weight:700;color:${info.color};margin-top:2px;">${info.label}</div>
+              <div id="alarmoStatusLabel" style="font-size:22px;font-weight:700;color:${info.color};margin-top:2px;">${info.label}</div>
             </div>
-            <div style="font-size:36px;display:flex;align-items:center;justify-content:center;">${this._icon(info.iconName, { size: 36, color: info.color })}</div>
+            <div id="alarmoStatusIcon" style="font-size:36px;display:flex;align-items:center;justify-content:center;">${this._icon(info.iconName, { size: 36, color: info.color })}</div>
           </div>
 
           <!-- Mode Buttons -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
             <button class="btn-micro ${st === 'disarmed' ? 'active-green' : ''}" id="btnAlarmoDisarm" style="padding:12px;font-weight:700;">
-              ${this._icon('shield-check', { size: 16, style: 'margin-right:6px;' })} Unscharf
+              ${this._icon('shield-check', { size: 16, style: 'margin-right:6px;' })} ${this._t('deactivated')}
             </button>
             <button class="btn-micro ${st === 'armed_home' ? 'active' : ''}" id="btnAlarmoHome" style="padding:12px;font-weight:700;">
-              ${this._icon('home', { size: 16, style: 'margin-right:6px;' })} Zuhause
+              ${this._icon('home', { size: 16, style: 'margin-right:6px;' })} ${this._t('armed_home')}
             </button>
             <button class="btn-micro ${st === 'armed_away' ? 'active-amber' : ''}" id="btnAlarmoAway" style="padding:12px;font-weight:700;">
-              ${this._icon('user-walk', { size: 16, style: 'margin-right:6px;' })} Abwesend
+              ${this._icon('user-walk', { size: 16, style: 'margin-right:6px;' })} ${this._t('armed_away')}
             </button>
             <button class="btn-micro ${st === 'armed_night' ? 'active' : ''}" id="btnAlarmoNight" style="padding:12px;font-weight:700;">
-              ${this._icon('moon', { size: 16, style: 'margin-right:6px;' })} Nacht
+              ${this._icon('moon', { size: 16, style: 'margin-right:6px;' })} ${this._t('armed_night')}
             </button>
           </div>
 
           <!-- Optional PIN display & Keypad -->
-          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:18px;padding:16px;display:flex;flex-direction:column;align-items:center;gap:12px;">
+          <div class="alarmo-keypad-box">
             <div style="display:flex;align-items:center;justify-content:space-between;width:100%;max-width:240px;">
-              <span style="font-size:13px;color:var(--text-secondary);">PIN Code:</span>
-              <span style="font-size:20px;letter-spacing:4px;font-family:monospace;font-weight:700;" id="alarmoPinDisplay">${this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : 'Keine Eingabe'}</span>
+              <span style="font-size:13px;color:var(--text-secondary);font-weight:600;">${this._t('pin_code')}:</span>
+              <span style="font-size:20px;letter-spacing:4px;font-family:monospace;font-weight:700;" id="alarmoPinDisplay">${this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : this._t('no_entry')}</span>
             </div>
             <div style="display:grid;grid-template-columns:repeat(3, 68px);gap:10px;">
               ${[1, 2, 3, 4, 5, 6, 7, 8, 9, 'C', 0, 'OK'].map(k => `
@@ -2812,39 +3181,26 @@ class VisionGlassDashboard extends HTMLElement {
         /* --- THEME DESIGN TOKENS --- */
         .dashboard-root.theme-light {
           background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%),
-                      radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.65) 0%, transparent 50%),
-                      linear-gradient(135deg, #cbe3f7 0%, #dbeafe 30%, #eef5ff 65%, #cde2f8 100%);
+                      radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.55) 0%, transparent 50%),
+                      linear-gradient(135deg, #dbeafe 0%, #eff6ff 35%, #f8fafc 70%, #ede9fe 100%);
           --bg-surface: rgba(255, 255, 255, 0.75);
           --bg-surface-hover: rgba(255, 255, 255, 0.92);
-          --bg-card: rgba(255, 255, 255, 0.52);
-          --border-glass: rgba(255, 255, 255, 0.95);
-          --border-subtle: rgba(255, 255, 255, 0.70);
+          --bg-card: rgba(255, 255, 255, 0.60);
+          --border-glass: rgba(255, 255, 255, 0.92);
+          --border-subtle: rgba(226, 232, 240, 0.85);
           --text-primary: #0f172a;
           --text-secondary: #475569;
           --accent: #0284c7;
           --accent-amber: #ea580c;
           --accent-green: #10b981;
-          --dock-bg: rgba(255, 255, 255, 0.90);
-          --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05);
+          --dock-bg: rgba(255, 255, 255, 0.92);
+          --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
           --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.40) 100%);
           --glass-refraction:
-            inset 0 2px 1.5px 0 #ffffff,
-            inset 0 0.5px 0.5px 0 #ffffff,
-            inset 0 -2px 2px 0 rgba(15, 23, 42, 0.08),
-            inset 2px 0 2px 0 rgba(2, 132, 199, 0.28),
-            inset -2px 0 2px 0 rgba(139, 92, 246, 0.22);
-          --card-ripple-pattern:
-            repeating-linear-gradient(90deg,
-              rgba(255, 255, 255, 0.85) 0px,
-              rgba(255, 255, 255, 1) 1.5px,
-              rgba(148, 163, 184, 0.28) 2.5px,
-              rgba(100, 116, 139, 0.14) 4px,
-              transparent 5px,
-              transparent 8px),
-            linear-gradient(135deg,
-              rgba(255, 255, 255, 0.75) 0%,
-              rgba(240, 246, 255, 0.55) 50%,
-              rgba(255, 255, 255, 0.70) 100%);
+            inset 0 1.5px 1px 0 #ffffff,
+            inset 0 -1.5px 1.5px 0 rgba(15, 23, 42, 0.05),
+            inset 1.5px 0 1.5px 0 rgba(2, 132, 199, 0.18),
+            inset -1.5px 0 1.5px 0 rgba(139, 92, 246, 0.14);
         }
 
         .dashboard-root.theme-dark {
@@ -2870,18 +3226,6 @@ class VisionGlassDashboard extends HTMLElement {
             inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.25),
             inset 1.5px 0 1.5px 0 rgba(56, 189, 248, 0.12),
             inset -1.5px 0 1.5px 0 rgba(168, 85, 247, 0.10);
-          --card-ripple-pattern:
-            repeating-linear-gradient(90deg,
-              rgba(255, 255, 255, 0.08) 0px,
-              rgba(255, 255, 255, 0.16) 1.5px,
-              rgba(0, 0, 0, 0.25) 2.5px,
-              rgba(0, 0, 0, 0.15) 4px,
-              transparent 5px,
-              transparent 8px),
-            linear-gradient(135deg,
-              rgba(255, 255, 255, 0.12) 0%,
-              rgba(255, 255, 255, 0.02) 40%,
-              rgba(255, 255, 255, 0.06) 100%);
         }
 
         .dashboard-root {
@@ -2949,37 +3293,37 @@ class VisionGlassDashboard extends HTMLElement {
         .theme-light .liquid-orb-1 {
           width: 580px;
           height: 580px;
-          background: radial-gradient(circle, #0284c7 0%, #38bdf8 45%, transparent 70%);
+          background: radial-gradient(circle, #7dd3fc 0%, #bae6fd 45%, transparent 70%);
           top: -60px;
           left: 15%;
-          opacity: 0.58;
+          opacity: 0.28;
           animation: liquidDrift1 26s ease-in-out infinite alternate;
         }
         .theme-light .liquid-orb-2 {
           width: 520px;
           height: 520px;
-          background: radial-gradient(circle, #8b5cf6 0%, #c084fc 45%, transparent 70%);
+          background: radial-gradient(circle, #d8b4fe 0%, #f3e8ff 45%, transparent 70%);
           bottom: 5%;
           right: 10%;
-          opacity: 0.52;
+          opacity: 0.25;
           animation: liquidDrift2 32s ease-in-out infinite alternate;
         }
         .theme-light .liquid-orb-3 {
           width: 480px;
           height: 480px;
-          background: radial-gradient(circle, #0d9488 0%, #2dd4bf 45%, transparent 70%);
+          background: radial-gradient(circle, #99f6e4 0%, #ccfbf1 45%, transparent 70%);
           bottom: 15%;
           left: 8%;
-          opacity: 0.54;
+          opacity: 0.26;
           animation: liquidDrift3 28s ease-in-out infinite alternate;
         }
         .theme-light .liquid-orb-4 {
           width: 440px;
           height: 440px;
-          background: radial-gradient(circle, #f59e0b 0%, #fbbf24 45%, transparent 70%);
+          background: radial-gradient(circle, #fde68a 0%, #fef3c7 45%, transparent 70%);
           top: 30%;
           right: 25%;
-          opacity: 0.48;
+          opacity: 0.22;
           animation: liquidDrift4 24s ease-in-out infinite alternate;
         }
 
@@ -3134,7 +3478,6 @@ class VisionGlassDashboard extends HTMLElement {
           position: relative;
           overflow: hidden;
           background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
           backdrop-filter: blur(32px) saturate(190%);
           -webkit-backdrop-filter: blur(32px) saturate(190%);
           border: 1px solid var(--border-glass);
@@ -3180,7 +3523,6 @@ class VisionGlassDashboard extends HTMLElement {
 
         .theme-light .sidebar-card {
           background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
           border: 1.5px solid var(--border-glass);
           box-shadow: var(--glass-refraction), var(--shadow-ambient);
         }
@@ -3405,7 +3747,6 @@ class VisionGlassDashboard extends HTMLElement {
           border-radius: 18px;
           overflow: hidden;
           background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1px solid var(--border-glass);
@@ -3456,7 +3797,6 @@ class VisionGlassDashboard extends HTMLElement {
 
         .theme-light .room-card {
           background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
           border: 1.5px solid var(--border-glass);
           box-shadow: var(--glass-refraction), var(--shadow-ambient);
         }
@@ -3689,7 +4029,6 @@ class VisionGlassDashboard extends HTMLElement {
           left: 50%;
           transform: translateX(-50%);
           background: var(--dock-bg);
-          background-image: var(--card-ripple-pattern);
           backdrop-filter: blur(32px) saturate(200%);
           -webkit-backdrop-filter: blur(32px) saturate(200%);
           border: 1px solid var(--border-glass);
@@ -3801,7 +4140,6 @@ class VisionGlassDashboard extends HTMLElement {
         .modal-card {
           position: relative;
           background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
           backdrop-filter: blur(38px) saturate(210%);
           -webkit-backdrop-filter: blur(38px) saturate(210%);
           border: 1px solid var(--border-glass);
@@ -3833,12 +4171,11 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-light .modal-card {
-          background: var(--bg-card);
-          background-image: var(--card-ripple-pattern);
-          border: 1px solid var(--border-glass);
+          background: rgba(255, 255, 255, 0.88);
+          border: 1.5px solid rgba(255, 255, 255, 0.95);
           box-shadow:
             inset 0 2px 1.5px 0 #ffffff,
-            0 35px 85px rgba(15, 23, 42, 0.18),
+            0 35px 85px rgba(15, 23, 42, 0.16),
             0 6px 20px rgba(15, 23, 42, 0.06);
         }
 
@@ -3945,7 +4282,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .btn-micro {
-          background: rgba(255, 255, 255, 0.15);
+          background: rgba(255, 255, 255, 0.12);
           border: 1px solid var(--border-glass);
           border-radius: 12px;
           padding: 8px 14px;
@@ -3953,18 +4290,121 @@ class VisionGlassDashboard extends HTMLElement {
           font-weight: 600;
           color: var(--text-primary);
           cursor: pointer;
+          transition: transform 0.12s ease, background 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+        }
+        .btn-micro:active {
+          transform: scale(0.96);
+        }
+        .theme-dark .btn-micro {
+          background: rgba(255, 255, 255, 0.10);
+          border: 1px solid rgba(255, 255, 255, 0.22);
+          color: #f8fafc;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.12), 0 2px 5px rgba(0, 0, 0, 0.25);
+        }
+        .theme-dark .btn-micro:hover {
+          background: rgba(255, 255, 255, 0.18);
+          border-color: rgba(255, 255, 255, 0.35);
+        }
+        .theme-light .btn-micro {
+          background: #f1f5f9;
+          border: 1.5px solid #cbd5e1;
+          color: #0f172a;
+          box-shadow: inset 0 1px 0 #ffffff, 0 1px 3px rgba(15, 23, 42, 0.08);
+        }
+        .theme-light .btn-micro:hover {
+          background: #e2e8f0;
+          border-color: #94a3b8;
         }
         .btn-micro.active {
-          background: var(--accent);
-          color: #fff;
+          background: #0284c7 !important;
+          border-color: #0284c7 !important;
+          color: #ffffff !important;
+          box-shadow: 0 2px 8px rgba(2, 132, 199, 0.4) !important;
         }
         .btn-micro.active-amber {
-          background: #f59e0b;
-          color: #fff;
+          background: #f59e0b !important;
+          border-color: #f59e0b !important;
+          color: #ffffff !important;
+          box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4) !important;
         }
         .btn-micro.active-green {
-          background: #10b981;
-          color: #fff;
+          background: #10b981 !important;
+          border-color: #10b981 !important;
+          color: #ffffff !important;
+          box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4) !important;
+        }
+        .btn-micro.active-blue {
+          background: #3b82f6 !important;
+          border-color: #3b82f6 !important;
+          color: #ffffff !important;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4) !important;
+        }
+
+        .alarmo-keypad-box {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 14px;
+          padding: 18px 24px;
+          border-radius: 20px;
+          border: 1px solid var(--border-subtle);
+          background: rgba(255, 255, 255, 0.04);
+        }
+        .theme-light .alarmo-keypad-box {
+          background: rgba(248, 250, 252, 0.95);
+          border: 1.5px solid #cbd5e1;
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+        .theme-dark .alarmo-keypad-box {
+          background: rgba(15, 23, 42, 0.6);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+        .keypad-btn {
+          min-width: 68px;
+          height: 44px;
+          font-size: 16px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.1s, background 0.15s;
+        }
+        .keypad-btn:active {
+          transform: scale(0.92);
+        }
+
+        .topbar-glass-btn {
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-glass);
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 11px;
+          font-weight: 800;
+          letter-spacing: 0.5px;
+          color: var(--text-primary);
+          transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, box-shadow 0.2s;
+        }
+        .topbar-glass-btn:hover {
+          background: rgba(255, 255, 255, 0.25);
+          transform: scale(1.08);
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        .theme-light .topbar-glass-btn {
+          background: #ffffff;
+          border: 1.5px solid #cbd5e1;
+          color: #0f172a;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+        }
+        .theme-light .topbar-glass-btn:hover {
+          background: #f8fafc;
+          border-color: #0284c7;
+          color: #0284c7;
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
         }
 
         .btn-step {
@@ -4145,18 +4585,14 @@ class VisionGlassDashboard extends HTMLElement {
           filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35)) !important;
         }
 
-        /* Dock item icon transitions */
+        /* Dock item icon transitions - eliminates Chromium compositor tile crosshair artifact */
         .dock-item .vg-icon {
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), filter 0.25s ease;
+          pointer-events: none;
+          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          will-change: transform;
         }
         .dock-item:hover .vg-icon {
           transform: scale(1.18);
-        }
-        .theme-light .dock-item:hover .vg-icon {
-          filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.22));
-        }
-        .theme-dark .dock-item:hover .vg-icon {
-          filter: drop-shadow(0 0 10px currentColor);
         }
 
       </style>
@@ -4178,14 +4614,15 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <div class="chips-container">
-            <div class="chip" id="chipPersonAndreas" title="Status Andreas">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Andreas laden...</div>
-            <div class="chip" id="chipPersonShanty" title="Status Shanty">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Shanty laden...</div>
-            <div class="chip" id="chipLights">${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} Lichter laden...</div>
-            <div class="chip" id="chipClimate">${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Klima laden...</div>
-            <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} Schloss laden...</div>
-            <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} Alarmo laden...</div>
-            <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} Wetter...</div>
-            <button class="theme-toggle" id="themeToggleBtn" title="Tag/Nacht umschalten">${this._icon('sun', { size: 18, cls: 'icon-sun' })}</button>
+            <div class="chip" id="chipPersonAndreas" title="Status Andreas">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Andreas...</div>
+            <div class="chip" id="chipPersonShanty" title="Status Shanty">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Shanty...</div>
+            <div class="chip" id="chipLights">${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('lights_loading')}</div>
+            <div class="chip" id="chipClimate">${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate_loading')}</div>
+            <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('lock_loading')}</div>
+            <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
+            <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
+            <button class="topbar-glass-btn" id="langToggleBtn" title="${this._t('lang_switch')}">${this._getLang().toUpperCase()}</button>
+            <button class="theme-toggle" id="themeToggleBtn" title="${this._isDaytime() ? this._t('day_mode') : this._t('night_mode')}">${this._isDaytime() ? this._icon('sun', { size: 18, cls: 'icon-sun' }) : this._icon('moon', { size: 18, cls: 'icon-moon' })}</button>
           </div>
         </div>
 
@@ -4334,15 +4771,20 @@ class VisionGlassDashboard extends HTMLElement {
     this._applyThemeClass();
 
     // Event Listeners
-    this.shadowRoot.getElementById('themeToggleBtn').addEventListener('click', () => this._toggleDayNight());
+    const themeBtn = this.shadowRoot.getElementById('themeToggleBtn');
+    if (themeBtn) themeBtn.addEventListener('click', () => this._toggleDayNight());
+    const langBtn = this.shadowRoot.getElementById('langToggleBtn');
+    if (langBtn) langBtn.addEventListener('click', () => this._toggleLang());
 
     // Sidebar Weather Card Click -> Open Weather Modal
     const swEl = this.shadowRoot.getElementById('sidebarWeather');
     if (swEl) swEl.addEventListener('click', () => this._openModal('weather'));
 
-    // Top Bar Chips
-    this.shadowRoot.getElementById('chipPersonAndreas').addEventListener('click', () => this._openModal('security'));
-    this.shadowRoot.getElementById('chipPersonShanty').addEventListener('click', () => this._openModal('security'));
+    // Top Bar Chips (Person chips open dedicated Resident & Presence overlay)
+    const chipPA = this.shadowRoot.getElementById('chipPersonAndreas');
+    if (chipPA) chipPA.addEventListener('click', () => this._openPersonModal('person.andreas'));
+    const chipPS = this.shadowRoot.getElementById('chipPersonShanty');
+    if (chipPS) chipPS.addEventListener('click', () => this._openPersonModal('person.shanty'));
     this.shadowRoot.getElementById('chipLights').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('chipClimate').addEventListener('click', () => this._openModal('climate'));
     this.shadowRoot.getElementById('chipLock').addEventListener('click', () => this._openModal('security'));
