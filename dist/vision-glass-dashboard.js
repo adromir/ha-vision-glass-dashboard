@@ -1,6 +1,6 @@
 /**
  * Vision Glass Dashboard for Home Assistant
- * An ultra-modern Apple VisionOS & macOS inspired spatial glassmorphism dashboard.
+ * Ultra-modern Apple VisionOS & macOS inspired spatial glassmorphism dashboard.
  * Author: Adromir (https://github.com/adromir)
  * Repository: https://github.com/adromir/ha-vision-glass-dashboard
  */
@@ -14,40 +14,125 @@ class VisionGlassDashboard extends HTMLElement {
     this._activeModal = null;
     this._userThemeOverride = null; // 'light' | 'dark' | null (auto)
     this._timer = null;
+    this._initialRenderDone = false;
   }
 
   static getStubConfig() {
     return {
-      title: 'Aether Residence',
+      title: 'Wohnung Andreas',
       auto_day_night: true,
-      weather_entity: 'weather.forecast_home',
+      weather_entity: 'weather.hannover_hannover',
+      lock_entity: 'lock.wohnungsschloss',
+      all_lights_entity: 'light.licht_wohnung',
+      washing_machine_switch: 'switch.switch_washingmachine_smartplug_switch',
+      washing_machine_power: 'sensor.switch_washingmachine_smartplug_power',
       rooms: [
-        { name: 'Living Room', icon: 'weekend', temp_entity: '', light_entity: '', blinds_entity: '', media_entity: '' },
-        { name: 'Office', icon: 'desk', temp_entity: '', light_entity: '', blinds_entity: '' },
-        { name: 'WC', icon: 'water_drop', temp_entity: '', light_entity: '' },
-        { name: 'Kitchen', icon: 'countertops', temp_entity: '', light_entity: '' },
-        { name: 'Kids Room', icon: 'crib', temp_entity: '', light_entity: '', blinds_entity: '' },
-        { name: 'Laundry', icon: 'local_laundry_service', temp_entity: '', light_entity: '' },
-        { name: 'Hallway', icon: 'sensor_door', temp_entity: '', light_entity: '' },
-        { name: 'Bedroom', icon: 'bed', temp_entity: '', light_entity: '', blinds_entity: '' },
-        { name: 'Bathroom', icon: 'bathtub', temp_entity: '', light_entity: '' }
+        {
+          id: 'wohnzimmer',
+          name: 'Wohnzimmer',
+          picture: '/api/image/serve/7a6844ff1859c2ea6c7ee3ac46a32765/512x512',
+          temp_entity: 'input_number.wohnzimmer_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_wohnzimmer',
+          light_entity: 'light.livingroom',
+          media_entity: 'media_player.denon_avr_x3300w_3',
+          switch_entity: 'switch.switch_livingroom_tv',
+          presence_entity: 'binary_sensor.prasenzmelder_wohnzimmer_presence',
+          window_entity: 'binary_sensor.fensterkontakt_wohnzimmerfenster_contact'
+        },
+        {
+          id: 'arbeitszimmer',
+          name: 'Arbeitszimmer',
+          picture: '/api/image/serve/bafdc8f4ac59eaa27f9821b007af5cd1/512x512',
+          temp_entity: 'input_number.arbeitszimmer_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_arbeitszimmer',
+          light_entity: 'light.light_studyroom_tomada',
+          media_entity: 'media_player.arbeitszimmer_andreas_echo_show',
+          switch_entity: 'switch.switch_denon',
+          presence_entity: 'binary_sensor.prasenzmelder_arbeitszimmer_presence'
+        },
+        {
+          id: 'schlafzimmer',
+          name: 'Schlafzimmer',
+          picture: '/api/image/serve/c232467fe87758f1622031d777e965b5/512x512',
+          temp_entity: 'input_number.schlafzimmer_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_schlafzimmer',
+          light_entity: 'light.schlafzimmerlicht',
+          media_entity: 'media_player.schlafzimmer_tv',
+          switch_entity: 'switch.switch_bedroom_tv',
+          presence_entity: 'binary_sensor.prasenzmelder_schlafzimmer_presence'
+        },
+        {
+          id: 'kuche',
+          name: 'Küche',
+          picture: '/api/image/serve/f95a2403326e0cbe78953ca98a93f878/512x512',
+          temp_entity: 'input_number.kuche_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_kuche',
+          light_entity: 'light.light_kitchen_tomada',
+          presence_entity: 'binary_sensor.prasenzmelder_kuche_presence'
+        },
+        {
+          id: 'badezimmer',
+          name: 'Badezimmer',
+          picture: '/api/image/serve/ce49978764aa284ddd21dfaac0f671f1/512x512',
+          temp_entity: 'input_number.bad_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_badezimmer',
+          light_entity: 'light.light_bathroom_tomada',
+          switch_entity: 'switch.switch_washingmachine_smartplug_switch',
+          presence_entity: 'binary_sensor.prasenzmelder_badezimmer_presence'
+        },
+        {
+          id: 'flur',
+          name: 'Flur',
+          picture: '/api/image/serve/bb7e01034e0b85ae2cfb23fa422d252e/512x512',
+          temp_entity: 'input_number.flur_komfort_temperatur',
+          climate_entity: 'climate.better_thermostat_flur',
+          light_entity: 'light.light_hallway_tomada',
+          lock_entity: 'lock.wohnungsschloss',
+          presence_entity: 'binary_sensor.prasenzmelder_flur_presence'
+        },
+        {
+          id: 'wohnung',
+          name: 'Wohnung',
+          picture: '/api/image/serve/d7e8a8480c1bd844b145b8b423af0c83/512x512',
+          temp_entity: 'input_number.wohnung_eco_temperatur',
+          light_entity: 'light.licht_wohnung'
+        },
+        {
+          id: 'kellerraum',
+          name: 'Kellerraum',
+          icon: 'inventory_2'
+        },
+        {
+          id: 'umwelt',
+          name: 'Umwelt',
+          picture: '/api/image/serve/274cec0148ef03e0dfb0acbaea469392/512x512',
+          weather_entity: 'weather.hannover_hannover'
+        }
       ]
     };
   }
 
   setConfig(config) {
+    const stub = VisionGlassDashboard.getStubConfig();
     this._config = {
-      title: config.title || 'Aether Residence',
+      title: config.title || stub.title,
       auto_day_night: config.auto_day_night !== false,
-      weather_entity: config.weather_entity || 'weather.forecast_home',
-      rooms: config.rooms || VisionGlassDashboard.getStubConfig().rooms
+      weather_entity: config.weather_entity || stub.weather_entity,
+      lock_entity: config.lock_entity || stub.lock_entity,
+      all_lights_entity: config.all_lights_entity || stub.all_lights_entity,
+      washing_machine_switch: config.washing_machine_switch || stub.washing_machine_switch,
+      washing_machine_power: config.washing_machine_power || stub.washing_machine_power,
+      rooms: (config.rooms && config.rooms.length > 0) ? config.rooms : stub.rooms
     };
     this._render();
+    this._initialRenderDone = true;
   }
 
   set hass(hass) {
     this._hass = hass;
-    this._updateStates();
+    if (this._initialRenderDone) {
+      this._updateAll();
+    }
   }
 
   connectedCallback() {
@@ -64,7 +149,7 @@ class VisionGlassDashboard extends HTMLElement {
       const clockEl = this.shadowRoot.getElementById('liveClock');
       if (clockEl) {
         const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        clockEl.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       }
     }, 1000);
   }
@@ -77,7 +162,7 @@ class VisionGlassDashboard extends HTMLElement {
       return this._hass.states['sun.sun'].state === 'above_horizon';
     }
     const hour = new Date().getHours();
-    return hour >= 7 && hour < 19;
+    return hour >= 7 && hour < 18;
   }
 
   _toggleDayNight() {
@@ -100,23 +185,287 @@ class VisionGlassDashboard extends HTMLElement {
     const themeBtn = this.shadowRoot.getElementById('themeToggleBtn');
     if (themeBtn) {
       themeBtn.innerHTML = isDay ? '☀️' : '🌙';
-      themeBtn.title = isDay ? 'Day Mode Active (Click for Night)' : 'Night Mode Active (Click for Day)';
+      themeBtn.title = isDay ? 'Tagmodus aktiv (Klick für Nachtmodus)' : 'Nachtmodus aktiv (Klick für Tagmodus)';
     }
   }
 
-  _updateStates() {
+  _callService(domain, service, data) {
+    if (!this._hass) return;
+    this._hass.callService(domain, service, data);
+  }
+
+  _updateAll() {
     if (!this._hass) return;
     this._applyThemeClass();
 
-    // Update Weather if entity exists
-    if (this._config.weather_entity && this._hass.states[this._config.weather_entity]) {
-      const wState = this._hass.states[this._config.weather_entity];
-      const temp = wState.attributes.temperature;
+    // 1. Update Date Header
+    const now = new Date();
+    const dateTitleEl = this.shadowRoot.getElementById('dateTitle');
+    if (dateTitleEl) {
+      const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+      dateTitleEl.textContent = now.toLocaleDateString('de-DE', options);
+    }
+
+    // 2. Update Weather
+    const wEntity = this._config.weather_entity;
+    if (wEntity && this._hass.states[wEntity]) {
+      const w = this._hass.states[wEntity];
+      const temp = w.attributes.temperature;
       const weatherTempEl = this.shadowRoot.getElementById('weatherTemp');
       const weatherStateEl = this.shadowRoot.getElementById('weatherCondition');
+      const weatherIconEl = this.shadowRoot.getElementById('weatherIcon');
+      const chipWeather = this.shadowRoot.getElementById('chipWeather');
+
       if (weatherTempEl && temp !== undefined) weatherTempEl.textContent = `${temp}°C`;
-      if (weatherStateEl) weatherStateEl.textContent = wState.state.replace('_', ' ').toUpperCase();
+      if (weatherStateEl) {
+        weatherStateEl.textContent = this._translateWeather(w.state);
+      }
+      if (weatherIconEl) {
+        weatherIconEl.textContent = this._getWeatherEmoji(w.state);
+      }
+      if (chipWeather && temp !== undefined) {
+        chipWeather.textContent = `🌦️ Hannover ${temp}°C`;
+      }
     }
+
+    // 3. Update Chips
+    // Lights Chip
+    const allLightsState = this._hass.states[this._config.all_lights_entity];
+    const chipLights = this.shadowRoot.getElementById('chipLights');
+    if (chipLights) {
+      let activeLightsCount = 0;
+      this._config.rooms.forEach(r => {
+        if (r.light_entity && this._hass.states[r.light_entity] && this._hass.states[r.light_entity].state === 'on') {
+          activeLightsCount++;
+        }
+      });
+      if (activeLightsCount > 0) {
+        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${activeLightsCount} Licht${activeLightsCount > 1 ? 'er' : ''} an`;
+      } else if (allLightsState && allLightsState.state === 'on') {
+        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> Licht an`;
+      } else {
+        chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> Alle Lichter aus`;
+      }
+    }
+
+    // Climate Chip
+    const chipClimate = this.shadowRoot.getElementById('chipClimate');
+    if (chipClimate) {
+      const wzTemp = this._hass.states['input_number.wohnzimmer_komfort_temperatur'];
+      const wzClimate = this._hass.states['climate.better_thermostat_wohnzimmer'];
+      const tempVal = wzClimate ? (wzClimate.attributes.current_temperature || wzClimate.attributes.temperature) : (wzTemp ? wzTemp.state : '22.0');
+      chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> Wohnzimmer ${tempVal}°C`;
+    }
+
+    // Lock Chip
+    const lockEntity = this._config.lock_entity;
+    const chipLock = this.shadowRoot.getElementById('chipLock');
+    if (chipLock && lockEntity && this._hass.states[lockEntity]) {
+      const isLocked = this._hass.states[lockEntity].state === 'locked';
+      chipLock.innerHTML = isLocked
+        ? `<span class="chip-dot dot-green"></span> Schloss: Verriegelt`
+        : `<span class="chip-dot dot-amber"></span> Schloss: Entriegelt`;
+    }
+
+    // Washing Machine Chip
+    const wmSwitch = this._config.washing_machine_switch;
+    const wmPower = this._config.washing_machine_power;
+    const chipWasher = this.shadowRoot.getElementById('chipWasher');
+    if (chipWasher) {
+      const swState = wmSwitch && this._hass.states[wmSwitch] ? this._hass.states[wmSwitch].state : 'off';
+      const pwrState = wmPower && this._hass.states[wmPower] ? parseFloat(this._hass.states[wmPower].state) : 0;
+      if (swState === 'on' && pwrState > 5) {
+        chipWasher.innerHTML = `🧺 Waschmaschine: ${Math.round(pwrState)} W`;
+      } else if (swState === 'on') {
+        chipWasher.innerHTML = `🧺 Waschmaschine: Bereit`;
+      } else {
+        chipWasher.innerHTML = `🧺 Waschmaschine: Aus`;
+      }
+    }
+
+    // 4. Update Room Cards
+    this._config.rooms.forEach((room, idx) => {
+      this._updateRoomCard(room, idx);
+    });
+
+    // 5. Update Agenda
+    this._updateAgenda();
+
+    // 6. Update Active Modal if open
+    if (this._activeModal) {
+      this._renderModalContent(this._activeModal);
+    }
+  }
+
+  _updateRoomCard(room, idx) {
+    const card = this.shadowRoot.getElementById(`roomCard_${idx}`);
+    if (!card) return;
+
+    // Temperature Badge
+    const tempEl = card.querySelector('.room-temp-badge');
+    if (tempEl) {
+      let tVal = null;
+      if (room.climate_entity && this._hass.states[room.climate_entity]) {
+        const c = this._hass.states[room.climate_entity];
+        tVal = c.attributes.current_temperature || c.attributes.temperature;
+      }
+      if (!tVal && room.temp_entity && this._hass.states[room.temp_entity]) {
+        tVal = this._hass.states[room.temp_entity].state;
+      }
+      if (tVal) {
+        tempEl.textContent = `${parseFloat(tVal).toFixed(1)}°C`;
+      } else {
+        tempEl.textContent = '';
+      }
+    }
+
+    // Subtitle / Status
+    const subEl = card.querySelector('.room-sub');
+    if (subEl) {
+      const isPres = room.presence_entity && this._hass.states[room.presence_entity] && this._hass.states[room.presence_entity].state === 'on';
+      const isLightOn = room.light_entity && this._hass.states[room.light_entity] && this._hass.states[room.light_entity].state === 'on';
+      const isWindowOpen = room.window_entity && this._hass.states[room.window_entity] && this._hass.states[room.window_entity].state === 'on';
+      const isLocked = room.lock_entity && this._hass.states[room.lock_entity] && this._hass.states[room.lock_entity].state === 'locked';
+
+      let status = [];
+      if (isWindowOpen) status.push('Fenster offen');
+      if (isLightOn) status.push('Licht an');
+      if (isPres) status.push('Belegt');
+      if (room.lock_entity) status.push(isLocked ? 'Verriegelt' : 'Entriegelt');
+
+      subEl.textContent = status.length > 0 ? status.join(' • ') : 'Bereit';
+    }
+
+    // Action Circles
+    // Light
+    const lightBtn = card.querySelector('.action-light');
+    if (lightBtn && room.light_entity && this._hass.states[room.light_entity]) {
+      const isOn = this._hass.states[room.light_entity].state === 'on';
+      lightBtn.classList.toggle('active-amber', isOn);
+    }
+
+    // Climate
+    const climateBtn = card.querySelector('.action-climate');
+    if (climateBtn && room.climate_entity && this._hass.states[room.climate_entity]) {
+      const isHeat = this._hass.states[room.climate_entity].state === 'heat';
+      climateBtn.classList.toggle('active', isHeat);
+    }
+
+    // Media
+    const mediaBtn = card.querySelector('.action-media');
+    if (mediaBtn && room.media_entity && this._hass.states[room.media_entity]) {
+      const isPlay = this._hass.states[room.media_entity].state === 'playing';
+      mediaBtn.classList.toggle('active', isPlay);
+    }
+
+    // Lock
+    const lockBtn = card.querySelector('.action-lock');
+    if (lockBtn && room.lock_entity && this._hass.states[room.lock_entity]) {
+      const isLocked = this._hass.states[room.lock_entity].state === 'locked';
+      lockBtn.classList.toggle('active-green', isLocked);
+      lockBtn.innerHTML = isLocked ? '🔒' : '🔓';
+    }
+
+    // Switch
+    const switchBtn = card.querySelector('.action-switch');
+    if (switchBtn && room.switch_entity && this._hass.states[room.switch_entity]) {
+      const isOn = this._hass.states[room.switch_entity].state === 'on';
+      switchBtn.classList.toggle('active-blue', isOn);
+    }
+  }
+
+  _updateAgenda() {
+    const agendaEl = this.shadowRoot.getElementById('sidebarAgenda');
+    if (!agendaEl || !this._hass) return;
+
+    let items = [];
+
+    // Müllabfuhr
+    const trashCalendars = [
+      { id: 'calendar.das_muhlenfeld_misburg_nord_4_restabfall', label: 'Restabfall', icon: '🗑️', color: 'dot-gray' },
+      { id: 'calendar.das_muhlenfeld_misburg_nord_4_leichtverpackungen', label: 'Gelber Sack', icon: '🟡', color: 'dot-amber' },
+      { id: 'calendar.das_muhlenfeld_misburg_nord_4_bioabfall', label: 'Bioabfall', icon: '🌿', color: 'dot-green' },
+      { id: 'calendar.das_muhlenfeld_misburg_nord_4_papier', label: 'Papiermüll', icon: '📦', color: 'dot-blue' }
+    ];
+
+    trashCalendars.forEach(c => {
+      const s = this._hass.states[c.id];
+      if (s && s.attributes && s.attributes.start_time) {
+        const d = new Date(s.attributes.start_time);
+        items.push({
+          date: d,
+          text: `${c.icon} ${c.label} (${d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })})`,
+          color: c.color
+        });
+      }
+    });
+
+    // Sun times
+    const sunState = this._hass.states['sun.sun'];
+    if (sunState && sunState.attributes) {
+      if (sunState.attributes.next_setting) {
+        const dSet = new Date(sunState.attributes.next_setting);
+        items.push({
+          date: dSet,
+          text: `🌅 Sonnenuntergang ${dSet.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`,
+          color: 'dot-amber'
+        });
+      }
+    }
+
+    // Sort by date
+    items.sort((a, b) => a.date - b.date);
+
+    if (items.length > 0) {
+      agendaEl.innerHTML = `
+        <div class="agenda-title">Termine & Müllabfuhr</div>
+        ${items.slice(0, 4).map(it => `
+          <div class="agenda-item">
+            <span class="chip-dot ${it.color}"></span>
+            <span>${it.text}</span>
+          </div>
+        `).join('')}
+      `;
+    }
+  }
+
+  _translateWeather(state) {
+    const map = {
+      'clear-night': 'Klar',
+      'cloudy': 'Bewölkt',
+      'fog': 'Nebel',
+      'hail': 'Hagel',
+      'lightning': 'Gewitter',
+      'lightning-rainy': 'Gewitter mit Regen',
+      'partlycloudy': 'Teilweise bewölkt',
+      'pouring': 'Starkregen',
+      'rainy': 'Regnerisch',
+      'snowy': 'Schneefall',
+      'snowy-rainy': 'Schneeregen',
+      'sunny': 'Sonnig',
+      'windy': 'Windig',
+      'windy-variant': 'Windig'
+    };
+    return map[state] || (state ? state.replace('_', ' ') : 'Unbekannt');
+  }
+
+  _getWeatherEmoji(state) {
+    const map = {
+      'clear-night': '🌙',
+      'cloudy': '☁️',
+      'fog': '🌫️',
+      'hail': '🌨️',
+      'lightning': '⚡',
+      'lightning-rainy': '⛈️',
+      'partlycloudy': '⛅',
+      'pouring': '🌧️',
+      'rainy': '🌦️',
+      'snowy': '❄️',
+      'snowy-rainy': '🌨️',
+      'sunny': '☀️',
+      'windy': '💨'
+    };
+    return map[state] || '⛅';
   }
 
   _openModal(type) {
@@ -137,154 +486,221 @@ class VisionGlassDashboard extends HTMLElement {
   _renderModalContent(type) {
     const body = this.shadowRoot.getElementById('modalBody');
     const title = this.shadowRoot.getElementById('modalTitle');
-    if (!body || !title) return;
+    if (!body || !title || !this._hass) return;
 
     if (type === 'lighting') {
-      title.textContent = '💡 Lighting Control & Scenes';
+      title.textContent = '💡 Beleuchtungs-Steuerung';
+      const allLights = [
+        { id: 'light.licht_wohnung', name: 'Wohnung Gesamt (Alle Lichter)' },
+        { id: 'light.livingroom', name: 'Wohnzimmer Licht' },
+        { id: 'light.light_studyroom_tomada', name: 'Arbeitszimmer Licht' },
+        { id: 'light.light_kitchen_tomada', name: 'Küchenlicht' },
+        { id: 'light.light_bathroom_tomada', name: 'Badezimmer Licht' },
+        { id: 'light.light_hallway_tomada', name: 'Flurlicht' },
+        { id: 'light.schlafzimmerlicht', name: 'Schlafzimmerlicht' }
+      ];
+
       body.innerHTML = `
-        <div class="modal-grid">
-          <div class="modal-col">
-            <h4 class="section-title">Automations & Presets</h4>
-            <div class="preset-pill-list">
-              <button class="glass-pill active" onclick="alert('Daylight Scene Activated')">Circadian Daylight (On)</button>
-              <button class="glass-pill" onclick="alert('Movie Cinema Scene Activated')">Cinema Ambiance (Off)</button>
-              <button class="glass-pill" onclick="alert('Evening Relaxation Activated')">Evening Warm Glow (Off)</button>
-              <button class="glass-pill" onclick="alert('Nightlight Activated')">Nightlight Path (Auto)</button>
-            </div>
-          </div>
-          <div class="modal-col">
-            <div class="flex-between">
-              <h4 class="section-title">Room Dimmers</h4>
-              <div>
-                <button class="btn-micro" id="modalAllOn">All On</button>
-                <button class="btn-micro" id="modalAllOff">All Off</button>
+        <div style="display:flex;gap:12px;margin-bottom:18px;">
+          <button class="btn-micro" id="modalAllOn">Alle Lichter an</button>
+          <button class="btn-micro" id="modalAllOff">Alle Lichter aus</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+          ${allLights.map(l => {
+            const s = this._hass.states[l.id];
+            const isOn = s && s.state === 'on';
+            const bri = s && s.attributes.brightness ? Math.round((s.attributes.brightness / 255) * 100) : 100;
+            return `
+              <div class="control-row">
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:14px;">${l.name}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">${isOn ? `An (${bri}%)` : 'Aus'}</div>
+                </div>
+                <button class="toggle-pill ${isOn ? 'active' : ''}" data-light="${l.id}">
+                  ${isOn ? 'AN' : 'AUS'}
+                </button>
               </div>
-            </div>
-            <div class="slider-row">
-              <span>Living Room Ceiling</span>
-              <input type="range" min="0" max="100" value="85" class="glass-slider">
-              <span>85%</span>
-            </div>
-            <div class="slider-row">
-              <span>Kitchen Counter LED</span>
-              <input type="range" min="0" max="100" value="70" class="glass-slider">
-              <span>70%</span>
-            </div>
-            <div class="slider-row">
-              <span>Office Desk Light</span>
-              <input type="range" min="0" max="100" value="100" class="glass-slider">
-              <span>100%</span>
-            </div>
-            <div class="slider-row">
-              <span>Bedroom Sconces</span>
-              <input type="range" min="0" max="100" value="30" class="glass-slider">
-              <span>30%</span>
-            </div>
-          </div>
+            `;
+          }).join('')}
         </div>
       `;
+
+      body.querySelector('#modalAllOn').onclick = () => {
+        this._callService('light', 'turn_on', { entity_id: 'light.licht_wohnung' });
+      };
+      body.querySelector('#modalAllOff').onclick = () => {
+        this._callService('light', 'turn_off', { entity_id: 'light.licht_wohnung' });
+      };
+      body.querySelectorAll('.toggle-pill[data-light]').forEach(btn => {
+        btn.onclick = () => {
+          const lId = btn.getAttribute('data-light');
+          this._callService('light', 'toggle', { entity_id: lId });
+        };
+      });
     } else if (type === 'climate') {
-      title.textContent = '🌡️ Room Heating & Climate Curves';
+      title.textContent = '🌡️ Raumklima & Thermostate';
+      const thermostats = [
+        { id: 'climate.better_thermostat_wohnzimmer', name: 'Wohnzimmer' },
+        { id: 'climate.better_thermostat_arbeitszimmer', name: 'Arbeitszimmer' },
+        { id: 'climate.better_thermostat_schlafzimmer', name: 'Schlafzimmer' },
+        { id: 'climate.better_thermostat_kuche', name: 'Küche' },
+        { id: 'climate.better_thermostat_badezimmer', name: 'Badezimmer' },
+        { id: 'climate.better_thermostat_flur', name: 'Flur' }
+      ];
+
       body.innerHTML = `
-        <div class="modal-grid">
-          <div class="modal-col">
-            <h4 class="section-title">Heating Status</h4>
-            <div class="chip-group">
-              <span class="status-chip active">🔥 Comfort</span>
-              <span class="status-chip">🏠 Home</span>
-              <span class="status-chip">🌙 Sleep</span>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Supply Water Temperature</div>
-              <div class="metric-val">39.5 °C</div>
-            </div>
-            <div class="metric-card">
-              <div class="metric-label">Domestic Hot Water (DHW)</div>
-              <div class="metric-val">47.4 °C</div>
-            </div>
-          </div>
-          <div class="modal-col">
-            <h4 class="section-title">Living Room Curve (23.1°C Target: 24.0°C)</h4>
-            <svg class="curve-chart" viewBox="0 0 300 100">
-              <defs>
-                <linearGradient id="curveGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.6"/>
-                  <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.0"/>
-                </linearGradient>
-              </defs>
-              <path d="M 0,70 Q 50,40 100,55 T 200,30 T 300,45 L 300,100 L 0,100 Z" fill="url(#curveGrad)"/>
-              <path d="M 0,70 Q 50,40 100,55 T 200,30 T 300,45" fill="none" stroke="#f59e0b" stroke-width="3"/>
-            </svg>
-            <div class="stepper-box">
-              <button class="step-btn">-</button>
-              <span class="step-val">24.0 °C</span>
-              <button class="step-btn">+</button>
-            </div>
-          </div>
-        </div>
-      `;
-    } else if (type === 'blinds') {
-      title.textContent = '🪟 Intelligent Blinds & Shading';
-      body.innerHTML = `
-        <div class="modal-grid">
-          <div class="modal-col">
-            <h4 class="section-title">Solar Tracking & Azimuth</h4>
-            <div class="compass-dial">
-              <div class="compass-pointer"></div>
-              <div class="compass-label">Sun 32° • 150° Azimuth</div>
-            </div>
-            <div class="metric-label mt-2">Sun status: Below Shading Threshold</div>
-          </div>
-          <div class="modal-col">
-            <div class="flex-between">
-              <h4 class="section-title">Blinds Position</h4>
-              <div>
-                <button class="btn-micro">Raise All</button>
-                <button class="btn-micro">Close All</button>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;">
+          ${thermostats.map(t => {
+            const s = this._hass.states[t.id];
+            const cur = s && s.attributes.current_temperature ? s.attributes.current_temperature : '--';
+            const target = s && s.attributes.temperature ? s.attributes.temperature : 21.0;
+            const isHeat = s && s.state === 'heat';
+            return `
+              <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-weight:600;font-size:15px;">${t.name}</span>
+                  <span style="font-size:13px;color:var(--text-secondary);">Ist: <strong>${cur}°C</strong></span>
+                </div>
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <span style="font-size:13px;">Ziel: <strong style="font-size:16px;color:var(--accent);">${target}°C</strong></span>
+                  <div style="display:flex;gap:8px;">
+                    <button class="btn-step" data-climate="${t.id}" data-delta="-0.5">-</button>
+                    <button class="btn-step" data-climate="${t.id}" data-delta="0.5">+</button>
+                    <button class="btn-micro ${isHeat ? 'active' : ''}" data-toggle-heat="${t.id}">
+                      ${isHeat ? 'HEIZEN' : 'AUS'}
+                    </button>
+                  </div>
+                </div>
               </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      body.querySelectorAll('.btn-step').forEach(btn => {
+        btn.onclick = () => {
+          const cId = btn.getAttribute('data-climate');
+          const delta = parseFloat(btn.getAttribute('data-delta'));
+          const s = this._hass.states[cId];
+          if (s) {
+            const curTarget = s.attributes.temperature || 21.0;
+            const newTarget = Math.round((curTarget + delta) * 2) / 2;
+            this._callService('climate', 'set_temperature', { entity_id: cId, temperature: newTarget });
+          }
+        };
+      });
+
+      body.querySelectorAll('[data-toggle-heat]').forEach(btn => {
+        btn.onclick = () => {
+          const cId = btn.getAttribute('data-toggle-heat');
+          const s = this._hass.states[cId];
+          if (s) {
+            const newMode = s.state === 'heat' ? 'off' : 'heat';
+            this._callService('climate', 'set_hvac_mode', { entity_id: cId, hvac_mode: newMode });
+          }
+        };
+      });
+    } else if (type === 'security') {
+      title.textContent = '🔒 Sicherheit & Zutritt';
+      const lockState = this._hass.states['lock.wohnungsschloss'];
+      const isLocked = lockState && lockState.state === 'locked';
+      const windowState = this._hass.states['binary_sensor.fensterkontakt_wohnzimmerfenster_contact'];
+      const isWindowOpen = windowState && windowState.state === 'on';
+
+      body.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:16px;">
+          <div class="control-row">
+            <div>
+              <div style="font-size:16px;font-weight:600;">Wohnungsschloss (SwitchBot Lock Ultra)</div>
+              <div style="font-size:13px;color:var(--text-secondary);">${isLocked ? 'Sicher verriegelt' : 'Aktuell ENTRIEGELT'}</div>
             </div>
-            <div class="slider-row">
-              <span>Office Window</span>
-              <input type="range" min="0" max="100" value="100" class="glass-slider">
-              <span>100% Up</span>
+            <button class="btn-micro ${isLocked ? 'active-green' : 'active-amber'}" id="toggleLockBtn">
+              ${isLocked ? 'VERRIEGELT' : 'ENTRIEGELT'}
+            </button>
+          </div>
+          <div class="control-row">
+            <div>
+              <div style="font-size:15px;font-weight:600;">Wohnzimmerfenster</div>
+              <div style="font-size:13px;color:var(--text-secondary);">${isWindowOpen ? '⚠️ Fenster ist geöffnet' : '✔️ Fenster ist geschlossen'}</div>
             </div>
-            <div class="slider-row">
-              <span>Kids Room Blinds</span>
-              <input type="range" min="0" max="100" value="40" class="glass-slider">
-              <span>40% Up</span>
-            </div>
-            <div class="slider-row">
-              <span>Bedroom Blackout</span>
-              <input type="range" min="0" max="100" value="0" class="glass-slider">
-              <span>Closed</span>
-            </div>
+            <span style="font-size:18px;">${isWindowOpen ? '🪟 ⚠️' : '🪟 ✔️'}</span>
           </div>
         </div>
       `;
-    } else if (type === 'weather') {
-      title.textContent = '🌦️ Weather Forecast & Radar';
+
+      body.querySelector('#toggleLockBtn').onclick = () => {
+        this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: 'lock.wohnungsschloss' });
+      };
+    } else if (type === 'switches') {
+      title.textContent = '🔌 Geräte & Steckdosen';
+      const switches = [
+        { id: 'switch.switch_washingmachine_smartplug_switch', name: 'Waschmaschine', pwr: 'sensor.switch_washingmachine_smartplug_power' },
+        { id: 'switch.switch_denon', name: 'Denon AVR Steckdose' },
+        { id: 'switch.switch_subwoofer', name: 'Subwoofer' },
+        { id: 'switch.switch_livingroom_tv', name: 'Wohnzimmer TV' },
+        { id: 'switch.switch_bedroom_tv', name: 'Schlafzimmer TV' },
+        { id: 'switch.switch_shield', name: 'Nvidia Shield' }
+      ];
+
       body.innerHTML = `
-        <div class="modal-grid">
-          <div class="modal-col">
-            <h4 class="section-title">Precipitation & Cloud Radar</h4>
-            <div class="radar-box">
-              <div class="radar-text">Interactive Live Radar Simulation</div>
-              <div class="radar-ping"></div>
-            </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+          ${switches.map(sw => {
+            const s = this._hass.states[sw.id];
+            const isOn = s && s.state === 'on';
+            const pwrSensor = sw.pwr && this._hass.states[sw.pwr] ? `${Math.round(parseFloat(this._hass.states[sw.pwr].state))} W` : '';
+            return `
+              <div class="control-row">
+                <div style="flex:1;">
+                  <div style="font-weight:600;font-size:14px;">${sw.name}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `Aktiv • ${pwrSensor}` : 'Ein') : 'Aus'}</div>
+                </div>
+                <button class="toggle-pill ${isOn ? 'active' : ''}" data-switch="${sw.id}">
+                  ${isOn ? 'EIN' : 'AUS'}
+                </button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      body.querySelectorAll('[data-switch]').forEach(btn => {
+        btn.onclick = () => {
+          const swId = btn.getAttribute('data-switch');
+          this._callService('switch', 'toggle', { entity_id: swId });
+        };
+      });
+    } else if (type === 'weather') {
+      title.textContent = '🌦️ Wetter Hannover (DWD)';
+      const w = this._hass.states['weather.hannover_hannover'];
+      if (!w) {
+        body.innerHTML = '<div>Keine Wetterdaten verfügbar.</div>';
+        return;
+      }
+      const a = w.attributes;
+      body.innerHTML = `
+        <div style="display:flex;gap:24px;align-items:center;margin-bottom:20px;">
+          <div style="font-size:56px;">${this._getWeatherEmoji(w.state)}</div>
+          <div>
+            <div style="font-size:32px;font-weight:700;">${a.temperature}°C</div>
+            <div style="font-size:16px;color:var(--text-secondary);">${this._translateWeather(w.state)}</div>
           </div>
-          <div class="modal-col">
-            <h4 class="section-title">Air Quality & Analytics</h4>
-            <div class="aqi-grid">
-              <div class="aqi-pill"><span class="aqi-num">16</span><span class="aqi-tag">PM2.5 Good</span></div>
-              <div class="aqi-pill"><span class="aqi-num">24</span><span class="aqi-tag">PM10 Good</span></div>
-              <div class="aqi-pill"><span class="aqi-num">4.2</span><span class="aqi-tag">NO2 Clean</span></div>
-              <div class="aqi-pill"><span class="aqi-num">11.5</span><span class="aqi-tag">O3 Optimal</span></div>
-            </div>
-            <h4 class="section-title mt-4">7-Day Atmospheric Outlook</h4>
-            <div class="forecast-row"><span>Mon</span> <span>⛅ 9° / 2°</span></div>
-            <div class="forecast-row"><span>Tue</span> <span>☁️ 8° / 2°</span></div>
-            <div class="forecast-row"><span>Wed</span> <span>☀️ 11° / 3°</span></div>
-            <div class="forecast-row"><span>Thu</span> <span>🌧️ 7° / 1°</span></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;">
+          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
+            <span style="font-size:12px;color:var(--text-secondary);">Luftfeuchtigkeit</span>
+            <span style="font-size:18px;font-weight:600;">${a.humidity}%</span>
+          </div>
+          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
+            <span style="font-size:12px;color:var(--text-secondary);">Luftdruck</span>
+            <span style="font-size:18px;font-weight:600;">${a.pressure} mbar</span>
+          </div>
+          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
+            <span style="font-size:12px;color:var(--text-secondary);">Wind</span>
+            <span style="font-size:18px;font-weight:600;">${a.wind_speed} km/h (${a.wind_bearing})</span>
+          </div>
+          <div class="control-row" style="flex-direction:column;align-items:flex-start;">
+            <span style="font-size:12px;color:var(--text-secondary);">Sichtweite</span>
+            <span style="font-size:18px;font-weight:600;">${a.visibility} km</span>
           </div>
         </div>
       `;
@@ -296,129 +712,133 @@ class VisionGlassDashboard extends HTMLElement {
       <style>
         :host {
           display: block;
-          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", sans-serif;
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           box-sizing: border-box;
-          --blur: 24px;
-        }
-
-        /* --- THEME STYLES --- */
-        .dashboard-root {
-          position: relative;
-          min-height: 100vh;
           width: 100%;
-          overflow-x: hidden;
-          padding: 24px 32px 100px 32px;
-          box-sizing: border-box;
-          transition: background 0.6s cubic-bezier(0.16, 1, 0.3, 1), color 0.4s ease;
         }
 
-        /* Day Mode (Light Glassmorphism) */
+        /* --- THEME DESIGN TOKENS --- */
         .dashboard-root.theme-light {
-          background: radial-gradient(circle at 50% 15%, #dbe7f6 0%, #bcd2eb 45%, #9ebbdc 100%);
-          color: #1c2438;
-          --card-bg: rgba(255, 255, 255, 0.55);
-          --card-border: rgba(255, 255, 255, 0.75);
-          --card-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px 0 rgba(255, 255, 255, 0.95);
-          --dock-bg: rgba(255, 255, 255, 0.65);
-          --dock-border: rgba(255, 255, 255, 0.85);
-          --text-primary: #1c2438;
-          --text-secondary: #52637a;
-          --accent-blue: #0284c7;
+          --bg-surface: rgba(255, 255, 255, 0.65);
+          --bg-surface-hover: rgba(255, 255, 255, 0.85);
+          --bg-card: rgba(255, 255, 255, 0.55);
+          --border-glass: rgba(255, 255, 255, 0.85);
+          --border-subtle: rgba(255, 255, 255, 0.5);
+          --text-primary: #0f172a;
+          --text-secondary: #475569;
+          --accent: #0284c7;
           --accent-amber: #ea580c;
+          --accent-green: #10b981;
+          --dock-bg: rgba(255, 255, 255, 0.65);
+          --shadow-ambient: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
+          --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
         }
 
-        /* Night Mode (Dark Glassmorphism) */
         .dashboard-root.theme-dark {
-          background: radial-gradient(circle at 50% 15%, #1d2538 0%, #121826 50%, #0a0e17 100%);
-          color: #f8fafc;
-          --card-bg: rgba(24, 32, 48, 0.70);
-          --card-border: rgba(255, 255, 255, 0.12);
-          --card-shadow: 0 10px 35px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.12);
-          --dock-bg: rgba(18, 24, 38, 0.75);
-          --dock-border: rgba(255, 255, 255, 0.15);
+          --bg-surface: rgba(24, 32, 48, 0.70);
+          --bg-surface-hover: rgba(30, 41, 59, 0.85);
+          --bg-card: rgba(20, 27, 42, 0.65);
+          --border-glass: rgba(255, 255, 255, 0.12);
+          --border-subtle: rgba(255, 255, 255, 0.08);
           --text-primary: #f8fafc;
           --text-secondary: #94a3b8;
-          --accent-blue: #38bdf8;
-          --accent-amber: #fbbf24;
+          --accent: #38bdf8;
+          --accent-amber: #f59e0b;
+          --accent-green: #10b981;
+          --dock-bg: rgba(18, 24, 38, 0.75);
+          --shadow-ambient: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+          --card-overlay: linear-gradient(180deg, rgba(20,27,42,0.7) 0%, rgba(12,16,24,0.5) 100%);
         }
 
-        /* Ambient Dynamic Light Blobs */
-        .ambient-blob {
-          position: fixed;
-          border-radius: 50%;
-          filter: blur(120px);
-          pointer-events: none;
-          z-index: 0;
-          opacity: 0.4;
-          transition: all 1s ease;
-        }
-        .blob-1 { top: 5%; left: 15%; width: 500px; height: 500px; background: rgba(56, 189, 248, 0.25); }
-        .blob-2 { bottom: 10%; right: 10%; width: 450px; height: 450px; background: rgba(245, 158, 11, 0.2); }
-
-        /* --- TOP HEADER BAR --- */
-        .top-bar {
+        .dashboard-root {
+          min-height: calc(100vh - 64px);
+          padding: 24px 36px 120px 36px;
+          box-sizing: border-box;
           position: relative;
-          z-index: 10;
+          color: var(--text-primary);
+          transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* Top Bar */
+        .top-bar {
           display: flex;
           justify-content: space-between;
           align-items: center;
           margin-bottom: 24px;
+          flex-wrap: wrap;
+          gap: 16px;
         }
+
         .date-title {
-          font-size: 20px;
-          font-weight: 600;
-          letter-spacing: -0.01em;
+          font-size: 26px;
+          font-weight: 700;
+          letter-spacing: -0.5px;
         }
+
         .name-day {
           font-size: 13px;
           color: var(--text-secondary);
           margin-top: 2px;
         }
+
         .chips-container {
           display: flex;
-          align-items: center;
           gap: 10px;
           flex-wrap: wrap;
+          align-items: center;
         }
+
         .chip {
-          display: flex;
+          display: inline-flex;
           align-items: center;
           gap: 6px;
-          padding: 6px 14px;
+          background: var(--bg-surface);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          background: var(--card-bg);
-          backdrop-filter: blur(var(--blur));
-          -webkit-backdrop-filter: blur(var(--blur));
-          border: 1px solid var(--card-border);
-          box-shadow: var(--card-shadow);
-          font-size: 12px;
+          padding: 7px 14px;
+          font-size: 13px;
           font-weight: 500;
+          cursor: pointer;
+          box-shadow: var(--shadow-ambient);
+          transition: transform 0.2s, background 0.2s;
         }
+        .chip:hover {
+          transform: translateY(-1px);
+          background: var(--bg-surface-hover);
+        }
+
         .chip-dot {
-          width: 7px;
-          height: 7px;
+          width: 8px;
+          height: 8px;
           border-radius: 50%;
         }
         .dot-amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
         .dot-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
         .dot-blue  { background: #38bdf8; box-shadow: 0 0 8px #38bdf8; }
+        .dot-gray  { background: #64748b; }
 
         .theme-toggle {
+          background: var(--bg-surface);
+          border: 1px solid var(--border-glass);
+          border-radius: 50%;
+          width: 36px;
+          height: 36px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
           cursor: pointer;
           font-size: 16px;
-          padding: 8px 12px;
-          border-radius: 9999px;
-          border: 1px solid var(--card-border);
-          background: var(--card-bg);
-          backdrop-filter: blur(var(--blur));
-          transition: transform 0.2s ease;
+          box-shadow: var(--shadow-ambient);
+          transition: transform 0.2s;
         }
-        .theme-toggle:active { transform: scale(0.92); }
+        .theme-toggle:hover {
+          transform: scale(1.08);
+        }
 
-        /* --- DASHBOARD MAIN LAYOUT --- */
+        /* Layout Grid */
         .dashboard-body {
-          position: relative;
-          z-index: 10;
           display: grid;
           grid-template-columns: 280px 1fr;
           gap: 24px;
@@ -427,67 +847,62 @@ class VisionGlassDashboard extends HTMLElement {
           .dashboard-body { grid-template-columns: 1fr; }
         }
 
-        /* --- LEFT SIDEBAR --- */
+        /* Left Sidebar */
         .sidebar-card {
-          background: var(--card-bg);
-          backdrop-filter: blur(var(--blur));
-          -webkit-backdrop-filter: blur(var(--blur));
-          border: 1px solid var(--card-border);
-          box-shadow: var(--card-shadow);
-          border-radius: 28px;
+          background: var(--bg-card);
+          backdrop-filter: blur(25px);
+          -webkit-backdrop-filter: blur(25px);
+          border: 1px solid var(--border-glass);
+          border-radius: 24px;
           padding: 24px;
+          box-shadow: var(--shadow-ambient);
           display: flex;
-          flex-col;
           flex-direction: column;
           gap: 20px;
         }
+
         .clock-display {
-          font-size: 48px;
-          font-weight: 300;
-          letter-spacing: -0.03em;
+          font-size: 44px;
+          font-weight: 700;
+          letter-spacing: -1px;
           line-height: 1;
         }
+
         .weather-banner {
           display: flex;
-          align-items: center;
           justify-content: space-between;
-          padding-bottom: 12px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+          align-items: center;
+          padding: 14px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 18px;
+          border: 1px solid var(--border-subtle);
         }
         .weather-temp {
-          font-size: 36px;
-          font-weight: 400;
+          font-size: 26px;
+          font-weight: 700;
         }
-        .hourly-forecast {
-          display: flex;
-          justify-content: space-between;
-          font-size: 12px;
-          text-align: center;
-        }
-        .forecast-pill {
+
+        .agenda-block {
           display: flex;
           flex-direction: column;
-          gap: 4px;
-          color: var(--text-secondary);
-        }
-        .agenda-block {
-          font-size: 13px;
+          gap: 10px;
+          margin-top: 10px;
         }
         .agenda-title {
-          font-size: 11px;
+          font-size: 12px;
           text-transform: uppercase;
-          letter-spacing: 0.08em;
+          letter-spacing: 0.5px;
           color: var(--text-secondary);
-          margin-bottom: 8px;
+          font-weight: 600;
         }
         .agenda-item {
           display: flex;
           align-items: center;
-          gap: 8px;
-          margin-bottom: 6px;
+          gap: 10px;
+          font-size: 13px;
         }
 
-        /* --- 3x3 BENTO ROOM GRID --- */
+        /* Rooms Bento Grid */
         .rooms-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
@@ -496,311 +911,298 @@ class VisionGlassDashboard extends HTMLElement {
         @media (max-width: 1280px) {
           .rooms-grid { grid-template-columns: repeat(2, 1fr); }
         }
-        @media (max-width: 768px) {
+        @media (max-width: 680px) {
           .rooms-grid { grid-template-columns: 1fr; }
         }
 
         .room-card {
           position: relative;
-          background: var(--card-bg);
-          backdrop-filter: blur(var(--blur));
-          -webkit-backdrop-filter: blur(var(--blur));
-          border: 1px solid var(--card-border);
-          box-shadow: var(--card-shadow);
+          min-height: 170px;
           border-radius: 24px;
-          padding: 20px;
+          overflow: hidden;
+          background: var(--bg-card);
+          backdrop-filter: blur(25px);
+          -webkit-backdrop-filter: blur(25px);
+          border: 1px solid var(--border-glass);
+          box-shadow: var(--shadow-ambient);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          min-height: 160px;
-          overflow: hidden;
-          transition: transform 0.25s ease, border-color 0.25s ease;
+          padding: 20px;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
         }
         .room-card:hover {
-          transform: translateY(-3px);
-          border-color: rgba(255, 255, 255, 0.4);
+          transform: translateY(-2px);
         }
+
+        .room-bg-image {
+          position: absolute;
+          inset: 0;
+          background-size: cover;
+          background-position: center;
+          opacity: 0.22;
+          filter: saturate(1.2);
+          pointer-events: none;
+          transition: opacity 0.3s;
+        }
+        .room-card:hover .room-bg-image {
+          opacity: 0.32;
+        }
+
         .room-header {
+          position: relative;
+          z-index: 2;
           display: flex;
           justify-content: space-between;
-          align-items: center;
-          z-index: 2;
+          align-items: flex-start;
         }
+
         .room-name {
-          font-size: 16px;
-          font-weight: 600;
-          letter-spacing: -0.01em;
-        }
-        .room-temp-badge {
-          font-size: 12px;
-          font-weight: 500;
-          padding: 4px 10px;
-          border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(10px);
-        }
-        .room-actions {
+          font-size: 18px;
+          font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 10px;
-          z-index: 2;
-          margin-top: 24px;
+          gap: 6px;
         }
+
+        .room-sub {
+          font-size: 12px;
+          color: var(--text-secondary);
+          margin-top: 3px;
+        }
+
+        .room-temp-badge {
+          background: rgba(255, 255, 255, 0.15);
+          backdrop-filter: blur(10px);
+          border: 1px solid var(--border-glass);
+          padding: 4px 10px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 600;
+        }
+
+        .room-actions {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        }
+
         .action-circle {
-          width: 40px;
-          height: 40px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
+          background: rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(12px);
+          border: 1px solid var(--border-glass);
           display: flex;
           align-items: center;
           justify-content: center;
-          cursor: pointer;
-          border: 1px solid rgba(255, 255, 255, 0.2);
-          background: rgba(255, 255, 255, 0.1);
-          backdrop-filter: blur(12px);
-          transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
           font-size: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+          user-select: none;
         }
         .action-circle:hover {
+          transform: scale(1.12);
           background: rgba(255, 255, 255, 0.25);
-          transform: scale(1.08);
-        }
-        .action-circle:active { transform: scale(0.92); }
-        .action-circle.active {
-          background: var(--accent-blue);
-          color: #ffffff;
-          box-shadow: 0 0 16px var(--accent-blue);
-          border-color: #ffffff;
         }
         .action-circle.active-amber {
-          background: var(--accent-amber);
-          color: #ffffff;
-          box-shadow: 0 0 16px var(--accent-amber);
-          border-color: #ffffff;
+          background: #f59e0b;
+          color: #fff;
+          box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
+          border-color: #fbbf24;
+        }
+        .action-circle.active {
+          background: var(--accent);
+          color: #fff;
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.6);
+        }
+        .action-circle.active-green {
+          background: #10b981;
+          color: #fff;
+          box-shadow: 0 0 14px rgba(16, 185, 129, 0.6);
+        }
+        .action-circle.active-blue {
+          background: #0284c7;
+          color: #fff;
+          box-shadow: 0 0 14px rgba(2, 132, 199, 0.6);
         }
 
-        /* --- FLOATING VISIONOS DOCK BAR --- */
-        .dock-bar {
+        /* Floating Dock */
+        .dock-container {
           position: fixed;
           bottom: 24px;
           left: 50%;
           transform: translateX(-50%);
-          z-index: 40;
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          padding: 8px 18px;
-          border-radius: 9999px;
           background: var(--dock-bg);
-          backdrop-filter: blur(32px);
-          -webkit-backdrop-filter: blur(32px);
-          border: 1px solid var(--dock-border);
-          box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(28px) saturate(180%);
+          -webkit-backdrop-filter: blur(28px) saturate(180%);
+          border: 1px solid var(--border-glass);
+          border-radius: 9999px;
+          padding: 8px 18px;
+          display: flex;
+          gap: 14px;
+          box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+          z-index: 100;
         }
-        .dock-btn {
+
+        .dock-item {
           width: 44px;
           height: 44px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          border: none;
-          background: transparent;
-          color: var(--text-primary);
           font-size: 20px;
           cursor: pointer;
-          transition: all 0.2s ease;
+          transition: transform 0.2s, background 0.2s;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid transparent;
         }
-        .dock-btn:hover {
-          background: rgba(255, 255, 255, 0.2);
-          transform: translateY(-4px) scale(1.1);
+        .dock-item:hover {
+          transform: translateY(-4px) scale(1.15);
+          background: rgba(255, 255, 255, 0.22);
+          border-color: var(--border-glass);
         }
-        .dock-btn:active { transform: scale(0.92); }
 
-        /* --- INTERACTIVE MODAL OVERLAYS --- */
+        /* Modals */
         .modal-overlay {
           position: fixed;
-          top: 0;
-          left: 0;
-          width: 100vw;
-          height: 100vh;
-          background: rgba(0, 0, 0, 0.5);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          z-index: 50;
+          inset: 0;
+          background: rgba(0, 0, 0, 0.45);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
           display: flex;
           align-items: center;
           justify-content: center;
-          padding: 24px;
-          box-sizing: border-box;
+          z-index: 1000;
+          padding: 20px;
         }
         .modal-overlay.hidden { display: none; }
+
         .modal-card {
+          background: var(--bg-card);
+          backdrop-filter: blur(35px) saturate(190%);
+          -webkit-backdrop-filter: blur(35px) saturate(190%);
+          border: 1px solid var(--border-glass);
+          border-radius: 28px;
           width: 100%;
-          max-width: 780px;
-          border-radius: 32px;
-          background: var(--card-bg);
-          backdrop-filter: blur(40px);
-          -webkit-backdrop-filter: blur(40px);
-          border: 1px solid var(--card-border);
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+          max-width: 680px;
+          max-height: 85vh;
+          overflow-y: auto;
           padding: 28px;
-          color: var(--text-primary);
-          box-sizing: border-box;
-          animation: popIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+          display: flex;
+          flex-direction: column;
+          gap: 18px;
         }
-        @keyframes popIn {
-          from { opacity: 0; transform: scale(0.94); }
-          to { opacity: 1; transform: scale(1); }
-        }
+
         .modal-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding-bottom: 16px;
-          border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+          border-bottom: 1px solid var(--border-subtle);
+          padding-bottom: 14px;
         }
         .modal-title {
           font-size: 20px;
-          font-weight: 600;
+          font-weight: 700;
         }
         .close-btn {
-          cursor: pointer;
-          background: rgba(255, 255, 255, 0.15);
-          border: none;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-glass);
+          border-radius: 50%;
           width: 32px;
           height: 32px;
-          border-radius: 50%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-primary);
+          cursor: pointer;
           font-size: 16px;
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
         }
-        .modal-body {
-          padding-top: 20px;
-        }
-        .modal-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 20px;
-        }
-        @media (max-width: 640px) {
-          .modal-grid { grid-template-columns: 1fr; }
-        }
-        .section-title {
-          font-size: 13px;
-          text-transform: uppercase;
-          color: var(--text-secondary);
-          letter-spacing: 0.05em;
-          margin-bottom: 12px;
-        }
-        .glass-pill {
-          display: block;
-          width: 100%;
-          text-align: left;
-          padding: 10px 14px;
-          margin-bottom: 8px;
-          border-radius: 12px;
-          border: 1px solid var(--card-border);
+
+        .control-row {
           background: rgba(255, 255, 255, 0.08);
-          color: var(--text-primary);
-          cursor: pointer;
-        }
-        .glass-pill.active {
-          background: var(--accent-blue);
-          color: #ffffff;
-        }
-        .slider-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 14px;
-          font-size: 13px;
-        }
-        .glass-slider {
-          flex: 1;
-          accent-color: var(--accent-blue);
-        }
-        .curve-chart {
-          width: 100%;
-          height: 120px;
-          background: rgba(0, 0, 0, 0.15);
-          border-radius: 16px;
-        }
-        .stepper-box {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 16px;
-          margin-top: 14px;
-        }
-        .step-btn {
-          width: 38px;
-          height: 38px;
-          border-radius: 50%;
-          border: 1px solid var(--card-border);
-          background: rgba(255, 255, 255, 0.15);
-          color: var(--text-primary);
-          font-size: 20px;
-          cursor: pointer;
-        }
-        .step-val {
-          font-size: 20px;
-          font-weight: 600;
-        }
-        .compass-dial {
-          width: 140px;
-          height: 140px;
-          border-radius: 50%;
-          border: 2px dashed var(--card-border);
-          margin: 0 auto;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          position: relative;
-        }
-        .compass-pointer {
-          width: 4px;
-          height: 50px;
-          background: #f59e0b;
-          border-radius: 2px;
-          transform: rotate(45deg);
-        }
-        .flex-between {
+          border: 1px solid var(--border-subtle);
+          border-radius: 18px;
+          padding: 14px 18px;
           display: flex;
           justify-content: space-between;
           align-items: center;
         }
+
         .btn-micro {
-          padding: 4px 10px;
-          border-radius: 8px;
-          border: 1px solid var(--card-border);
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid var(--border-glass);
+          border-radius: 12px;
+          padding: 8px 14px;
+          font-size: 13px;
+          font-weight: 600;
           color: var(--text-primary);
           cursor: pointer;
-          font-size: 11px;
+        }
+        .btn-micro.active {
+          background: var(--accent);
+          color: #fff;
+        }
+        .btn-micro.active-amber {
+          background: #f59e0b;
+          color: #fff;
+        }
+        .btn-micro.active-green {
+          background: #10b981;
+          color: #fff;
+        }
+
+        .btn-step {
+          background: rgba(255, 255, 255, 0.15);
+          border: 1px solid var(--border-glass);
+          border-radius: 10px;
+          width: 34px;
+          height: 34px;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--text-primary);
+          cursor: pointer;
+        }
+
+        .toggle-pill {
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-glass);
+          border-radius: 12px;
+          padding: 6px 14px;
+          font-size: 12px;
+          font-weight: 700;
+          color: var(--text-primary);
+          cursor: pointer;
+        }
+        .toggle-pill.active {
+          background: var(--accent);
+          color: #fff;
         }
       </style>
 
       <div class="dashboard-root theme-dark">
-        <!-- Ambient Atmospheric Blobs -->
-        <div class="ambient-blob blob-1"></div>
-        <div class="ambient-blob blob-2"></div>
-
-        <!-- Top Header Navigation & Status Chips -->
+        <!-- Top Bar Navigation & Status Chips -->
         <div class="top-bar">
           <div>
-            <div class="date-title" id="dateTitle">Monday, October 19</div>
-            <div class="name-day">Name day: Michael • Climate Control Active</div>
+            <div class="date-title" id="dateTitle">Mittwoch, 11. November</div>
+            <div class="name-day" id="subHeader">Wohnung Andreas • Smart Home Zentrale</div>
           </div>
 
           <div class="chips-container">
-            <div class="chip"><span class="chip-dot dot-amber"></span> DHW 47.4 °C</div>
-            <div class="chip"><span class="chip-dot dot-green"></span> 4.2 kW Solar</div>
-            <div class="chip"><span class="chip-dot dot-blue"></span> 8.4 kWh Batt</div>
-            <div class="chip">⏱️ 42 min Wash</div>
-            <div class="chip">📺 Plex: 1</div>
-            <button class="theme-toggle" id="themeToggleBtn" title="Toggle Day / Night Mode">☀️</button>
+            <div class="chip" id="chipLights">💡 Lichter laden...</div>
+            <div class="chip" id="chipClimate">🌡️ Klima laden...</div>
+            <div class="chip" id="chipLock">🔒 Schloss laden...</div>
+            <div class="chip" id="chipWasher">🧺 Waschmaschine...</div>
+            <div class="chip" id="chipWeather">🌦️ Wetter...</div>
+            <button class="theme-toggle" id="themeToggleBtn" title="Tag/Nacht umschalten">☀️</button>
           </div>
         </div>
 
@@ -808,231 +1210,132 @@ class VisionGlassDashboard extends HTMLElement {
         <div class="dashboard-body">
           <!-- Left Glanceable Sidebar -->
           <div class="sidebar-card">
-            <div class="clock-display" id="liveClock">10:38:00</div>
+            <div class="clock-display" id="liveClock">--:--:--</div>
 
             <div class="weather-banner" id="sidebarWeather">
               <div>
-                <div class="weather-temp" id="weatherTemp">7°C</div>
-                <div style="color:var(--text-secondary);font-size:13px;" id="weatherCondition">CLOUDY</div>
+                <div class="weather-temp" id="weatherTemp">--°C</div>
+                <div style="color:var(--text-secondary);font-size:13px;" id="weatherCondition">Laden...</div>
               </div>
-              <div style="font-size:32px;">⛅</div>
+              <div style="font-size:36px;" id="weatherIcon">⛅</div>
             </div>
 
-            <div class="hourly-forecast">
-              <div class="forecast-pill"><span>11:00</span><span>☁️</span><span>7°</span></div>
-              <div class="forecast-pill"><span>12:00</span><span>⛅</span><span>8°</span></div>
-              <div class="forecast-pill"><span>13:00</span><span>☁️</span><span>9°</span></div>
-              <div class="forecast-pill"><span>14:00</span><span>🌧️</span><span>9°</span></div>
-              <div class="forecast-pill"><span>15:00</span><span>⛅</span><span>9°</span></div>
-            </div>
-
-            <div class="agenda-block">
-              <div class="agenda-title">Today's Agenda</div>
-              <div class="agenda-item"><span class="chip-dot dot-blue"></span> 15:30 Dentist - Emma</div>
-              <div class="agenda-item"><span class="chip-dot dot-green"></span> 17:00 Soccer Training</div>
+            <div class="agenda-block" id="sidebarAgenda">
+              <div class="agenda-title">Termine & Müllabfuhr</div>
+              <div class="agenda-item"><span>Wird geladen...</span></div>
             </div>
           </div>
 
-          <!-- 3x3 Bento Room Grid -->
-          <div class="rooms-grid">
-            <!-- Living Room -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Living Room &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">4 Devices Active</div>
+          <!-- Rooms Grid -->
+          <div class="rooms-grid" id="roomsContainer">
+            ${this._config.rooms.map((room, idx) => `
+              <div class="room-card" id="roomCard_${idx}">
+                ${room.picture ? `<div class="room-bg-image" style="background-image:url('${room.picture}');"></div>` : ''}
+                <div class="room-header">
+                  <div>
+                    <div class="room-name">${room.name} &rsaquo;</div>
+                    <div class="room-sub">Wird geladen...</div>
+                  </div>
+                  <div class="room-temp-badge">--°C</div>
                 </div>
-                <div class="room-temp-badge">21.5°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle active-amber" title="Light" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active" title="TV" onclick="this.classList.toggle('active')">📺</div>
-                <div class="action-circle" title="Blinds" onclick="this.classList.toggle('active')">🪟</div>
-                <div class="action-circle" title="Gaming" onclick="this.classList.toggle('active')">🎮</div>
-              </div>
-            </div>
 
-            <!-- Office -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Office &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Desk & Monitors On</div>
+                <div class="room-actions">
+                  ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">💡</div>` : ''}
+                  ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">🌡️</div>` : ''}
+                  ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">🎵</div>` : ''}
+                  ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">🔒</div>` : ''}
+                  ${room.switch_entity ? `<div class="action-circle action-switch" title="Steckdose/Gerät umschalten" data-action="switch" data-idx="${idx}">🔌</div>` : ''}
                 </div>
-                <div class="room-temp-badge">22.0°C</div>
               </div>
-              <div class="room-actions">
-                <div class="action-circle active-amber" title="Desk Lamp" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active" title="Monitors" onclick="this.classList.toggle('active')">🖥️</div>
-                <div class="action-circle" title="Audio" onclick="this.classList.toggle('active')">🎧</div>
-              </div>
-            </div>
-
-            <!-- WC -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">WC &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Motion Ready</div>
-                </div>
-                <div class="room-temp-badge">20.0°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle" title="Ceiling Light" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle" title="Exhaust Fan" onclick="this.classList.toggle('active')">💨</div>
-              </div>
-            </div>
-
-            <!-- Kitchen -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Kitchen &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Under-cabinet LED On</div>
-                </div>
-                <div class="room-temp-badge">21.0°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle active-amber" title="Pendant" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active-amber" title="Counter LED" onclick="this.classList.toggle('active-amber')">✨</div>
-                <div class="action-circle" title="Espresso Machine" onclick="this.classList.toggle('active')">☕</div>
-              </div>
-            </div>
-
-            <!-- Kids Room -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Kids' Room &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Star Projector On</div>
-                </div>
-                <div class="room-temp-badge">21.5°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle active" title="Star Projector" onclick="this.classList.toggle('active')">⭐</div>
-                <div class="action-circle" title="Ceiling" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle" title="Blinds" onclick="this.classList.toggle('active')">🪟</div>
-              </div>
-            </div>
-
-            <!-- Laundry -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Laundry &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Washer Active • 42m</div>
-                </div>
-                <div class="room-temp-badge">19.5°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle active" title="Washer" onclick="this.classList.toggle('active')">🧺</div>
-                <div class="action-circle" title="Light" onclick="this.classList.toggle('active-amber')">💡</div>
-              </div>
-            </div>
-
-            <!-- Hallway -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Hallway &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Welcome Light Auto</div>
-                </div>
-                <div class="room-temp-badge">20.5°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle" title="Spotlights" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active" title="Door Lock" onclick="this.classList.toggle('active')">🔒</div>
-              </div>
-            </div>
-
-            <!-- Bedroom -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Bedroom &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Climate Sleep 19°</div>
-                </div>
-                <div class="room-temp-badge">20.0°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle" title="Main Light" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active-amber" title="Bedside Sconce" onclick="this.classList.toggle('active-amber')">🌙</div>
-                <div class="action-circle" title="Blinds" onclick="this.classList.toggle('active')">🪟</div>
-              </div>
-            </div>
-
-            <!-- Bathroom -->
-            <div class="room-card">
-              <div class="room-header">
-                <div>
-                  <div class="room-name">Bathroom &rsaquo;</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">Towel Heater On</div>
-                </div>
-                <div class="room-temp-badge">23.0°C</div>
-              </div>
-              <div class="room-actions">
-                <div class="action-circle active-amber" title="Mirror Light" onclick="this.classList.toggle('active-amber')">💡</div>
-                <div class="action-circle active" title="Towel Heater" onclick="this.classList.toggle('active')">♨️</div>
-              </div>
-            </div>
+            `).join('')}
           </div>
         </div>
 
-        <!-- Floating Apple VisionOS Style Dock Bar -->
-        <div class="dock-bar">
-          <button class="dock-btn" title="Lighting Control" id="dockLighting">💡</button>
-          <button class="dock-btn" title="Heating & Climate" id="dockClimate">🌡️</button>
-          <button class="dock-btn" title="Blinds & Shading" id="dockBlinds">🪟</button>
-          <button class="dock-btn" title="Weather & Radar" id="dockWeather">🌦️</button>
-          <button class="dock-btn" title="Audio & Music" onclick="alert('Music Scene Overlay')">🎵</button>
-          <button class="dock-btn" title="Cameras & Security" onclick="alert('Cameras Security Grid')">📹</button>
+        <!-- Floating Glass Dock -->
+        <div class="dock-container">
+          <div class="dock-item" id="dockLighting" title="Beleuchtung">💡</div>
+          <div class="dock-item" id="dockClimate" title="Heizung & Klima">🌡️</div>
+          <div class="dock-item" id="dockSecurity" title="Sicherheit & Schloss">🔒</div>
+          <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">🔌</div>
+          <div class="dock-item" id="dockWeather" title="Wetter & Vorhersage">🌦️</div>
         </div>
 
-        <!-- Interactive Popup Modal Container -->
+        <!-- Popup Modal Container -->
         <div class="modal-overlay hidden" id="modalContainer">
           <div class="modal-card">
             <div class="modal-header">
-              <div class="modal-title" id="modalTitle">Modal Window</div>
+              <div class="modal-title" id="modalTitle">Steuerung</div>
               <button class="close-btn" id="modalCloseBtn">&times;</button>
             </div>
-            <div class="modal-body" id="modalBody">
-              <!-- Dynamically populated via JS -->
-            </div>
+            <div class="modal-body" id="modalBody"></div>
           </div>
         </div>
       </div>
     `;
 
-    // Bind event listeners
+    // Event Listeners
     this.shadowRoot.getElementById('themeToggleBtn').addEventListener('click', () => this._toggleDayNight());
+
+    // Top Bar Chips
+    this.shadowRoot.getElementById('chipLights').addEventListener('click', () => this._openModal('lighting'));
+    this.shadowRoot.getElementById('chipClimate').addEventListener('click', () => this._openModal('climate'));
+    this.shadowRoot.getElementById('chipLock').addEventListener('click', () => {
+      const lockState = this._hass && this._hass.states[this._config.lock_entity];
+      const isLocked = lockState && lockState.state === 'locked';
+      this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: this._config.lock_entity });
+    });
+    this.shadowRoot.getElementById('chipWasher').addEventListener('click', () => this._openModal('switches'));
+    this.shadowRoot.getElementById('chipWeather').addEventListener('click', () => this._openModal('weather'));
+
+    // Dock Items
     this.shadowRoot.getElementById('dockLighting').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('dockClimate').addEventListener('click', () => this._openModal('climate'));
-    this.shadowRoot.getElementById('dockBlinds').addEventListener('click', () => this._openModal('blinds'));
+    this.shadowRoot.getElementById('dockSecurity').addEventListener('click', () => this._openModal('security'));
+    this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
     this.shadowRoot.getElementById('dockWeather').addEventListener('click', () => this._openModal('weather'));
 
+    // Modal Close
     this.shadowRoot.getElementById('modalCloseBtn').addEventListener('click', () => this._closeModal());
     this.shadowRoot.getElementById('modalContainer').addEventListener('click', (e) => {
       if (e.target.id === 'modalContainer') this._closeModal();
     });
 
-    // Set localized date
-    const dateEl = this.shadowRoot.getElementById('dateTitle');
-    if (dateEl) {
-      const now = new Date();
-      dateEl.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', month: 'long', day: 'numeric' });
-    }
+    // Room Action Circles
+    this.shadowRoot.querySelectorAll('[data-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const action = btn.getAttribute('data-action');
+        const idx = parseInt(btn.getAttribute('data-idx'));
+        const room = this._config.rooms[idx];
+        if (!room) return;
 
-    this._applyThemeClass();
+        if (action === 'light' && room.light_entity) {
+          this._callService('light', 'toggle', { entity_id: room.light_entity });
+        } else if (action === 'climate') {
+          this._openModal('climate');
+        } else if (action === 'media' && room.media_entity) {
+          this._callService('media_player', 'media_play_pause', { entity_id: room.media_entity });
+        } else if (action === 'lock' && room.lock_entity) {
+          const lState = this._hass && this._hass.states[room.lock_entity];
+          const isLocked = lState && lState.state === 'locked';
+          this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: room.lock_entity });
+        } else if (action === 'switch' && room.switch_entity) {
+          this._callService('switch', 'toggle', { entity_id: room.switch_entity });
+        }
+      });
+    });
+  }
+
+  getCardSize() {
+    return 6;
   }
 }
 
 customElements.define('vision-glass-dashboard', VisionGlassDashboard);
 
-// Register in Home Assistant Lovelace Custom Card list
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'vision-glass-dashboard',
   name: 'Vision Glass Dashboard',
-  description: 'Ultra-modern translucent glassmorphism smart home dashboard with interactive modals, day/night auto-switching and floating dock.'
+  description: 'Spatial glassmorphism smart home dashboard with live room states, interactive modals, and floating dock.'
 });
-
