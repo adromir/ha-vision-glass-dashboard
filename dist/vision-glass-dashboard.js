@@ -12,7 +12,6 @@ class VisionGlassDashboard extends HTMLElement {
     this._config = {};
     this._hass = null;
     this._activeModal = null;
-    this._userThemeOverride = null; // 'light' | 'dark' | null (auto)
     this._timer = null;
     this._initialRenderDone = false;
     this._alarmoCode = '';
@@ -28,7 +27,6 @@ class VisionGlassDashboard extends HTMLElement {
     this._statsHistoryFetched = false;
     this._roomEntitiesCache = {};
     this._updateRaf = null;
-    this._lang = (typeof localStorage !== 'undefined' && localStorage.getItem('vg_dashboard_lang')) || null;
   }
 
   static get I18N() {
@@ -106,11 +104,72 @@ class VisionGlassDashboard extends HTMLElement {
         daily_trend: '7-Tage Wettertrend',
         all_lights_turn_off: 'Alle Lichter ausschalten',
         all_lights_turn_on: 'Alle Lichter einschalten',
+        all_lights_apartment: 'Wohnung Gesamt (Alle Lichter)',
         battery_level: 'Batterie',
         device_details: 'Details in Home Assistant öffnen',
-        lang_switch: 'Sprache wechseln / Change language (DE / EN)',
-        day_mode: 'Tagmodus aktiv (Klick für Nachtmodus)',
-        night_mode: 'Nachtmodus aktiv (Klick für Tagmodus)'
+        heating_active: 'Heizung: AN',
+        heating_idle: 'Heizung: AUS / Bereit',
+        light_active: 'Licht: AN',
+        light_idle: 'Licht: AUS',
+        temperature_curve: 'Temperaturverlauf',
+        illuminance_curve: 'Helligkeitsverlauf',
+        occupancy_heating: 'Belegung & Heizung',
+        battery_curves: 'Batteriekurven',
+        select_room: 'Raum wählen',
+        pressure: 'Luftdruck',
+        wind: 'Wind',
+        visibility: 'Sichtweite',
+        humidity_label: 'Luftfeuchtigkeit',
+        entrance_status: 'Wohnungseingang Status',
+        window_door_contacts: 'Fenster- & Türkontakte',
+        battery_status_maintenance: 'Batteriestatus & Geräte-Wartung',
+        lighting_control: 'Beleuchtungs-Steuerung',
+        climate_control: 'Heizung, Raumklima & Temperaturkurven',
+        switches_control: 'Geräte, Schalter & Steckdosen',
+        stats_title: 'Statistiken & 24h-Verläufe',
+        weather_modal_title: 'Wetter, Vorhersage & Regenradar',
+        no_data_available: 'Keine Daten verfügbar.',
+        adjust_target_temp: 'Zieltemperatur anpassen',
+        increase_temp: 'Temperatur um 0.5°C erhöhen',
+        decrease_temp: 'Temperatur um 0.5°C senken',
+        open_weather_modal: 'Wetterübersicht & Vorhersage öffnen',
+        fullscreen: 'Vollbild',
+        wohnzimmer: 'Wohnzimmer',
+        arbeitszimmer: 'Arbeitszimmer',
+        badezimmer: 'Badezimmer',
+        kuche: 'Küche',
+        schlafzimmer: 'Schlafzimmer',
+        flur: 'Flur',
+        wohnung: 'Wohnung',
+        kellerraum: 'Kellerraum',
+        umwelt: 'Umwelt',
+        room_temperatures: 'Raumtemperaturen',
+        illuminance_lux: 'Helligkeit (Lux)',
+        hourly_forecast_title: 'Stündliche Vorhersage (Nächste 24 Stunden)',
+        live_precipitation_radar: 'Live Niederschlagsradar Hannover & Region',
+        rain_radar: 'Regenradar',
+        open_full_stats: 'Vollständige Statistiken öffnen',
+        detailed_stats_sub: 'Detaillierte Langzeitanalyse & Zoom im Dashboard:',
+        thermostat_status: 'Thermostat Status',
+        heating_power: 'Heizleistung',
+        heating_active_desc: 'Heizen aktiv',
+        heating_ready_desc: 'Bereit / Eco',
+        battery_curves_title: 'Batterieverläufe (24h Entladung)',
+        battery_curves_sub: 'Verlaufskurven wichtiger Batteriegeräte',
+        temp_curve_heating: 'Temperaturverlauf & Heizung',
+        illum_curve_lighting: 'Helligkeitsverlauf & Licht',
+        all_sensors_24h: 'Alle Messstellen über 24h • Farbige Hinterlegung & Zeitleiste zeigen Heizphasen',
+        lux_curve_24h: '24h Lux-Messkurve • Farbige Hinterlegung & Zeitleiste zeigen wann das Licht an war',
+        live_occupancy_overview: 'Live-Übersicht der YAML-Belegungshelfer und der Better Thermostat Heizaktivität.',
+        switches_sockets: 'Geräte & Steckdosen',
+        socket: 'Steckdose',
+        media: 'Medien',
+        playing: 'PLAY',
+        paused: 'PAUSE',
+        switched_on: 'Eingeschaltet',
+        switched_off: 'Ausgeschaltet',
+        active: 'Aktiv',
+        unavailable: 'Nicht verf.'
       },
       en: {
         welcome: 'Welcome',
@@ -136,7 +195,7 @@ class VisionGlassDashboard extends HTMLElement {
         climate_loading: 'Loading climate...',
         lock_loading: 'Loading lock...',
         alarmo_loading: 'Loading alarmo...',
-        weather_loading: 'Weather...',
+        weather_loading: 'Loading weather...',
         climate: 'Climate',
         lock: 'Lock',
         alarmo: 'Alarmo',
@@ -185,11 +244,72 @@ class VisionGlassDashboard extends HTMLElement {
         daily_trend: '7-Day Weather Trend',
         all_lights_turn_off: 'Turn all lights off',
         all_lights_turn_on: 'Turn all lights on',
+        all_lights_apartment: 'Apartment Total (All Lights)',
         battery_level: 'Battery',
         device_details: 'Open details in Home Assistant',
-        lang_switch: 'Change language / Sprache wechseln (DE / EN)',
-        day_mode: 'Day mode active (click for night mode)',
-        night_mode: 'Night mode active (click for day mode)'
+        heating_active: 'Heating: ON',
+        heating_idle: 'Heating: OFF / Ready',
+        light_active: 'Light: ON',
+        light_idle: 'Light: OFF',
+        temperature_curve: 'Temperature History',
+        illuminance_curve: 'Illuminance History',
+        occupancy_heating: 'Occupancy & Heating',
+        battery_curves: 'Battery Curves',
+        select_room: 'Select room',
+        pressure: 'Air Pressure',
+        wind: 'Wind',
+        visibility: 'Visibility',
+        humidity_label: 'Humidity',
+        entrance_status: 'Apartment Entrance Status',
+        window_door_contacts: 'Window & Door Contacts',
+        battery_status_maintenance: 'Battery Status & Device Maintenance',
+        lighting_control: 'Lighting Control',
+        climate_control: 'Climate, Heating & Curves',
+        switches_control: 'Devices, Switches & Sockets',
+        stats_title: 'Statistics & 24h History',
+        weather_modal_title: 'Weather, Forecast & Radar',
+        no_data_available: 'No data available.',
+        adjust_target_temp: 'Adjust target temperature',
+        increase_temp: 'Increase temperature by 0.5°C',
+        decrease_temp: 'Decrease temperature by 0.5°C',
+        open_weather_modal: 'Open weather overview & forecast',
+        fullscreen: 'Fullscreen',
+        wohnzimmer: 'Living Room',
+        arbeitszimmer: 'Study',
+        badezimmer: 'Bathroom',
+        kuche: 'Kitchen',
+        schlafzimmer: 'Bedroom',
+        flur: 'Hallway',
+        wohnung: 'Apartment',
+        kellerraum: 'Basement',
+        umwelt: 'Environment',
+        room_temperatures: 'Room Temperatures',
+        illuminance_lux: 'Illuminance (Lux)',
+        hourly_forecast_title: 'Hourly Forecast (Next 24 Hours)',
+        live_precipitation_radar: 'Live Precipitation Radar Hannover & Region',
+        rain_radar: 'Rain Radar',
+        open_full_stats: 'Open Full Statistics',
+        detailed_stats_sub: 'Detailed long-term analysis & zoom in dashboard:',
+        thermostat_status: 'Thermostat Status',
+        heating_power: 'Heating Output',
+        heating_active_desc: 'Heating active',
+        heating_ready_desc: 'Ready / Eco',
+        battery_curves_title: 'Battery Curves (24h Discharge)',
+        battery_curves_sub: 'History curves of essential battery devices',
+        temp_curve_heating: 'Temperature History & Heating',
+        illum_curve_lighting: 'Illuminance History & Light',
+        all_sensors_24h: 'All sensors over 24h • Shading and timeline indicate heating phases',
+        lux_curve_24h: '24h lux curve • Shading and timeline indicate when light was active',
+        live_occupancy_overview: 'Live overview of occupancy helpers and Better Thermostat heating activity.',
+        switches_sockets: 'Devices & Sockets',
+        socket: 'Socket',
+        media: 'Media',
+        playing: 'PLAY',
+        paused: 'PAUSE',
+        switched_on: 'Turned on',
+        switched_off: 'Turned off',
+        active: 'Active',
+        unavailable: 'Unavail.'
       }
     };
   }
@@ -594,7 +714,6 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   _getLang() {
-    if (this._lang) return this._lang;
     if (this._hass) {
       const hl = this._hass.language || (this._hass.locale && this._hass.locale.language) || '';
       if (hl.toLowerCase().startsWith('en')) return 'en';
@@ -607,16 +726,6 @@ class VisionGlassDashboard extends HTMLElement {
     return (VisionGlassDashboard.I18N[lang] && VisionGlassDashboard.I18N[lang][key]) ||
            (VisionGlassDashboard.I18N['de'] && VisionGlassDashboard.I18N['de'][key]) ||
            key;
-  }
-
-  _toggleLang() {
-    const cur = this._getLang();
-    this._lang = cur === 'de' ? 'en' : 'de';
-    try {
-      localStorage.setItem('vg_dashboard_lang', this._lang);
-    } catch (e) {}
-    this._render();
-    this._updateAll();
   }
 
   _fireMoreInfo(entityId) {
@@ -642,26 +751,18 @@ class VisionGlassDashboard extends HTMLElement {
       const clockEl = this.shadowRoot.getElementById('liveClock');
       if (clockEl) {
         const now = new Date();
-        clockEl.textContent = now.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const locale = this._getLang() === 'en' ? 'en-US' : 'de-DE';
+        clockEl.textContent = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       }
     }, 1000);
   }
 
   _isDaytime() {
-    if (this._userThemeOverride) {
-      return this._userThemeOverride === 'light';
-    }
     if (this._hass && this._hass.states['sun.sun']) {
       return this._hass.states['sun.sun'].state === 'above_horizon';
     }
     const hour = new Date().getHours();
     return hour >= 7 && hour < 18;
-  }
-
-  _toggleDayNight() {
-    const isCurrentlyLight = this._isDaytime();
-    this._userThemeOverride = isCurrentlyLight ? 'dark' : 'light';
-    this._applyThemeClass();
   }
 
   _applyThemeClass() {
@@ -675,11 +776,27 @@ class VisionGlassDashboard extends HTMLElement {
       root.classList.remove('theme-light');
       root.classList.add('theme-dark');
     }
-    const themeBtn = this.shadowRoot.getElementById('themeToggleBtn');
-    if (themeBtn) {
-      themeBtn.innerHTML = isDay ? this._icon('sun', { size: 18, cls: 'icon-sun' }) : this._icon('moon', { size: 18, cls: 'icon-moon' });
-      themeBtn.title = isDay ? 'Tagmodus aktiv (Klick für Nachtmodus)' : 'Nachtmodus aktiv (Klick für Tagmodus)';
-    }
+    this._syncGlobalHaTheme(isDay);
+  }
+
+  _syncGlobalHaTheme(isDay) {
+    try {
+      const targetTheme = isDay ? 'Vision Glass Light' : 'Vision Glass Dark';
+      const isDark = !isDay;
+      const expected = JSON.stringify({ theme: targetTheme, dark: isDark });
+      if (localStorage.getItem('selectedTheme') !== expected) {
+        localStorage.setItem('selectedTheme', expected);
+      }
+      const ha = document.querySelector('home-assistant');
+      if (ha && ha.hass && ha.hass.selectedTheme) {
+        if (ha.hass.selectedTheme.theme !== targetTheme || ha.hass.selectedTheme.dark !== isDark) {
+          ha.hass.selectedTheme = { theme: targetTheme, dark: isDark };
+          if (typeof ha._applyTheme === 'function') {
+            ha._applyTheme();
+          }
+        }
+      }
+    } catch(e) {}
   }
 
   _callService(domain, service, data) {
@@ -1392,7 +1509,7 @@ class VisionGlassDashboard extends HTMLElement {
     const title = this.shadowRoot.getElementById('modalTitle');
     if (!body || !title || !this._hass) return;
 
-    title.textContent = `${room.name} – Raumübersicht & Geräte`;
+    title.textContent = `${room.name} – ${this._t('overview_devices')}`;
 
     const lightObj = room.light_entity ? this._hass.states[room.light_entity] : null;
     const climateObj = room.climate_entity ? this._hass.states[room.climate_entity] : null;
@@ -1472,24 +1589,24 @@ class VisionGlassDashboard extends HTMLElement {
           <div>
             <div style="font-size:22px;font-weight:700;">${room.name}</div>
             <div style="font-size:13px;color:var(--text-secondary);margin-top:3px;">
-              ${isPres ? this._icon('motion', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' Person anwesend' : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' Keine Bewegung'} • ${isWinOpen ? this._icon('window-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' Fenster geöffnet' : this._icon('window', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' Fenster geschlossen'}
+              ${isPres ? this._icon('motion', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('person_present') : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' ' + this._t('no_motion')} • ${isWinOpen ? this._icon('window-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' ' + this._t('window_open') : this._icon('window', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('window_closed')}
             </div>
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
             <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
               <div style="font-size:19px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
-              <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('thermometer', { size: 11, cls: 'icon-temp' })} Temp</div>
+              <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('thermometer', { size: 11, cls: 'icon-temp' })} ${this._t('temp')}</div>
             </div>
             ${curHum != null ? `
               <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
                 <div style="font-size:19px;font-weight:700;color:#0284c7;">${curHum}%</div>
-                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('droplet', { size: 11, cls: 'icon-humidity' })} Feuchte</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('droplet', { size: 11, cls: 'icon-humidity' })} ${this._t('humidity')}</div>
               </div>
             ` : ''}
             ${curLux != null ? `
               <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
                 <div style="font-size:19px;font-weight:700;color:#f59e0b;">${curLux} lx</div>
-                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('lux', { size: 11, cls: 'icon-lux' })} Lux</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('lux', { size: 11, cls: 'icon-lux' })} ${this._t('lux')}</div>
               </div>
             ` : ''}
           </div>
@@ -1499,11 +1616,11 @@ class VisionGlassDashboard extends HTMLElement {
           ${mmSwitchObj ? `
             <div class="control-row" style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.4);grid-column:1/-1;">
               <div>
-                <div style="font-weight:700;font-size:15px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">${this._icon('tv', { size: 16, cls: 'icon-switch' })} Multimedia-Zentrale</div>
-                <div style="font-size:12px;color:var(--text-secondary);">Schaltet TV, AVR-Receiver, Subwoofer & Shield zusammen • ${mmSwitchObj.state === 'on' ? 'Aktiv' : 'Aus'}</div>
+                <div style="font-weight:700;font-size:15px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">${this._icon('tv', { size: 16, cls: 'icon-switch' })} ${this._t('multimedia_hub')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${this._t('multimedia_desc')} • ${mmSwitchObj.state === 'on' ? this._t('active') : this._t('off')}</div>
               </div>
               <button class="toggle-pill ${mmSwitchObj.state === 'on' ? 'active-blue' : ''}" id="roomModalMultimediaToggle">
-                ${mmSwitchObj.state === 'on' ? 'EIN' : 'AUS'}
+                ${mmSwitchObj.state === 'on' ? this._t('on') : this._t('off')}
               </button>
             </div>
           ` : ''}
@@ -1511,11 +1628,11 @@ class VisionGlassDashboard extends HTMLElement {
           ${room.light_entity ? `
             <div class="control-row">
               <div>
-                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('light', { size: 16, cls: 'icon-light' })} Beleuchtung</div>
-                <div style="font-size:12px;color:var(--text-secondary);">${isLightOn ? 'Eingeschaltet' : 'Ausgeschaltet'}</div>
+                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('light', { size: 16, cls: 'icon-light' })} ${this._t('lighting')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${isLightOn ? this._t('switched_on') : this._t('switched_off')}</div>
               </div>
               <button class="toggle-pill ${isLightOn ? 'active-amber' : ''}" id="roomModalLightToggle">
-                ${isLightOn ? 'EIN' : 'AUS'}
+                ${isLightOn ? this._t('on') : this._t('off')}
               </button>
             </div>
           ` : ''}
@@ -1523,14 +1640,14 @@ class VisionGlassDashboard extends HTMLElement {
           ${room.climate_entity ? `
             <div class="control-row" style="flex-direction:column;align-items:stretch;gap:8px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
-                <span style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('climate', { size: 16, cls: 'icon-climate' })} Thermostat</span>
-                <span style="font-size:13px;">Ziel: <strong style="color:var(--accent);">${climateObj ? climateObj.attributes.temperature : 21}°C</strong></span>
+                <span style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('climate', { size: 16, cls: 'icon-climate' })} ${this._t('climate')}</span>
+                <span style="font-size:13px;">${this._t('target')}: <strong style="color:var(--accent);">${climateObj ? climateObj.attributes.temperature : 21}°C</strong></span>
               </div>
               <div style="display:flex;justify-content:flex-end;gap:8px;">
                 <button class="btn-step" id="roomModalTempMinus">-</button>
                 <button class="btn-step" id="roomModalTempPlus">+</button>
                 <button class="btn-micro ${isHeat ? 'active' : ''}" id="roomModalHeatToggle">
-                  ${isHeat ? 'HEIZEN' : 'AUS'}
+                  ${isHeat ? this._t('heat') : this._t('off')}
                 </button>
               </div>
             </div>
@@ -1539,11 +1656,11 @@ class VisionGlassDashboard extends HTMLElement {
           ${room.switch_entity ? `
             <div class="control-row">
               <div>
-                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('plug', { size: 16, cls: 'icon-switch' })} ${(switchObj && switchObj.attributes.friendly_name) || 'Steckdose'}</div>
-                <div style="font-size:12px;color:var(--text-secondary);">${switchObj && switchObj.state === 'on' ? 'Aktiv' : 'Aus'}</div>
+                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('plug', { size: 16, cls: 'icon-switch' })} ${(switchObj && switchObj.attributes.friendly_name) || this._t('socket')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${switchObj && switchObj.state === 'on' ? this._t('active') : this._t('off')}</div>
               </div>
               <button class="toggle-pill ${switchObj && switchObj.state === 'on' ? 'active-blue' : ''}" id="roomModalSwitchToggle">
-                ${switchObj && switchObj.state === 'on' ? 'EIN' : 'AUS'}
+                ${switchObj && switchObj.state === 'on' ? this._t('on') : this._t('off')}
               </button>
             </div>
           ` : ''}
@@ -1551,18 +1668,18 @@ class VisionGlassDashboard extends HTMLElement {
           ${room.media_entity ? `
             <div class="control-row">
               <div>
-                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('music', { size: 16, cls: 'icon-media' })} ${(mediaObj && mediaObj.attributes.friendly_name) || 'Medien'}</div>
-                <div style="font-size:12px;color:var(--text-secondary);">${mediaObj ? mediaObj.state : 'Aus'}</div>
+                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('music', { size: 16, cls: 'icon-media' })} ${(mediaObj && mediaObj.attributes.friendly_name) || this._t('media')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${mediaObj ? (mediaObj.state === 'playing' ? this._t('playing') : this._t('off')) : this._t('off')}</div>
               </div>
               <button class="btn-micro ${mediaObj && mediaObj.state === 'playing' ? 'active' : ''}" id="roomModalMediaToggle">
-                ${mediaObj && mediaObj.state === 'playing' ? 'PAUSE' : 'PLAY'}
+                ${mediaObj && mediaObj.state === 'playing' ? this._t('paused') : this._t('playing')}
               </button>
             </div>
           ` : ''}
         </div>
 
         ${otherSwitches.length > 0 ? `
-          <div style="font-size:14px;font-weight:700;margin-top:8px;">Weitere Geräte & Schalter in diesem Raum (${otherSwitches.length})</div>
+          <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('other_devices')} (${otherSwitches.length})</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${otherSwitches.map(s => {
               const isOn = s.state && s.state.state === 'on';
@@ -1576,7 +1693,7 @@ class VisionGlassDashboard extends HTMLElement {
                     <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
                   </div>
                   <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
-                    ${isOn ? 'EIN' : 'AUS'}
+                    ${isOn ? this._t('on') : this._t('off')}
                   </button>
                 </div>
               `;
@@ -1585,7 +1702,7 @@ class VisionGlassDashboard extends HTMLElement {
         ` : ''}
 
         ${otherSensors.length > 0 ? `
-          <div style="font-size:14px;font-weight:700;margin-top:8px;">Messwerte & Sensoren (${otherSensors.length})</div>
+          <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('measurements_sensors')} (${otherSensors.length})</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
             ${otherSensors.map(s => {
               const name = (s.state && s.state.attributes.friendly_name) || s.id;
@@ -1595,16 +1712,16 @@ class VisionGlassDashboard extends HTMLElement {
               let valDisplay = rawVal;
               let valColor = 'var(--text-primary)';
               if (rawVal === 'unknown') {
-                valDisplay = 'Unbekannt';
+                valDisplay = this._t('unknown');
                 valColor = 'var(--text-secondary)';
               } else if (rawVal === 'unavailable') {
-                valDisplay = 'Nicht verf.';
+                valDisplay = this._t('unavailable');
                 valColor = 'var(--text-secondary)';
               } else if (rawVal === 'on') {
-                valDisplay = 'AN';
+                valDisplay = this._t('on');
                 valColor = '#10b981';
               } else if (rawVal === 'off') {
-                valDisplay = 'AUS';
+                valDisplay = this._t('off');
                 valColor = 'var(--text-secondary)';
               } else if (!isNaN(parseFloat(rawVal))) {
                 const num = parseFloat(rawVal);
@@ -2066,7 +2183,8 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   _translateWeather(state) {
-    const map = {
+    const isEn = this._getLang() === 'en';
+    const mapDe = {
       'clear-night': 'Klar',
       'cloudy': 'Bewölkt',
       'fog': 'Nebel',
@@ -2082,7 +2200,24 @@ class VisionGlassDashboard extends HTMLElement {
       'windy': 'Windig',
       'windy-variant': 'Windig'
     };
-    return map[state] || (state ? state.replace('_', ' ') : 'Unbekannt');
+    const mapEn = {
+      'clear-night': 'Clear Night',
+      'cloudy': 'Cloudy',
+      'fog': 'Fog',
+      'hail': 'Hail',
+      'lightning': 'Thunderstorm',
+      'lightning-rainy': 'Thunderstorm with Rain',
+      'partlycloudy': 'Partly Cloudy',
+      'pouring': 'Heavy Rain',
+      'rainy': 'Rainy',
+      'snowy': 'Snow',
+      'snowy-rainy': 'Sleet',
+      'sunny': 'Sunny',
+      'windy': 'Windy',
+      'windy-variant': 'Windy'
+    };
+    const map = isEn ? mapEn : mapDe;
+    return map[state] || (state ? state.replace(/[-_]/g, ' ') : (isEn ? 'Unknown' : 'Unbekannt'));
   }
 
   _getWeatherEmoji(state) {
@@ -2115,21 +2250,21 @@ class VisionGlassDashboard extends HTMLElement {
     if (!body || !title || !this._hass) return;
 
     if (type === 'lighting') {
-      title.innerHTML = `${this._icon('light', { size: 22, cls: 'icon-light', style: 'margin-right:8px;' })} Beleuchtungs-Steuerung`;
+      title.innerHTML = `${this._icon('light', { size: 22, cls: 'icon-light', style: 'margin-right:8px;' })} ${this._t('lighting_control')}`;
       const allLights = [
-        { id: 'light.licht_wohnung', name: 'Wohnung Gesamt (Alle Lichter)' },
-        { id: 'light.livingroom', name: 'Wohnzimmer Licht' },
-        { id: 'light.light_studyroom_tomada', name: 'Arbeitszimmer Licht' },
-        { id: 'light.light_kitchen_tomada', name: 'Küchenlicht' },
-        { id: 'light.light_bathroom_tomada', name: 'Badezimmer Licht' },
-        { id: 'light.light_hallway_tomada', name: 'Flurlicht' },
-        { id: 'light.schlafzimmerlicht', name: 'Schlafzimmerlicht' }
+        { id: 'light.licht_wohnung', name: this._t('all_lights_apartment') },
+        { id: 'light.livingroom', name: `${this._t('wohnzimmer')} ${this._t('lighting')}` },
+        { id: 'light.light_studyroom_tomada', name: `${this._t('arbeitszimmer')} ${this._t('lighting')}` },
+        { id: 'light.light_kitchen_tomada', name: `${this._t('kuche')} ${this._t('lighting')}` },
+        { id: 'light.light_bathroom_tomada', name: `${this._t('badezimmer')} ${this._t('lighting')}` },
+        { id: 'light.light_hallway_tomada', name: `${this._t('flur')} ${this._t('lighting')}` },
+        { id: 'light.schlafzimmerlicht', name: `${this._t('schlafzimmer')} ${this._t('lighting')}` }
       ];
 
       body.innerHTML = `
         <div style="display:flex;gap:12px;margin-bottom:18px;">
-          <button class="btn-micro" id="modalAllOn">Alle Lichter an</button>
-          <button class="btn-micro" id="modalAllOff">Alle Lichter aus</button>
+          <button class="btn-micro" id="modalAllOn">${this._t('all_lights_turn_on')}</button>
+          <button class="btn-micro" id="modalAllOff">${this._t('all_lights_turn_off')}</button>
         </div>
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
           ${allLights.map(l => {
@@ -2142,11 +2277,11 @@ class VisionGlassDashboard extends HTMLElement {
                   <div style="flex-shrink:0;">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>
                   <div style="flex:1;min-width:0;">
                     <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${l.name}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? `An (${bri}%)` : 'Aus'}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? `${this._t('on')} (${bri}%)` : this._t('off')}</div>
                   </div>
                 </div>
                 <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-light="${l.id}">
-                  ${isOn ? 'AN' : 'AUS'}
+                  ${isOn ? this._t('on') : this._t('off')}
                 </button>
               </div>
             `;
@@ -2167,14 +2302,14 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'climate') {
-      title.innerHTML = `${this._icon('climate', { size: 22, cls: 'icon-climate', style: 'margin-right:8px;' })} Heizung, Raumklima & Temperaturkurven`;
+      title.innerHTML = `${this._icon('climate', { size: 22, cls: 'icon-climate', style: 'margin-right:8px;' })} ${this._t('climate_control')}`;
       const thermostats = [
-        { id: 'climate.better_thermostat_wohnzimmer', name: 'Wohnzimmer', tempSensor: 'sensor.bewegungsmelder_wohnzimmer_temperatur' },
-        { id: 'climate.better_thermostat_arbeitszimmer', name: 'Arbeitszimmer', tempSensor: 'sensor.bewegungsmelder_arbeitszimmer_temperatur' },
-        { id: 'climate.better_thermostat_schlafzimmer', name: 'Schlafzimmer', tempSensor: 'sensor.bewegungsmelder_schlafzimmer_temperature' },
-        { id: 'climate.better_thermostat_kuche', name: 'Küche', tempSensor: 'sensor.bewegungsmelder_kuche_temperature' },
-        { id: 'climate.better_thermostat_badezimmer', name: 'Badezimmer', tempSensor: 'sensor.badezimmer_temperatur' },
-        { id: 'climate.better_thermostat_flur', name: 'Flur', tempSensor: 'sensor.bewegungsmelder_flur_temperatur' }
+        { id: 'climate.better_thermostat_wohnzimmer', roomKey: 'wohnzimmer', tempSensor: 'sensor.bewegungsmelder_wohnzimmer_temperatur' },
+        { id: 'climate.better_thermostat_arbeitszimmer', roomKey: 'arbeitszimmer', tempSensor: 'sensor.bewegungsmelder_arbeitszimmer_temperatur' },
+        { id: 'climate.better_thermostat_schlafzimmer', roomKey: 'schlafzimmer', tempSensor: 'sensor.bewegungsmelder_schlafzimmer_temperature' },
+        { id: 'climate.better_thermostat_kuche', roomKey: 'kuche', tempSensor: 'sensor.bewegungsmelder_kuche_temperature' },
+        { id: 'climate.better_thermostat_badezimmer', roomKey: 'badezimmer', tempSensor: 'sensor.badezimmer_temperatur' },
+        { id: 'climate.better_thermostat_flur', roomKey: 'flur', tempSensor: 'sensor.bewegungsmelder_flur_temperatur' }
       ];
 
       if (!this._historyFetched) {
@@ -2189,6 +2324,7 @@ class VisionGlassDashboard extends HTMLElement {
             const cur = s && s.attributes.current_temperature ? s.attributes.current_temperature : (this._hass.states[t.tempSensor] ? this._hass.states[t.tempSensor].state : '--');
             const target = s && s.attributes.temperature ? s.attributes.temperature : 21.0;
             const isHeat = s && s.state === 'heat';
+            const roomName = this._t(t.roomKey);
 
             const historyVals = this._tempHistory[t.tempSensor];
             const curve = this._generateSvgCurve(historyVals, cur, 290, 55);
@@ -2197,12 +2333,12 @@ class VisionGlassDashboard extends HTMLElement {
               <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;">
                   <div>
-                    <span style="font-weight:700;font-size:16px;">${t.name}</span>
+                    <span style="font-weight:700;font-size:16px;">${roomName}</span>
                     <div style="font-size:12px;color:var(--text-secondary);">Better Thermostat</div>
                   </div>
                   <div style="text-align:right;">
                     <span style="font-size:18px;font-weight:700;color:var(--text-primary);">${cur}°C</span>
-                    <div style="font-size:11px;color:var(--text-secondary);">Ist-Temperatur</div>
+                    <div style="font-size:11px;color:var(--text-secondary);">${this._t('now')}</div>
                   </div>
                 </div>
 
@@ -2221,17 +2357,17 @@ class VisionGlassDashboard extends HTMLElement {
                   </svg>
                   <div style="position:absolute;top:2px;left:4px;font-size:10px;color:var(--text-secondary);font-weight:600;">Max: ${curve.max}°C</div>
                   <div style="position:absolute;bottom:2px;left:4px;font-size:10px;color:var(--text-secondary);font-weight:600;">Min: ${curve.min}°C</div>
-                  <div style="position:absolute;bottom:2px;right:4px;font-size:10px;color:var(--accent);font-weight:600;">24h Verlauf</div>
+                  <div style="position:absolute;bottom:2px;right:4px;font-size:10px;color:var(--accent);font-weight:600;">24h</div>
                 </div>
 
                 <!-- Steppers & Mode -->
                 <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-subtle);padding-top:10px;">
-                  <span style="font-size:13px;">Ziel: <strong style="font-size:16px;color:var(--accent);">${target}°C</strong></span>
+                  <span style="font-size:13px;">${this._t('target')}: <strong style="font-size:16px;color:var(--accent);">${target}°C</strong></span>
                   <div style="display:flex;gap:8px;">
                     <button class="btn-step" data-climate="${t.id}" data-delta="-0.5">-</button>
                     <button class="btn-step" data-climate="${t.id}" data-delta="0.5">+</button>
                     <button class="btn-micro ${isHeat ? 'active' : ''}" data-toggle-heat="${t.id}">
-                      ${isHeat ? 'HEIZEN' : 'AUS'}
+                      ${isHeat ? this._t('heat') : this._t('off')}
                     </button>
                   </div>
                 </div>
@@ -2265,7 +2401,7 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'security') {
-      title.innerHTML = `${this._icon('lock-closed', { size: 22, cls: 'icon-security', style: 'margin-right:8px;' })} Sicherheit, Schloss & Kontakte`;
+      title.innerHTML = `${this._icon('lock-closed', { size: 22, cls: 'icon-security', style: 'margin-right:8px;' })} ${this._t('security')}`;
       const lockObj = this._hass.states['lock.wohnungsschloss'];
       const doorObj = this._hass.states['binary_sensor.turkontakt_hausture_contact'];
       const isLocked = lockObj && lockObj.state === 'locked';
@@ -2277,17 +2413,17 @@ class VisionGlassDashboard extends HTMLElement {
       let stateBg = 'rgba(16, 185, 129, 0.15)';
 
       if (isDoorOpen) {
-        stateText = 'Tür ist GEÖFFNET (Offen)';
+        stateText = this._t('door_open');
         stateColor = '#ef4444';
         stateIcon = this._icon('door-open', { size: 38, cls: 'icon-climate' });
         stateBg = 'rgba(239, 68, 68, 0.20)';
       } else if (!isLocked) {
-        stateText = 'Tür geschlossen • Aktuell ENTRIEGELT';
+        stateText = this._t('door_closed_unlocked');
         stateColor = '#f59e0b';
         stateIcon = this._icon('lock-open', { size: 38, cls: 'icon-light' });
         stateBg = 'rgba(245, 158, 11, 0.18)';
       } else {
-        stateText = 'Tür geschlossen & Sicher VERRIEGELT';
+        stateText = this._t('door_closed_locked');
         stateColor = '#10b981';
         stateIcon = this._icon('lock-closed', { size: 38, cls: 'icon-security' });
         stateBg = 'rgba(16, 185, 129, 0.15)';
@@ -2309,7 +2445,7 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="background:${stateBg};border:1px solid ${stateColor};border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:14px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Wohnungseingang Status</div>
+                <div style="font-size:12px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${this._t('entrance_status')}</div>
                 <div style="font-size:20px;font-weight:700;color:${stateColor};margin-top:2px;">${stateText}</div>
               </div>
               <div style="font-size:40px;">${stateIcon}</div>
@@ -2317,15 +2453,15 @@ class VisionGlassDashboard extends HTMLElement {
             <!-- Distinct Action Buttons -->
             <div style="display:flex;gap:12px;margin-top:6px;">
               <button class="btn-micro ${isLocked ? 'active-green' : ''}" id="btnLockAction" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
-                ${this._icon('lock-closed', { size: 16, style: 'margin-right:6px;' })} Verriegeln
+                ${this._icon('lock-closed', { size: 16, style: 'margin-right:6px;' })} ${this._t('lock_door')}
               </button>
               <button class="btn-micro ${!isLocked ? 'active-amber' : ''}" id="btnUnlockAction" style="flex:1;padding:12px;font-size:14px;font-weight:700;">
-                ${this._icon('lock-open', { size: 16, style: 'margin-right:6px;' })} Entriegeln
+                ${this._icon('lock-open', { size: 16, style: 'margin-right:6px;' })} ${this._t('unlock_door')}
               </button>
             </div>
           </div>
 
-          <div style="font-size:15px;font-weight:700;margin-top:4px;">Fenster- & Türkontakte</div>
+          <div style="font-size:15px;font-weight:700;margin-top:4px;">${this._t('window_door_contacts')}</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${contacts.map(c => {
               const cs = this._hass.states[c.id];
@@ -2336,10 +2472,10 @@ class VisionGlassDashboard extends HTMLElement {
                     <div style="flex-shrink:0;">${this._icon(c.iconName, { size: 16, cls: 'icon-security' })}</div>
                     <div style="flex:1;min-width:0;">
                       <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${c.name}</div>
-                      <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;">${isOpen ? this._icon('alert-triangle', { size: 12, cls: 'icon-temp' }) + ' Geöffnet' : this._icon('check', { size: 12, cls: 'icon-security' }) + ' Geschlossen'}</div>
+                      <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;">${isOpen ? this._icon('alert-triangle', { size: 12, cls: 'icon-temp' }) + ' ' + this._t('window_open') : this._icon('check', { size: 12, cls: 'icon-security' }) + ' ' + this._t('window_closed')}</div>
                     </div>
                   </div>
-                  <span class="toggle-pill ${isOpen ? 'active-amber' : ''}" style="flex-shrink:0;">${isOpen ? 'OFFEN' : 'ZU'}</span>
+                  <span class="toggle-pill ${isOpen ? 'active-amber' : ''}" style="flex-shrink:0;">${isOpen ? this._t('open') : this._t('door_locked_short')}</span>
                 </div>
               `;
             }).join('')}
@@ -2449,11 +2585,11 @@ class VisionGlassDashboard extends HTMLElement {
             if (this._alarmoCode.length < 8) this._alarmoCode += k;
           }
           const disp = body.querySelector('#alarmoPinDisplay');
-          if (disp) disp.textContent = this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : 'Keine Eingabe';
+          if (disp) disp.textContent = this._alarmoCode ? '•'.repeat(this._alarmoCode.length) : this._t('no_entry');
         };
       });
     } else if (type === 'battery') {
-      title.innerHTML = `${this._icon('battery-full', { size: 22, cls: 'icon-battery', style: 'margin-right:8px;' })} Batteriestatus & Geräte-Wartung`;
+      title.innerHTML = `${this._icon('battery-full', { size: 22, cls: 'icon-battery', style: 'margin-right:8px;' })} ${this._t('battery_status_maintenance')}`;
 
       let batteryDevices = [];
       const seenDevices = new Set();
@@ -2509,19 +2645,19 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- Summary Cards -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;">
             <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'all' ? 'border-color:var(--accent);' : ''}" id="filterAll">
-              <span style="font-size:12px;color:var(--text-secondary);">Gesamt</span>
+              <span style="font-size:12px;color:var(--text-secondary);">${this._t('all')}</span>
               <span style="font-size:22px;font-weight:700;">${batteryDevices.length}</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'critical' ? 'border-color:#ef4444;' : ''}" id="filterCritical">
-              <span style="font-size:12px;color:#ef4444;font-weight:600;">Kritisch (<20%)</span>
+              <span style="font-size:12px;color:#ef4444;font-weight:600;">${this._t('critical')}</span>
               <span style="font-size:22px;font-weight:700;color:#ef4444;">${critical.length}</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'low' ? 'border-color:#f59e0b;' : ''}" id="filterLow">
-              <span style="font-size:12px;color:#f59e0b;font-weight:600;">Niedrig (20-40%)</span>
+              <span style="font-size:12px;color:#f59e0b;font-weight:600;">${this._t('low')}</span>
               <span style="font-size:22px;font-weight:700;color:#f59e0b;">${low.length}</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:center;cursor:pointer;${filter === 'good' ? 'border-color:#10b981;' : ''}" id="filterGood">
-              <span style="font-size:12px;color:#10b981;font-weight:600;">Gut (>40%)</span>
+              <span style="font-size:12px;color:#10b981;font-weight:600;">${this._t('good')}</span>
               <span style="font-size:22px;font-weight:700;color:#10b981;">${good.length}</span>
             </div>
           </div>
@@ -2563,7 +2699,7 @@ class VisionGlassDashboard extends HTMLElement {
       body.querySelector('#filterGood').onclick = () => { this._batteryFilter = 'good'; this._renderModalContent('battery'); };
 
     } else if (type === 'switches') {
-      title.innerHTML = `${this._icon('plug', { size: 22, cls: 'icon-switch', style: 'margin-right:8px;' })} Geräte & Steckdosen`;
+      title.innerHTML = `${this._icon('plug', { size: 22, cls: 'icon-switch', style: 'margin-right:8px;' })} ${this._t('switches_control')}`;
       const switches = [
         { id: 'switch.livingroom_multimedia', name: 'Multimedia-Zentrale (TV, AVR, Shield, Sub)', icon: 'tv' },
         { id: 'switch.switch_washingmachine_smartplug_switch', name: 'Waschmaschine', pwr: 'sensor.switch_washingmachine_smartplug_power' },
@@ -2589,11 +2725,11 @@ class VisionGlassDashboard extends HTMLElement {
                   <div style="flex-shrink:0;">${icon}</div>
                   <div style="flex:1;min-width:0;">
                     <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${sw.name}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `Aktiv • ${pwrSensor}` : 'Ein') : 'Aus'}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `${this._t('active')} • ${pwrSensor}` : this._t('on')) : this._t('off')}</div>
                   </div>
                 </div>
                 <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-switch="${sw.id}">
-                  ${isOn ? 'EIN' : 'AUS'}
+                  ${isOn ? this._t('on') : this._t('off')}
                 </button>
               </div>
             `;
@@ -2608,7 +2744,7 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'weather') {
-      title.innerHTML = `${this._icon('weather-partlycloudy', { size: 22, cls: 'icon-weather', style: 'margin-right:8px;' })} Wetter, Vorhersage & Regenradar`;
+      title.innerHTML = `${this._icon('weather-partlycloudy', { size: 22, cls: 'icon-weather', style: 'margin-right:8px;' })} ${this._t('weather_modal_title')}`;
 
       const existingIframe = body.querySelector('#weatherRadarIframe');
       if (existingIframe) {
@@ -2619,7 +2755,7 @@ class VisionGlassDashboard extends HTMLElement {
 
       const w = this._hass.states['weather.hannover_hannover'];
       if (!w) {
-        body.innerHTML = '<div>Keine Wetterdaten verfügbar.</div>';
+        body.innerHTML = `<div>${this._t('no_data_available')}</div>`;
         return;
       }
       const a = w.attributes;
@@ -2642,7 +2778,7 @@ class VisionGlassDashboard extends HTMLElement {
               </div>
             </div>
             <div style="text-align:right;">
-              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Heute</div>
+              <div style="font-size:12px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">${this._t('today')}</div>
               <div style="font-size:18px;font-weight:700;margin-top:2px;" id="weatherHeroToday">
                 ${dailyItems[0] && dailyItems[0].templow != null ? `${Math.round(dailyItems[0].templow)}° / ` : ''}${dailyItems[0] ? `${Math.round(dailyItems[0].temperature)}°C` : `${a.temperature}°C`}
               </div>
@@ -2653,19 +2789,19 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- Key Metrics Grid -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
-              <span style="font-size:11px;color:var(--text-secondary);">Luftfeuchtigkeit</span>
+              <span style="font-size:11px;color:var(--text-secondary);">${this._t('humidity_label')}</span>
               <span style="font-size:17px;font-weight:700;" id="weatherMetricHum">${a.humidity}%</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
-              <span style="font-size:11px;color:var(--text-secondary);">Luftdruck</span>
+              <span style="font-size:11px;color:var(--text-secondary);">${this._t('pressure')}</span>
               <span style="font-size:17px;font-weight:700;" id="weatherMetricPress">${a.pressure} hPa</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
-              <span style="font-size:11px;color:var(--text-secondary);">Wind</span>
+              <span style="font-size:11px;color:var(--text-secondary);">${this._t('wind')}</span>
               <span style="font-size:17px;font-weight:700;" id="weatherMetricWind">${a.wind_speed} km/h (${a.wind_bearing})</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
-              <span style="font-size:11px;color:var(--text-secondary);">Sichtweite</span>
+              <span style="font-size:11px;color:var(--text-secondary);">${this._t('visibility')}</span>
               <span style="font-size:17px;font-weight:700;" id="weatherMetricVis">${a.visibility} km</span>
             </div>
           </div>
@@ -2673,7 +2809,7 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- Hourly Forecast Carousel (24 Hours - No rubberbanding) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
-              ${this._icon('clock', { size: 16, style: 'margin-right:6px;' })} <span>Stündliche Vorhersage (Nächste 24 Stunden)</span>
+              ${this._icon('clock', { size: 16, style: 'margin-right:6px;' })} <span>${this._t('hourly_forecast_title')}</span>
             </div>
             <div class="weather-hourly-carousel" id="weatherHourlyContainer">
               ${this._renderHourlyItemsHtml(hourlyItems)}
@@ -2683,7 +2819,7 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- 7-Day Forecast Trend -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
-              ${this._icon('calendar', { size: 16, style: 'margin-right:6px;' })} <span>7-Tage Wettertrend</span>
+              ${this._icon('calendar', { size: 16, style: 'margin-right:6px;' })} <span>${this._t('daily_trend')}</span>
             </div>
             <div style="display:flex;flex-direction:column;gap:8px;" id="weatherDailyContainer">
               ${this._renderDailyItemsHtml(dailyItems)}
@@ -2694,6 +2830,16 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
               <div style="display:flex;align-items:center;gap:6px;">
+                ${this._icon('radar', { size: 16, style: 'margin-right:6px;' })} <span>${this._t('live_precipitation_radar')}</span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn-micro active" id="btnRadarRain" style="padding:4px 10px;font-size:12px;">${this._icon('weather-rainy', { size: 14, style: 'margin-right:4px;' })} ${this._t('rain_radar')}</button>
+                <button class="btn-micro" id="btnRadarWindy" style="padding:4px 10px;font-size:12px;">${this._icon('cyclone', { size: 14, style: 'margin-right:4px;' })} Windy</button>
+                <a href="https://www.rainviewer.com/map.html?loc=52.3889,9.8297,9" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;margin-left:4px;">
+                  ${this._t('fullscreen')} &nearr;
+                </a>
+              </div>
+            </div>
                 ${this._icon('radar', { size: 16, style: 'margin-right:6px;' })} <span>Live Niederschlagsradar Hannover & Region</span>
               </div>
               <div style="display:flex;gap:6px;align-items:center;">
@@ -2744,14 +2890,14 @@ class VisionGlassDashboard extends HTMLElement {
         };
       }
     } else if (type === 'stats') {
-      title.innerHTML = `${this._icon('chart-bar', { size: 22, cls: 'icon-stats', style: 'margin-right:8px;' })} Statistiken & Verläufe`;
+      title.innerHTML = `${this._icon('chart-bar', { size: 22, cls: 'icon-stats', style: 'margin-right:8px;' })} ${this._t('stats_title')}`;
 
       const tab = this._statsTab || 'temperature';
       const selectedRoom = this._statsRoom || 'wohnzimmer';
 
       const roomSensorsConfig = {
         wohnzimmer: {
-          name: 'Wohnzimmer',
+          name: this._t('wohnzimmer'),
           climate_entity: 'climate.better_thermostat_wohnzimmer',
           light_entity: 'light.livingroom',
           temp_sensors: [
@@ -2767,7 +2913,7 @@ class VisionGlassDashboard extends HTMLElement {
           ]
         },
         arbeitszimmer: {
-          name: 'Arbeitszimmer',
+          name: this._t('arbeitszimmer'),
           climate_entity: 'climate.better_thermostat_arbeitszimmer',
           light_entity: 'light.light_studyroom_tomada',
           temp_sensors: [
@@ -2781,7 +2927,7 @@ class VisionGlassDashboard extends HTMLElement {
           ]
         },
         badezimmer: {
-          name: 'Badezimmer',
+          name: this._t('badezimmer'),
           climate_entity: 'climate.better_thermostat_badezimmer',
           light_entity: 'light.light_bathroom_tomada',
           temp_sensors: [
@@ -2794,7 +2940,7 @@ class VisionGlassDashboard extends HTMLElement {
           ]
         },
         kuche: {
-          name: 'Küche',
+          name: this._t('kuche'),
           climate_entity: 'climate.better_thermostat_kuche',
           light_entity: 'light.light_kitchen_tomada',
           temp_sensors: [
@@ -2808,7 +2954,7 @@ class VisionGlassDashboard extends HTMLElement {
           ]
         },
         schlafzimmer: {
-          name: 'Schlafzimmer',
+          name: this._t('schlafzimmer'),
           climate_entity: 'climate.better_thermostat_schlafzimmer',
           light_entity: 'light.schlafzimmerlicht',
           temp_sensors: [
@@ -2820,7 +2966,7 @@ class VisionGlassDashboard extends HTMLElement {
           ]
         },
         flur: {
-          name: 'Flur',
+          name: this._t('flur'),
           climate_entity: 'climate.better_thermostat_flur',
           light_entity: 'light.light_hallway_tomada',
           temp_sensors: [
@@ -2854,11 +3000,11 @@ class VisionGlassDashboard extends HTMLElement {
           series: seriesData,
           stateOverlay: {
             entity_id: currentRoomConf.climate_entity,
-            label: 'Heizung',
+            label: this._t('climate'),
             type: 'climate',
             activeColor: '#ef4444',
-            activeLabel: 'Heizung AKTIV',
-            idleLabel: 'Heizung AUS / Bereit'
+            activeLabel: this._t('heating_active'),
+            idleLabel: this._t('heating_idle')
           },
           width: 780,
           height: 320,
@@ -2884,15 +3030,15 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
               <div>
-                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Temperaturverlauf & Heizung</span>
+                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('temp_curve_heating')}</span>
                 <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
-                  Alle ${seriesData.length} Messstellen über 24h • Farbige Hinterlegung & Zeitleiste zeigen Heizphasen (AN/AUS)
+                  ${this._t('all_sensors_24h')}
                 </div>
               </div>
               <div style="text-align:right;">
                 <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isHeating ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isHeating ? 'rgba(239,68,68,0.3)' : 'var(--border-subtle)'};">
                   <span style="font-size:12.5px;font-weight:700;color:${isHeating ? '#ef4444' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
-                    ${isHeating ? this._icon('flame', { size: 13, color: '#ef4444' }) + ' Heizung: AN' : this._icon('motion-idle', { size: 13 }) + ' Heizung: AUS / Bereit'}
+                    ${isHeating ? this._icon('flame', { size: 13, color: '#ef4444' }) + ' ' + this._t('heating_active') : this._icon('motion-idle', { size: 13 }) + ' ' + this._t('heating_idle')}
                   </span>
                 </div>
                 <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
@@ -2940,11 +3086,11 @@ class VisionGlassDashboard extends HTMLElement {
           series: seriesData,
           stateOverlay: {
             entity_id: currentRoomConf.light_entity,
-            label: 'Licht',
+            label: this._t('lighting'),
             type: 'light',
             activeColor: '#f59e0b',
-            activeLabel: 'Licht AN',
-            idleLabel: 'Licht AUS'
+            activeLabel: this._t('light_active'),
+            idleLabel: this._t('light_idle')
           },
           width: 780,
           height: 320,
@@ -2970,15 +3116,15 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
               <div>
-                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Helligkeitsverlauf & Licht</span>
+                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('illum_curve_lighting')}</span>
                 <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
-                  24h Lux-Messkurve • Farbige Hinterlegung & Zeitleiste zeigen wann das Licht an war
+                  ${this._t('lux_curve_24h')}
                 </div>
               </div>
               <div style="text-align:right;">
                 <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isLightOn ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isLightOn ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'};">
                   <span style="font-size:12.5px;font-weight:700;color:${isLightOn ? '#f59e0b' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
-                    ${isLightOn ? this._icon('light', { size: 13, cls: 'icon-light' }) + ' Licht: AN' : this._icon('light', { size: 13 }) + ' Licht: AUS'}
+                    ${isLightOn ? this._icon('light', { size: 13, cls: 'icon-light' }) + ' ' + this._t('light_active') : this._icon('light', { size: 13 }) + ' ' + this._t('light_idle')}
                   </span>
                 </div>
                 <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
@@ -3011,17 +3157,17 @@ class VisionGlassDashboard extends HTMLElement {
         `;
       } else if (tab === 'occupancy_heating') {
         const roomsList = [
-          { name: 'Wohnzimmer', occ: 'binary_sensor.living_room_occupied', climate: 'climate.better_thermostat_wohnzimmer', pwr: 'sensor.wohnzimmer_better_thermostat_wohnzimmer_heizleistung' },
-          { name: 'Arbeitszimmer', occ: 'binary_sensor.studyroom_occupied', climate: 'climate.better_thermostat_arbeitszimmer', pwr: 'sensor.arbeitszimmer_better_thermostat_arbeitszimmer_heizleistung' },
-          { name: 'Badezimmer', occ: 'binary_sensor.bathroom_occupied', climate: 'climate.better_thermostat_badezimmer', pwr: 'sensor.badezimmer_better_thermostat_badezimmer_heizleistung' },
-          { name: 'Küche', occ: 'binary_sensor.kuche_occupied', climate: 'climate.better_thermostat_kuche', pwr: 'sensor.kuche_better_thermostat_kuche_heizleistung' },
-          { name: 'Schlafzimmer', occ: 'binary_sensor.bedroom_occupied', climate: 'climate.better_thermostat_schlafzimmer', pwr: 'sensor.schlafzimmer_better_thermostat_schlafzimmer_heizleistung' },
-          { name: 'Flur', occ: 'binary_sensor.hallway_occupied', climate: 'climate.better_thermostat_flur', pwr: 'sensor.flur_better_thermostat_flur_heizleistung' }
+          { name: this._t('wohnzimmer'), occ: 'binary_sensor.living_room_occupied', climate: 'climate.better_thermostat_wohnzimmer', pwr: 'sensor.wohnzimmer_better_thermostat_wohnzimmer_heizleistung' },
+          { name: this._t('arbeitszimmer'), occ: 'binary_sensor.studyroom_occupied', climate: 'climate.better_thermostat_arbeitszimmer', pwr: 'sensor.arbeitszimmer_better_thermostat_arbeitszimmer_heizleistung' },
+          { name: this._t('badezimmer'), occ: 'binary_sensor.bathroom_occupied', climate: 'climate.better_thermostat_badezimmer', pwr: 'sensor.badezimmer_better_thermostat_badezimmer_heizleistung' },
+          { name: this._t('kuche'), occ: 'binary_sensor.kuche_occupied', climate: 'climate.better_thermostat_kuche', pwr: 'sensor.kuche_better_thermostat_kuche_heizleistung' },
+          { name: this._t('schlafzimmer'), occ: 'binary_sensor.bedroom_occupied', climate: 'climate.better_thermostat_schlafzimmer', pwr: 'sensor.schlafzimmer_better_thermostat_schlafzimmer_heizleistung' },
+          { name: this._t('flur'), occ: 'binary_sensor.hallway_occupied', climate: 'climate.better_thermostat_flur', pwr: 'sensor.flur_better_thermostat_flur_heizleistung' }
         ];
 
         tabContent = `
           <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">
-            Live-Übersicht der YAML-Belegungshelfer und der Better Thermostat Heizaktivität.
+            ${this._t('live_occupancy_overview')}
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
             ${roomsList.map(r => {
@@ -3037,18 +3183,18 @@ class VisionGlassDashboard extends HTMLElement {
                   <div style="display:flex;justify-content:space-between;align-items:center;">
                     <span style="font-weight:700;font-size:15px;">${r.name}</span>
                     <span class="toggle-pill ${isOcc ? 'active-green' : ''}" style="cursor:default;">
-                      ${isOcc ? this._icon('motion', { size: 12, style: 'margin-right:4px;' }) + ' Belegt' : this._icon('motion-idle', { size: 12, style: 'margin-right:4px;' }) + ' Frei'}
+                      ${isOcc ? this._icon('motion', { size: 12, style: 'margin-right:4px;' }) + ' ' + this._t('occupied') : this._icon('motion-idle', { size: 12, style: 'margin-right:4px;' }) + ' ' + this._t('idle')}
                     </span>
                   </div>
                   <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-subtle);padding-top:8px;">
                     <div>
-                      <div style="font-size:12px;color:var(--text-secondary);">Thermostat Status</div>
+                      <div style="font-size:12px;color:var(--text-secondary);">${this._t('thermostat_status')}</div>
                       <div style="font-size:14px;font-weight:600;color:${isHeat ? 'var(--accent-amber)' : 'var(--text-primary)'};">
-                        ${isHeat ? this._icon('flame', { size: 14, color: '#f59e0b', style: 'margin-right:4px;' }) + ' Heizen aktiv' : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' Bereit / Eco'}
+                        ${isHeat ? this._icon('flame', { size: 14, color: '#f59e0b', style: 'margin-right:4px;' }) + ' ' + this._t('heating_active_desc') : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' ' + this._t('heating_ready_desc')}
                       </div>
                     </div>
                     <div style="text-align:right;">
-                      <div style="font-size:12px;color:var(--text-secondary);">Heizleistung</div>
+                      <div style="font-size:12px;color:var(--text-secondary);">${this._t('heating_power')}</div>
                       <div style="font-size:14px;font-weight:700;color:var(--accent);">${pwrVal.toFixed(4)} K/min</div>
                     </div>
                   </div>
@@ -3086,8 +3232,8 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
             <div style="display:flex;justify-content:space-between;align-items:center;">
               <div>
-                <span style="font-weight:700;font-size:16px;">Batterieverläufe (24h Entladung)</span>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Verlaufskurven wichtiger Batteriegeräte</div>
+                <span style="font-weight:700;font-size:16px;">${this._t('battery_curves_title')}</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${this._t('battery_curves_sub')}</div>
               </div>
               <div style="text-align:right;">
                 <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Status</span>
@@ -3121,10 +3267,10 @@ class VisionGlassDashboard extends HTMLElement {
         <div style="display:flex;flex-direction:column;gap:16px;">
           <!-- Category Tabs -->
           <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} Raumtemperaturen</button>
-            <button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} Helligkeit (Lux)</button>
-            <button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} Belegung & ${this._icon('flame', { size: 14, style: 'margin-right:4px;' })} Heizung</button>
-            <button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} Batteriekurven</button>
+            <button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} ${this._t('room_temperatures')}</button>
+            <button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} ${this._t('illuminance_lux')}</button>
+            <button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} ${this._t('occupancy_heating')}</button>
+            <button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} ${this._t('battery_curves')}</button>
           </div>
 
           <!-- Active Tab Content -->
@@ -3132,9 +3278,9 @@ class VisionGlassDashboard extends HTMLElement {
 
           <!-- Direct Link to Dashboard Statistics View -->
           <div style="border-top:1px solid var(--border-subtle);padding-top:14px;display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:12px;color:var(--text-secondary);">Detaillierte Langzeitanalyse & Zoom im Dashboard:</span>
+            <span style="font-size:12px;color:var(--text-secondary);">${this._t('detailed_stats_sub')}</span>
             <a href="/vision-glass/stats" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;" class="btn-micro">
-              <span>${this._icon('chart-bar', { size: 14, style: 'margin-right:6px;' })} Vollständige Statistiken öffnen</span>
+              <span>${this._icon('chart-bar', { size: 14, style: 'margin-right:6px;' })} ${this._t('open_full_stats')}</span>
               <span>&rsaquo;</span>
             </a>
           </div>
@@ -3199,8 +3345,8 @@ class VisionGlassDashboard extends HTMLElement {
           --glass-refraction:
             inset 0 1.5px 1px 0 #ffffff,
             inset 0 -1.5px 1.5px 0 rgba(15, 23, 42, 0.05),
-            inset 1.5px 0 1.5px 0 rgba(2, 132, 199, 0.18),
-            inset -1.5px 0 1.5px 0 rgba(139, 92, 246, 0.14);
+            inset 1.5px 0 1.5px 0 rgba(255, 255, 255, 0.85),
+            inset -1.5px 0 1.5px 0 rgba(15, 23, 42, 0.04);
         }
 
         .dashboard-root.theme-dark {
@@ -3224,8 +3370,8 @@ class VisionGlassDashboard extends HTMLElement {
             inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45),
             inset 0 0.5px 0.5px 0 rgba(255, 255, 255, 0.65),
             inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.25),
-            inset 1.5px 0 1.5px 0 rgba(56, 189, 248, 0.12),
-            inset -1.5px 0 1.5px 0 rgba(168, 85, 247, 0.10);
+            inset 1.5px 0 1.5px 0 rgba(255, 255, 255, 0.12),
+            inset -1.5px 0 1.5px 0 rgba(0, 0, 0, 0.18);
         }
 
         .dashboard-root {
@@ -3530,11 +3676,11 @@ class VisionGlassDashboard extends HTMLElement {
         .theme-light .sidebar-card::after {
           background: linear-gradient(115deg,
             transparent 0%,
-            transparent 28%,
-            rgba(255, 255, 255, 0.95) 45%,
-            rgba(56, 189, 248, 0.45) 50%,
-            rgba(168, 85, 247, 0.35) 54%,
-            transparent 68%);
+            transparent 32%,
+            rgba(15, 23, 42, 0.03) 42%,
+            rgba(15, 23, 42, 0.14) 50%,
+            rgba(15, 23, 42, 0.04) 58%,
+            transparent 70%);
           background-size: 250% 250%;
           background-position: -120% -120%;
         }
@@ -3719,6 +3865,55 @@ class VisionGlassDashboard extends HTMLElement {
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
         }
 
+        /* Sidebar items dynamic reflection sheen */
+        .sidebar-pill,
+        .sidebar-weather-box,
+        .sidebar-mini-pill,
+        .agenda-item {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .sidebar-pill::after,
+        .sidebar-weather-box::after,
+        .sidebar-mini-pill::after,
+        .agenda-item::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.28) 50%, transparent 65%);
+          background-size: 250% 250%;
+          background-position: -120% -120%;
+          pointer-events: none;
+          z-index: 2;
+          opacity: 0.6;
+          transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        .theme-light .sidebar-pill::after,
+        .theme-light .sidebar-weather-box::after,
+        .theme-light .sidebar-mini-pill::after,
+        .theme-light .agenda-item::after {
+          background: linear-gradient(115deg,
+            transparent 0%,
+            transparent 32%,
+            rgba(15, 23, 42, 0.03) 42%,
+            rgba(15, 23, 42, 0.12) 50%,
+            rgba(15, 23, 42, 0.04) 58%,
+            transparent 70%);
+          background-size: 250% 250%;
+          background-position: -120% -120%;
+        }
+
+        .sidebar-pill:hover::after,
+        .sidebar-weather-box:hover::after,
+        .sidebar-mini-pill:hover::after,
+        .agenda-item:hover::after {
+          background-position: 140% 140%;
+          opacity: 1;
+        }
+
         .sidebar-glance-bar {
           margin-top: auto;
           padding-top: 8px;
@@ -3804,11 +3999,11 @@ class VisionGlassDashboard extends HTMLElement {
         .theme-light .room-card::after {
           background: linear-gradient(115deg,
             transparent 0%,
-            transparent 28%,
-            rgba(255, 255, 255, 0.95) 45%,
-            rgba(56, 189, 248, 0.45) 50%,
-            rgba(168, 85, 247, 0.35) 54%,
-            transparent 68%);
+            transparent 32%,
+            rgba(15, 23, 42, 0.03) 42%,
+            rgba(15, 23, 42, 0.14) 50%,
+            rgba(15, 23, 42, 0.04) 58%,
+            transparent 70%);
           background-size: 250% 250%;
           background-position: -120% -120%;
         }
@@ -4076,18 +4271,18 @@ class VisionGlassDashboard extends HTMLElement {
           justify-content: center;
           cursor: pointer;
           position: relative;
-          background: rgba(255, 255, 255, 0.06);
-          border: 1px solid rgba(255, 255, 255, 0.12);
+          background: rgba(30, 41, 59, 0.82);
+          border: 1px solid rgba(255, 255, 255, 0.20);
           color: var(--text-primary);
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
-          transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, box-shadow 0.2s;
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3), 0 2px 6px rgba(0, 0, 0, 0.25);
+          transition: transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, box-shadow 0.2s, border-color 0.2s;
         }
 
         .dock-item:hover {
           transform: translateY(-4px) scale(1.14);
-          background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.25) 0%, rgba(56, 189, 248, 0.20) 100%);
-          border-color: rgba(255, 255, 255, 0.35);
-          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 18px rgba(0, 0, 0, 0.3), 0 0 14px rgba(56, 189, 248, 0.35);
+          background: rgba(45, 60, 85, 0.95);
+          border-color: rgba(56, 189, 248, 0.70);
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 18px rgba(0, 0, 0, 0.35), 0 0 16px rgba(56, 189, 248, 0.40);
         }
 
         .dock-item:active {
@@ -4095,15 +4290,19 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-dark .dock-item {
-          background: rgba(255, 255, 255, 0.08);
-          background-image: radial-gradient(circle at 50% 25%, rgba(255, 255, 255, 0.18) 0%, rgba(30, 41, 59, 0.85) 100%);
-          border: 1px solid rgba(255, 255, 255, 0.18);
+          background: rgba(30, 41, 59, 0.82);
+          border: 1px solid rgba(255, 255, 255, 0.20);
           box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.35), 0 2px 6px rgba(0, 0, 0, 0.25);
         }
 
+        .theme-dark .dock-item:hover {
+          background: rgba(45, 60, 85, 0.95);
+          border-color: rgba(56, 189, 248, 0.70);
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 18px rgba(0, 0, 0, 0.35), 0 0 16px rgba(56, 189, 248, 0.40);
+        }
+
         .theme-light .dock-item {
-          background: rgba(240, 246, 255, 0.95);
-          background-image: radial-gradient(circle at 50% 25%, #ffffff 0%, rgba(219, 234, 254, 0.95) 75%, rgba(191, 219, 254, 0.80) 100%);
+          background: #f0f6ff;
           border: 1.5px solid rgba(147, 197, 253, 0.85);
           color: #0f172a;
           box-shadow:
@@ -4113,12 +4312,12 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-light .dock-item:hover {
-          background-image: radial-gradient(circle at 50% 25%, #ffffff 0%, rgba(186, 230, 253, 1) 100%);
+          background: #e0f2fe;
           border-color: #0284c7;
           box-shadow:
             inset 0 1.5px 1px 0 #ffffff,
             0 6px 18px rgba(2, 132, 199, 0.35);
-          transform: translateY(-4px) scale(1.15);
+          transform: translateY(-4px) scale(1.14);
         }
 
         /* Modals */
@@ -4585,14 +4784,16 @@ class VisionGlassDashboard extends HTMLElement {
           filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35)) !important;
         }
 
-        /* Dock item icon transitions - eliminates Chromium compositor tile crosshair artifact */
+        /* Dock item icon transitions - eliminates Chromium & Firefox WebRender crosshair artifact */
         .dock-item .vg-icon {
           pointer-events: none;
-          transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-          will-change: transform;
+          transform: none !important;
+          filter: none !important;
+          transition: none !important;
         }
         .dock-item:hover .vg-icon {
-          transform: scale(1.18);
+          transform: none !important;
+          filter: none !important;
         }
 
       </style>
@@ -4621,8 +4822,6 @@ class VisionGlassDashboard extends HTMLElement {
             <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('lock_loading')}</div>
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
-            <button class="topbar-glass-btn" id="langToggleBtn" title="${this._t('lang_switch')}">${this._getLang().toUpperCase()}</button>
-            <button class="theme-toggle" id="themeToggleBtn" title="${this._isDaytime() ? this._t('day_mode') : this._t('night_mode')}">${this._isDaytime() ? this._icon('sun', { size: 18, cls: 'icon-sun' }) : this._icon('moon', { size: 18, cls: 'icon-moon' })}</button>
           </div>
         </div>
 
@@ -4771,11 +4970,6 @@ class VisionGlassDashboard extends HTMLElement {
     this._applyThemeClass();
 
     // Event Listeners
-    const themeBtn = this.shadowRoot.getElementById('themeToggleBtn');
-    if (themeBtn) themeBtn.addEventListener('click', () => this._toggleDayNight());
-    const langBtn = this.shadowRoot.getElementById('langToggleBtn');
-    if (langBtn) langBtn.addEventListener('click', () => this._toggleLang());
-
     // Sidebar Weather Card Click -> Open Weather Modal
     const swEl = this.shadowRoot.getElementById('sidebarWeather');
     if (swEl) swEl.addEventListener('click', () => this._openModal('weather'));
