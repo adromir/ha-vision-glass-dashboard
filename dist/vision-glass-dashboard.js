@@ -1168,7 +1168,7 @@ class VisionGlassDashboard extends HTMLElement {
         weatherStateEl.textContent = this._translateWeather(w.state);
       }
       if (weatherIconEl) {
-        weatherIconEl.innerHTML = this._getWeatherIcon(w.state, 44, 'icon-weather');
+        weatherIconEl.innerHTML = this._getWeatherIcon(w.state, 30, 'icon-weather');
       }
       if (chipWeather && temp !== undefined) {
         chipWeather.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._getWeatherIcon(w.state, 15, 'icon-weather')} Hannover ${temp}°C`;
@@ -1367,7 +1367,7 @@ class VisionGlassDashboard extends HTMLElement {
         tVal = this._hass.states[room.temp_entity].state;
       }
       if (tVal && !isNaN(parseFloat(tVal))) {
-        tempEl.innerHTML = `${this._icon('thermometer', { size: 13, cls: 'icon-temp', style: 'margin-right:4px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
+        tempEl.innerHTML = `${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
         tempEl.style.display = 'inline-flex';
       } else {
         tempEl.style.display = 'none';
@@ -1380,7 +1380,7 @@ class VisionGlassDashboard extends HTMLElement {
       const hEntity = room.humidity_entity || `sensor.prasenzmelder_${room.id}_humidity` || `sensor.ir_${room.id}_humidity`;
       const hState = this._hass.states[hEntity];
       if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
-        humEl.innerHTML = `${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:4px;' })} ${Math.round(parseFloat(hState.state))}%`;
+        humEl.innerHTML = `${this._icon('droplet', { size: 11, cls: 'icon-humidity', style: 'margin-right:3px;' })} ${Math.round(parseFloat(hState.state))}%`;
         humEl.style.display = 'inline-flex';
       } else {
         humEl.style.display = 'none';
@@ -1393,7 +1393,7 @@ class VisionGlassDashboard extends HTMLElement {
       const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${room.id}_illuminance` || `sensor.bewegungsmelder_${room.id}_illuminance`;
       const luxState = this._hass.states[luxEntity];
       if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
-        luxEl.innerHTML = `${this._icon('lux', { size: 13, cls: 'icon-lux', style: 'margin-right:4px;' })} ${Math.round(parseFloat(luxState.state))} lx`;
+        luxEl.innerHTML = `${this._icon('lux', { size: 11, cls: 'icon-lux', style: 'margin-right:3px;' })} ${Math.round(parseFloat(luxState.state))} lx`;
         luxEl.style.display = 'inline-flex';
       } else {
         luxEl.style.display = 'none';
@@ -1452,7 +1452,7 @@ class VisionGlassDashboard extends HTMLElement {
     if (lockBtn && room.lock_entity && this._hass.states[room.lock_entity]) {
       const isLocked = this._hass.states[room.lock_entity].state === 'locked';
       lockBtn.classList.toggle('active-green', isLocked);
-      lockBtn.innerHTML = isLocked ? this._icon('lock-closed', { size: 18, cls: 'icon-security' }) : this._icon('lock-open', { size: 18, cls: 'icon-security' });
+      lockBtn.innerHTML = isLocked ? this._icon('lock-closed', { size: 16, cls: 'icon-security' }) : this._icon('lock-open', { size: 16, cls: 'icon-security' });
     }
 
     // Switch
@@ -2660,8 +2660,8 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .dashboard-root {
-          min-height: calc(100vh - 64px);
-          padding: 32px 36px 120px 36px;
+          min-height: calc(100vh - 56px);
+          padding: 10px 24px 62px 24px;
           box-sizing: border-box;
           position: relative;
           color: var(--text-primary);
@@ -2673,26 +2673,26 @@ class VisionGlassDashboard extends HTMLElement {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          margin-bottom: 24px;
+          margin-bottom: 10px;
           flex-wrap: wrap;
-          gap: 16px;
+          gap: 10px;
         }
 
         .date-title {
-          font-size: 26px;
+          font-size: 20px;
           font-weight: 700;
-          letter-spacing: -0.5px;
+          letter-spacing: -0.4px;
         }
 
         .name-day {
-          font-size: 13px;
+          font-size: 11.5px;
           color: var(--text-secondary);
-          margin-top: 2px;
+          margin-top: 1px;
         }
 
         .chips-container {
           display: flex;
-          gap: 10px;
+          gap: 7px;
           flex-wrap: wrap;
           align-items: center;
         }
@@ -2700,14 +2700,14 @@ class VisionGlassDashboard extends HTMLElement {
         .chip {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
+          gap: 5px;
           background: var(--bg-surface);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          padding: 6px 14px;
-          font-size: 13px;
+          padding: 4px 10px;
+          font-size: 11.5px;
           font-weight: 500;
           cursor: pointer;
           box-shadow: var(--shadow-ambient);
@@ -2719,8 +2719,8 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .chip-avatar {
-          width: 22px;
-          height: 22px;
+          width: 20px;
+          height: 20px;
           border-radius: 50%;
           object-fit: cover;
           flex-shrink: 0;
@@ -2738,7 +2738,7 @@ class VisionGlassDashboard extends HTMLElement {
           align-items: center;
           justify-content: center;
           font-weight: 700;
-          font-size: 11px;
+          font-size: 10px;
           color: #fff;
           line-height: 1;
         }
@@ -2747,13 +2747,13 @@ class VisionGlassDashboard extends HTMLElement {
           margin-right: 2px;
         }
         .chip-status-text {
-          font-size: 12px;
+          font-size: 11px;
           color: var(--text-secondary);
         }
 
         .chip-dot {
-          width: 8px;
-          height: 8px;
+          width: 7px;
+          height: 7px;
           border-radius: 50%;
         }
         .dot-amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
@@ -2765,13 +2765,13 @@ class VisionGlassDashboard extends HTMLElement {
           background: var(--bg-surface);
           border: 1px solid var(--border-glass);
           border-radius: 50%;
-          width: 36px;
-          height: 36px;
+          width: 30px;
+          height: 30px;
           display: inline-flex;
           align-items: center;
           justify-content: center;
           cursor: pointer;
-          font-size: 16px;
+          font-size: 14px;
           box-shadow: var(--shadow-ambient);
           transition: transform 0.2s;
         }
@@ -2782,10 +2782,10 @@ class VisionGlassDashboard extends HTMLElement {
         /* Layout Grid */
         .dashboard-body {
           display: grid;
-          grid-template-columns: 290px 1fr;
-          gap: 24px;
+          grid-template-columns: 260px 1fr;
+          gap: 12px;
         }
-        @media (max-width: 1024px) {
+        @media (max-width: 980px) {
           .dashboard-body { grid-template-columns: 1fr; }
         }
 
@@ -2795,12 +2795,12 @@ class VisionGlassDashboard extends HTMLElement {
           backdrop-filter: blur(30px);
           -webkit-backdrop-filter: blur(30px);
           border: 1px solid var(--border-glass);
-          border-radius: 28px;
-          padding: 24px;
+          border-radius: 20px;
+          padding: 14px 16px;
           box-shadow: var(--shadow-ambient);
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 10px;
           transition: all 0.3s ease;
         }
 
@@ -2816,11 +2816,11 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .sidebar-pill {
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 700;
           text-transform: uppercase;
           letter-spacing: 0.8px;
-          padding: 4px 10px;
+          padding: 3px 8px;
           border-radius: 9999px;
           background: rgba(255, 255, 255, 0.12);
           border: 1px solid var(--border-subtle);
@@ -2836,13 +2836,13 @@ class VisionGlassDashboard extends HTMLElement {
         .sidebar-clock-wrap {
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 2px;
         }
 
         .clock-display {
-          font-size: 46px;
+          font-size: 36px;
           font-weight: 800;
-          letter-spacing: -1.5px;
+          letter-spacing: -1px;
           line-height: 1;
           color: var(--text-primary);
           font-feature-settings: "tnum";
@@ -2853,7 +2853,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .sidebar-date-sub {
-          font-size: 13.5px;
+          font-size: 12px;
           font-weight: 600;
           color: var(--text-secondary);
         }
@@ -2865,10 +2865,10 @@ class VisionGlassDashboard extends HTMLElement {
         .sidebar-weather-box {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          padding: 16px 18px;
+          gap: 6px;
+          padding: 8px 12px;
           background: rgba(255, 255, 255, 0.06);
-          border-radius: 20px;
+          border-radius: 14px;
           border: 1px solid var(--border-subtle);
           cursor: pointer;
           transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
@@ -2898,7 +2898,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .weather-temp {
-          font-size: 28px;
+          font-size: 24px;
           font-weight: 800;
           letter-spacing: -0.5px;
         }
@@ -2909,7 +2909,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         .weather-cond {
           color: var(--text-secondary);
-          font-size: 13px;
+          font-size: 11.5px;
           font-weight: 600;
           margin-top: 1px;
         }
@@ -2919,8 +2919,8 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .weather-icon-glow {
-          font-size: 40px;
-          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+          font-size: 28px;
+          filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.25));
           transition: transform 0.3s ease;
         }
 
@@ -2930,14 +2930,14 @@ class VisionGlassDashboard extends HTMLElement {
 
         .sidebar-weather-mini-row {
           display: flex;
-          gap: 6px;
+          gap: 4px;
           flex-wrap: wrap;
         }
 
         .sidebar-mini-pill {
-          font-size: 11px;
+          font-size: 10px;
           font-weight: 600;
-          padding: 3px 8px;
+          padding: 2px 6px;
           border-radius: 9999px;
           background: rgba(255, 255, 255, 0.1);
           border: 1px solid var(--border-subtle);
@@ -2954,12 +2954,12 @@ class VisionGlassDashboard extends HTMLElement {
         .agenda-block {
           display: flex;
           flex-direction: column;
-          gap: 10px;
-          margin-top: 4px;
+          gap: 6px;
+          margin-top: 2px;
         }
 
         .agenda-title {
-          font-size: 11.5px;
+          font-size: 10.5px;
           text-transform: uppercase;
           letter-spacing: 0.8px;
           color: var(--text-secondary);
@@ -2973,11 +2973,11 @@ class VisionGlassDashboard extends HTMLElement {
         .agenda-item {
           display: flex;
           align-items: center;
-          gap: 10px;
-          font-size: 13px;
+          gap: 8px;
+          font-size: 11.5px;
           font-weight: 500;
-          padding: 8px 12px;
-          border-radius: 14px;
+          padding: 5px 9px;
+          border-radius: 10px;
           background: rgba(255, 255, 255, 0.05);
           border: 1px solid var(--border-subtle);
           transition: background 0.2s;
@@ -2992,10 +2992,10 @@ class VisionGlassDashboard extends HTMLElement {
 
         .sidebar-glance-bar {
           margin-top: auto;
-          padding-top: 12px;
+          padding-top: 8px;
           border-top: 1px solid var(--border-subtle);
           display: flex;
-          gap: 8px;
+          gap: 6px;
           flex-wrap: wrap;
         }
 
@@ -3003,9 +3003,9 @@ class VisionGlassDashboard extends HTMLElement {
         .rooms-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
+          gap: 10px;
         }
-        @media (max-width: 1280px) {
+        @media (max-width: 1080px) {
           .rooms-grid { grid-template-columns: repeat(2, 1fr); }
         }
         @media (max-width: 680px) {
@@ -3014,8 +3014,8 @@ class VisionGlassDashboard extends HTMLElement {
 
         .room-card {
           position: relative;
-          min-height: 185px;
-          border-radius: 24px;
+          min-height: 122px;
+          border-radius: 18px;
           overflow: hidden;
           background: var(--bg-card);
           backdrop-filter: blur(25px);
@@ -3025,22 +3025,22 @@ class VisionGlassDashboard extends HTMLElement {
           display: flex;
           flex-direction: column;
           justify-content: space-between;
-          padding: 20px;
+          padding: 10px 14px;
           cursor: pointer;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
         }
         .room-card:hover {
-          transform: translateY(-3px);
-          box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+          transform: translateY(-2px);
+          box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
         }
         .theme-light .room-card {
           background: rgba(255, 255, 255, 0.85);
           border-color: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), inset 0 1px 1px #ffffff;
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), inset 0 1px 1px #ffffff;
         }
         .theme-light .room-card:hover {
           background: rgba(255, 255, 255, 0.94);
-          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
+          box-shadow: 0 14px 35px rgba(15, 23, 42, 0.14);
         }
 
         .room-bg-image {
@@ -3066,17 +3066,17 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .room-name {
-          font-size: 18px;
+          font-size: 15px;
           font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 6px;
+          gap: 4px;
         }
 
         .room-sub {
-          font-size: 12px;
+          font-size: 11px;
           color: var(--text-secondary);
-          margin-top: 3px;
+          margin-top: 1px;
         }
 
         /* Environmental Badges (Temp, Humidity, Lux) */
@@ -3084,10 +3084,10 @@ class VisionGlassDashboard extends HTMLElement {
           position: relative;
           z-index: 2;
           display: flex;
-          gap: 6px;
+          gap: 4px;
           flex-wrap: wrap;
           align-items: center;
-          margin: 10px 0 14px 0;
+          margin: 4px 0 6px 0;
         }
 
         .env-pill {
@@ -3096,13 +3096,13 @@ class VisionGlassDashboard extends HTMLElement {
           -webkit-backdrop-filter: blur(8px);
           border: 1px solid var(--border-subtle);
           border-radius: 9999px;
-          padding: 3px 9px;
-          font-size: 11.5px;
+          padding: 2px 7px;
+          font-size: 10.5px;
           font-weight: 600;
           color: var(--text-primary);
           display: inline-flex;
           align-items: center;
-          gap: 4px;
+          gap: 3px;
         }
 
         .theme-light .env-pill {
@@ -3119,18 +3119,18 @@ class VisionGlassDashboard extends HTMLElement {
           justify-content: space-between;
           align-items: center;
           margin-top: auto;
-          gap: 10px;
+          gap: 6px;
         }
 
         .room-actions {
           display: flex;
-          gap: 10px;
+          gap: 6px;
           align-items: center;
         }
 
         .action-circle {
-          width: 38px;
-          height: 38px;
+          width: 32px;
+          height: 32px;
           border-radius: 50%;
           background: rgba(255, 255, 255, 0.12);
           backdrop-filter: blur(12px);
@@ -3138,7 +3138,7 @@ class VisionGlassDashboard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 16px;
+          font-size: 14px;
           cursor: pointer;
           transition: all 0.2s;
           user-select: none;
@@ -3178,7 +3178,7 @@ class VisionGlassDashboard extends HTMLElement {
           -webkit-backdrop-filter: blur(12px);
           border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          padding: 2px 4px;
+          padding: 1px 3px;
           gap: 2px;
           box-shadow: var(--shadow-ambient);
           user-select: none;
@@ -3191,13 +3191,13 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .quick-step-btn {
-          width: 28px;
-          height: 28px;
+          width: 22px;
+          height: 22px;
           border-radius: 50%;
           border: none;
           background: rgba(255, 255, 255, 0.18);
           color: var(--text-primary);
-          font-size: 16px;
+          font-size: 13px;
           font-weight: 700;
           display: flex;
           align-items: center;
@@ -3222,10 +3222,10 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .quick-step-val {
-          font-size: 13px;
+          font-size: 11.5px;
           font-weight: 700;
-          padding: 0 6px;
-          min-width: 36px;
+          padding: 0 4px;
+          min-width: 30px;
           text-align: center;
           color: var(--text-primary);
         }
@@ -3251,7 +3251,7 @@ class VisionGlassDashboard extends HTMLElement {
         /* Floating Dock */
         .dock-container {
           position: fixed;
-          bottom: 24px;
+          bottom: 12px;
           left: 50%;
           transform: translateX(-50%);
           background: var(--dock-bg);
@@ -3259,28 +3259,28 @@ class VisionGlassDashboard extends HTMLElement {
           -webkit-backdrop-filter: blur(28px) saturate(180%);
           border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          padding: 8px 18px;
+          padding: 4px 12px;
           display: flex;
-          gap: 14px;
-          box-shadow: 0 20px 45px rgba(0, 0, 0, 0.25);
+          gap: 8px;
+          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
           z-index: 100;
         }
 
         .dock-item {
-          width: 44px;
-          height: 44px;
+          width: 38px;
+          height: 38px;
           border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 20px;
+          font-size: 18px;
           cursor: pointer;
           transition: transform 0.2s, background 0.2s;
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid transparent;
         }
         .dock-item:hover {
-          transform: translateY(-4px) scale(1.15);
+          transform: translateY(-3px) scale(1.12);
           background: rgba(255, 255, 255, 0.22);
           border-color: var(--border-glass);
         }
@@ -3643,7 +3643,7 @@ class VisionGlassDashboard extends HTMLElement {
                   <div class="weather-temp" id="weatherTemp">--°C</div>
                   <div class="weather-cond" id="weatherCondition">Laden...</div>
                 </div>
-                <div class="weather-icon-glow" id="weatherIcon">${this._icon('weather-partlycloudy', { size: 44, cls: 'icon-weather' })}</div>
+                <div class="weather-icon-glow" id="weatherIcon">${this._icon('weather-partlycloudy', { size: 30, cls: 'icon-weather' })}</div>
               </div>
               <div class="sidebar-weather-mini-row" id="sidebarWeatherMini">
                 <span class="sidebar-mini-pill" id="sidebarMiniHum">${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:3px;' })} --%</span>
@@ -3707,27 +3707,27 @@ class VisionGlassDashboard extends HTMLElement {
                     </div>
                   </div>
 
-                  <!-- Room Environmental Readings (Temp, Humidity, Illuminance) -->
+                  <!-- Room Environmental Readings (Temp, Humidity, Lux) -->
                   <div class="room-env-bar">
-                    <span class="env-pill env-temp">${this._icon('thermometer', { size: 13, cls: 'icon-temp', style: 'margin-right:4px;' })} ${initTemp}</span>
-                    <span class="env-pill env-humidity" style="${initHum ? 'display:inline-flex;' : 'display:none;'}">${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:4px;' })} ${initHum || '--%'}</span>
-                    <span class="env-pill env-lux" style="${initLux ? 'display:inline-flex;' : 'display:none;'}">${this._icon('lux', { size: 13, cls: 'icon-lux', style: 'margin-right:4px;' })} ${initLux || '-- lx'}</span>
+                    <span class="env-pill env-temp">${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${initTemp}</span>
+                    <span class="env-pill env-humidity" style="${initHum ? 'display:inline-flex;' : 'display:none;'}">${this._icon('droplet', { size: 11, cls: 'icon-humidity', style: 'margin-right:3px;' })} ${initHum || '--%'}</span>
+                    <span class="env-pill env-lux" style="${initLux ? 'display:inline-flex;' : 'display:none;'}">${this._icon('lux', { size: 11, cls: 'icon-lux', style: 'margin-right:3px;' })} ${initLux || '-- lx'}</span>
                   </div>
 
                   <!-- Bottom Row: Actions & Heating Quick Stepper -->
                   <div class="room-bottom-row">
                     <div class="room-actions">
-                      ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">${this._icon('light', { size: 18, cls: 'icon-light' })}</div>` : ''}
-                      ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 18, cls: 'icon-climate' })}</div>` : ''}
-                      ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">${this._icon('music', { size: 18, cls: 'icon-media' })}</div>` : ''}
-                      ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 18, cls: 'icon-security' })}</div>` : ''}
+                      ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
+                      ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
+                      ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
+                      ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
                     </div>
 
                     ${room.climate_entity ? `
                       <div class="quick-climate-stepper" title="Zieltemperatur anpassen">
-                        <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 12 })}</button>
+                        <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 11 })}</button>
                         <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
-                        <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 12 })}</button>
+                        <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 11 })}</button>
                       </div>
                     ` : ''}
                   </div>
@@ -3739,14 +3739,14 @@ class VisionGlassDashboard extends HTMLElement {
 
         <!-- Floating Glass Dock -->
         <div class="dock-container">
-          <div class="dock-item" id="dockLighting" title="Beleuchtung">${this._icon('light', { size: 22, cls: 'icon-light' })}</div>
-          <div class="dock-item" id="dockClimate" title="Heizung & Schnellregler">${this._icon('climate', { size: 22, cls: 'icon-climate' })}</div>
-          <div class="dock-item" id="dockStats" title="Statistiken & Verläufe">${this._icon('chart-bar', { size: 22, cls: 'icon-stats' })}</div>
-          <div class="dock-item" id="dockSecurity" title="Sicherheit & Wohnungsschloss">${this._icon('lock-closed', { size: 22, cls: 'icon-security' })}</div>
-          <div class="dock-item" id="dockAlarmo" title="Alarmanlage (Alarmo)">${this._icon('shield', { size: 22, cls: 'icon-alarmo' })}</div>
-          <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">${this._icon('plug', { size: 22, cls: 'icon-switch' })}</div>
-          <div class="dock-item" id="dockBattery" title="Batteriestatus & Wartung">${this._icon('battery-full', { size: 22, cls: 'icon-battery' })}</div>
-          <div class="dock-item" id="dockWeather" title="Wetter, Vorhersage & Radar">${this._icon('weather-partlycloudy', { size: 22, cls: 'icon-weather' })}</div>
+          <div class="dock-item" id="dockLighting" title="Beleuchtung">${this._icon('light', { size: 19, cls: 'icon-light' })}</div>
+          <div class="dock-item" id="dockClimate" title="Heizung & Schnellregler">${this._icon('climate', { size: 19, cls: 'icon-climate' })}</div>
+          <div class="dock-item" id="dockStats" title="Statistiken & Verläufe">${this._icon('chart-bar', { size: 19, cls: 'icon-stats' })}</div>
+          <div class="dock-item" id="dockSecurity" title="Sicherheit & Wohnungsschloss">${this._icon('lock-closed', { size: 19, cls: 'icon-security' })}</div>
+          <div class="dock-item" id="dockAlarmo" title="Alarmanlage (Alarmo)">${this._icon('shield', { size: 19, cls: 'icon-alarmo' })}</div>
+          <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">${this._icon('plug', { size: 19, cls: 'icon-switch' })}</div>
+          <div class="dock-item" id="dockBattery" title="Batteriestatus & Wartung">${this._icon('battery-full', { size: 19, cls: 'icon-battery' })}</div>
+          <div class="dock-item" id="dockWeather" title="Wetter, Vorhersage & Radar">${this._icon('weather-partlycloudy', { size: 19, cls: 'icon-weather' })}</div>
         </div>
 
         <!-- Popup Modal Container -->
