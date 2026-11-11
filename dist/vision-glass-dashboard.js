@@ -408,7 +408,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         ${otherSwitches.length > 0 ? `
           <div style="font-size:14px;font-weight:700;margin-top:8px;">Weitere Geräte & Schalter in diesem Raum (${otherSwitches.length})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;max-height:220px;overflow-y:auto;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${otherSwitches.map(s => {
               const isOn = s.state && s.state.state === 'on';
               const name = (s.state && s.state.attributes.friendly_name) || s.id;
@@ -429,7 +429,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         ${otherSensors.length > 0 ? `
           <div style="font-size:14px;font-weight:700;margin-top:8px;">Messwerte & Sensoren (${otherSensors.length})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;max-height:160px;overflow-y:auto;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">
             ${otherSensors.slice(0, 16).map(s => {
               const name = (s.state && s.state.attributes.friendly_name) || s.id;
               const val = s.state ? s.state.state : '--';
@@ -890,7 +890,7 @@ class VisionGlassDashboard extends HTMLElement {
       }
 
       body.innerHTML = `
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px;max-height:65vh;overflow-y:auto;padding-right:4px;">
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:14px;">
           ${thermostats.map((t, idx) => {
             const s = this._hass.states[t.id];
             const cur = s && s.attributes.current_temperature ? s.attributes.current_temperature : (this._hass.states[t.tempSensor] ? this._hass.states[t.tempSensor].state : '--');
@@ -1231,7 +1231,7 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <!-- Device List -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;max-height:55vh;overflow-y:auto;padding-right:4px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${displayedDevices.map(d => {
               let color = '#10b981';
               let icon = '🔋';
@@ -1709,14 +1709,15 @@ class VisionGlassDashboard extends HTMLElement {
         .modal-overlay {
           position: fixed;
           inset: 0;
-          background: rgba(0, 0, 0, 0.45);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
+          background: rgba(0, 0, 0, 0.5);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
           display: flex;
           align-items: center;
           justify-content: center;
           z-index: 1000;
-          padding: 20px;
+          padding: 24px;
+          overscroll-behavior: contain;
         }
         .modal-overlay.hidden { display: none; }
 
@@ -1727,14 +1728,13 @@ class VisionGlassDashboard extends HTMLElement {
           border: 1px solid var(--border-glass);
           border-radius: 28px;
           width: 100%;
-          max-width: 680px;
+          max-width: 720px;
           max-height: 85vh;
-          overflow-y: auto;
-          padding: 28px;
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          overflow: hidden;
+          overscroll-behavior: contain;
         }
 
         .modal-header {
@@ -1742,7 +1742,9 @@ class VisionGlassDashboard extends HTMLElement {
           justify-content: space-between;
           align-items: center;
           border-bottom: 1px solid var(--border-subtle);
-          padding-bottom: 14px;
+          padding: 20px 28px;
+          flex-shrink: 0;
+          background: rgba(255, 255, 255, 0.02);
         }
         .modal-title {
           font-size: 20px;
@@ -1752,14 +1754,44 @@ class VisionGlassDashboard extends HTMLElement {
           background: rgba(255, 255, 255, 0.12);
           border: 1px solid var(--border-glass);
           border-radius: 50%;
-          width: 32px;
-          height: 32px;
+          width: 34px;
+          height: 34px;
           cursor: pointer;
-          font-size: 16px;
+          font-size: 18px;
           color: var(--text-primary);
           display: flex;
           align-items: center;
           justify-content: center;
+          transition: background 0.2s ease, transform 0.15s ease;
+        }
+        .close-btn:hover {
+          background: rgba(255, 255, 255, 0.22);
+          transform: scale(1.08);
+        }
+
+        .modal-body {
+          padding: 24px 28px;
+          overflow-y: auto;
+          overscroll-behavior: contain;
+          -webkit-overflow-scrolling: touch;
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+
+        .modal-body::-webkit-scrollbar {
+          width: 6px;
+        }
+        .modal-body::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .modal-body::-webkit-scrollbar-thumb {
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 4px;
+        }
+        .modal-body::-webkit-scrollbar-thumb:hover {
+          background: rgba(255, 255, 255, 0.38);
         }
 
         .control-row {
