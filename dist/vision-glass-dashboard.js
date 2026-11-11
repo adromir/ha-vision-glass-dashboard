@@ -2814,38 +2814,71 @@ class VisionGlassDashboard extends HTMLElement {
           background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%),
                       radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.65) 0%, transparent 50%),
                       linear-gradient(135deg, #cbe3f7 0%, #dbeafe 30%, #eef5ff 65%, #cde2f8 100%);
-          --bg-surface: rgba(255, 255, 255, 0.68);
-          --bg-surface-hover: rgba(255, 255, 255, 0.88);
-          --bg-card: rgba(255, 255, 255, 0.60);
-          --border-glass: rgba(255, 255, 255, 0.85);
-          --border-subtle: rgba(255, 255, 255, 0.55);
+          --bg-surface: rgba(255, 255, 255, 0.72);
+          --bg-surface-hover: rgba(255, 255, 255, 0.90);
+          --bg-card: rgba(255, 255, 255, 0.65);
+          --border-glass: rgba(255, 255, 255, 0.92);
+          --border-subtle: rgba(255, 255, 255, 0.60);
           --text-primary: #0f172a;
           --text-secondary: #475569;
           --accent: #0284c7;
           --accent-amber: #ea580c;
           --accent-green: #10b981;
-          --dock-bg: rgba(255, 255, 255, 0.70);
-          --shadow-ambient: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
-          --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
+          --dock-bg: rgba(255, 255, 255, 0.75);
+          --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.09), 0 2px 6px rgba(15, 23, 42, 0.04);
+          --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.75) 0%, rgba(255,255,255,0.45) 100%);
+          --glass-refraction:
+            inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.95),
+            inset 0 0.5px 0.5px 0 #ffffff,
+            inset 0 -1px 1px 0 rgba(15, 23, 42, 0.05),
+            inset 1.5px 0 1.5px 0 rgba(56, 189, 248, 0.16),
+            inset -1.5px 0 1.5px 0 rgba(168, 85, 247, 0.10);
+          --card-ripple-pattern:
+            repeating-linear-gradient(90deg,
+              rgba(255, 255, 255, 0.35) 0px,
+              rgba(255, 255, 255, 0.60) 1.5px,
+              rgba(255, 255, 255, 0.15) 3px,
+              transparent 4.5px,
+              transparent 7px),
+            linear-gradient(135deg,
+              rgba(255, 255, 255, 0.85) 0%,
+              rgba(255, 255, 255, 0.65) 100%);
         }
 
         .dashboard-root.theme-dark {
-          background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
-                      radial-gradient(circle at 15% 85%, rgba(30, 58, 138, 0.20) 0%, transparent 50%),
-                      linear-gradient(135deg, #090e18 0%, #101828 35%, #182338 70%, #0c121e 100%);
+          background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.14) 0%, transparent 45%),
+                      radial-gradient(circle at 15% 85%, rgba(30, 58, 138, 0.22) 0%, transparent 50%),
+                      linear-gradient(135deg, #090e18 0%, #0f172a 35%, #162032 70%, #0a101b 100%);
           --bg-surface: rgba(24, 32, 48, 0.70);
           --bg-surface-hover: rgba(30, 41, 59, 0.85);
-          --bg-card: rgba(20, 27, 42, 0.65);
-          --border-glass: rgba(255, 255, 255, 0.12);
+          --bg-card: rgba(18, 25, 38, 0.62);
+          --border-glass: rgba(255, 255, 255, 0.18);
           --border-subtle: rgba(255, 255, 255, 0.08);
           --text-primary: #f8fafc;
           --text-secondary: #94a3b8;
           --accent: #38bdf8;
           --accent-amber: #f59e0b;
           --accent-green: #10b981;
-          --dock-bg: rgba(18, 24, 38, 0.75);
-          --shadow-ambient: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+          --dock-bg: rgba(16, 22, 34, 0.72);
+          --shadow-ambient: 0 16px 36px rgba(0, 0, 0, 0.38);
           --card-overlay: linear-gradient(180deg, rgba(20,27,42,0.7) 0%, rgba(12,16,24,0.5) 100%);
+          --glass-refraction:
+            inset 0 1.5px 1px 0 rgba(255, 255, 255, 0.45),
+            inset 0 0.5px 0.5px 0 rgba(255, 255, 255, 0.65),
+            inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.25),
+            inset 1.5px 0 1.5px 0 rgba(56, 189, 248, 0.12),
+            inset -1.5px 0 1.5px 0 rgba(168, 85, 247, 0.10);
+          --card-ripple-pattern:
+            repeating-linear-gradient(90deg,
+              rgba(255, 255, 255, 0.015) 0px,
+              rgba(255, 255, 255, 0.038) 1.5px,
+              rgba(255, 255, 255, 0.005) 3px,
+              transparent 4.5px,
+              transparent 7px),
+            linear-gradient(135deg,
+              rgba(255, 255, 255, 0.12) 0%,
+              rgba(255, 255, 255, 0.02) 40%,
+              rgba(255, 255, 255, 0.06) 100%);
         }
 
         .dashboard-root {
@@ -2853,12 +2886,125 @@ class VisionGlassDashboard extends HTMLElement {
           padding: 10px 24px 62px 24px;
           box-sizing: border-box;
           position: relative;
+          overflow: hidden;
           color: var(--text-primary);
           transition: background 0.5s ease, color 0.3s ease;
         }
 
+        /* Animated Liquid Ambient Fluid Backdrop */
+        .liquid-backdrop {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+          pointer-events: none;
+          z-index: 0;
+          border-radius: inherit;
+        }
+
+        .liquid-orb {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(85px);
+          will-change: transform, opacity;
+          transform: translate3d(0, 0, 0);
+          opacity: 0.38;
+        }
+
+        .theme-dark .liquid-orb-1 {
+          width: 540px;
+          height: 540px;
+          background: radial-gradient(circle, #0284c7 0%, #0369a1 40%, transparent 70%);
+          top: -80px;
+          left: 18%;
+          animation: liquidDrift1 26s ease-in-out infinite alternate;
+        }
+        .theme-dark .liquid-orb-2 {
+          width: 480px;
+          height: 480px;
+          background: radial-gradient(circle, #6366f1 0%, #4338ca 45%, transparent 70%);
+          bottom: 5%;
+          right: 12%;
+          animation: liquidDrift2 32s ease-in-out infinite alternate;
+        }
+        .theme-dark .liquid-orb-3 {
+          width: 440px;
+          height: 440px;
+          background: radial-gradient(circle, #0d9488 0%, #0f766e 40%, transparent 70%);
+          bottom: 20%;
+          left: 6%;
+          animation: liquidDrift3 28s ease-in-out infinite alternate;
+        }
+        .theme-dark .liquid-orb-4 {
+          width: 380px;
+          height: 380px;
+          background: radial-gradient(circle, #38bdf8 0%, #0284c7 50%, transparent 70%);
+          top: 35%;
+          right: 28%;
+          animation: liquidDrift4 24s ease-in-out infinite alternate;
+        }
+
+        .theme-light .liquid-orb-1 {
+          width: 560px;
+          height: 560px;
+          background: radial-gradient(circle, #38bdf8 0%, #7dd3fc 45%, transparent 70%);
+          top: -60px;
+          left: 15%;
+          opacity: 0.45;
+          animation: liquidDrift1 26s ease-in-out infinite alternate;
+        }
+        .theme-light .liquid-orb-2 {
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, #c084fc 0%, #e879f9 40%, transparent 70%);
+          bottom: 5%;
+          right: 10%;
+          opacity: 0.35;
+          animation: liquidDrift2 32s ease-in-out infinite alternate;
+        }
+        .theme-light .liquid-orb-3 {
+          width: 460px;
+          height: 460px;
+          background: radial-gradient(circle, #2dd4bf 0%, #5eead4 40%, transparent 70%);
+          bottom: 15%;
+          left: 8%;
+          opacity: 0.40;
+          animation: liquidDrift3 28s ease-in-out infinite alternate;
+        }
+        .theme-light .liquid-orb-4 {
+          width: 420px;
+          height: 420px;
+          background: radial-gradient(circle, #fbbf24 0%, #fcd34d 40%, transparent 70%);
+          top: 30%;
+          right: 25%;
+          opacity: 0.30;
+          animation: liquidDrift4 24s ease-in-out infinite alternate;
+        }
+
+        @keyframes liquidDrift1 {
+          0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); border-radius: 42% 58% 70% 30% / 45% 45% 55% 55%; }
+          50% { transform: translate3d(70px, 35px, 0) scale(1.14) rotate(35deg); border-radius: 58% 42% 38% 62% / 55% 65% 35% 45%; }
+          100% { transform: translate3d(-35px, 75px, 0) scale(0.96) rotate(-25deg); border-radius: 50% 50% 60% 40% / 40% 50% 50% 60%; }
+        }
+        @keyframes liquidDrift2 {
+          0% { transform: translate3d(0, 0, 0) scale(1) rotate(0deg); border-radius: 55% 45% 35% 65% / 50% 60% 40% 50%; }
+          50% { transform: translate3d(-60px, -45px, 0) scale(1.16) rotate(-30deg); border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%; }
+          100% { transform: translate3d(45px, -70px, 0) scale(0.94) rotate(30deg); border-radius: 65% 35% 50% 50% / 45% 55% 45% 55%; }
+        }
+        @keyframes liquidDrift3 {
+          0% { transform: translate3d(0, 0, 0) scale(1); border-radius: 45% 55% 60% 40% / 55% 45% 55% 45%; }
+          50% { transform: translate3d(50px, -50px, 0) scale(1.10); border-radius: 60% 40% 45% 55% / 45% 55% 45% 55%; }
+          100% { transform: translate3d(25px, 45px, 0) scale(1.04); border-radius: 50% 50% 50% 50%; }
+        }
+        @keyframes liquidDrift4 {
+          0% { transform: translate3d(0, 0, 0) scale(1); }
+          50% { transform: translate3d(-45px, 50px, 0) scale(1.12); }
+          100% { transform: translate3d(50px, -35px, 0) scale(0.96); }
+        }
+
         /* Top Bar */
         .top-bar {
+          position: relative;
+          z-index: 1;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -2970,6 +3116,8 @@ class VisionGlassDashboard extends HTMLElement {
 
         /* Layout Grid */
         .dashboard-body {
+          position: relative;
+          z-index: 1;
           display: grid;
           grid-template-columns: 260px 1fr;
           gap: 12px;
@@ -2980,23 +3128,58 @@ class VisionGlassDashboard extends HTMLElement {
 
         /* Left Sidebar Card */
         .sidebar-card {
+          position: relative;
+          overflow: hidden;
           background: var(--bg-card);
-          backdrop-filter: blur(30px);
-          -webkit-backdrop-filter: blur(30px);
+          background-image: var(--card-ripple-pattern);
+          backdrop-filter: blur(32px) saturate(190%);
+          -webkit-backdrop-filter: blur(32px) saturate(190%);
           border: 1px solid var(--border-glass);
           border-radius: 20px;
           padding: 14px 16px;
-          box-shadow: var(--shadow-ambient);
+          box-shadow: var(--glass-refraction), var(--shadow-ambient);
           display: flex;
           flex-direction: column;
           gap: 10px;
-          transition: all 0.3s ease;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+        }
+
+        .sidebar-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 10%;
+          right: 10%;
+          height: 1.5px;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+          pointer-events: none;
+          z-index: 3;
+        }
+
+        .sidebar-card::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 68%);
+          background-size: 250% 250%;
+          background-position: -120% -120%;
+          pointer-events: none;
+          z-index: 2;
+          opacity: 0.6;
+          transition: background-position 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        .sidebar-card:hover::after {
+          background-position: 140% 140%;
+          opacity: 1;
         }
 
         .theme-light .sidebar-card {
-          background: rgba(255, 255, 255, 0.90);
-          border: 1px solid rgba(255, 255, 255, 1);
-          box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff;
+          background: var(--bg-card);
+          background-image: var(--card-ripple-pattern);
+          border: 1px solid var(--border-glass);
+          box-shadow: var(--glass-refraction), var(--shadow-ambient);
         }
 
         .sidebar-header-badge {
@@ -3207,10 +3390,11 @@ class VisionGlassDashboard extends HTMLElement {
           border-radius: 18px;
           overflow: hidden;
           background: var(--bg-card);
-          backdrop-filter: blur(25px);
-          -webkit-backdrop-filter: blur(25px);
+          background-image: var(--card-ripple-pattern);
+          backdrop-filter: blur(28px) saturate(190%);
+          -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1px solid var(--border-glass);
-          box-shadow: var(--shadow-ambient);
+          box-shadow: var(--glass-refraction), var(--shadow-ambient);
           display: flex;
           flex-direction: column;
           justify-content: space-between;
@@ -3218,18 +3402,52 @@ class VisionGlassDashboard extends HTMLElement {
           cursor: pointer;
           transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
         }
+
+        .room-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 8%;
+          right: 8%;
+          height: 1.5px;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+          pointer-events: none;
+          z-index: 3;
+        }
+
+        .room-card::after {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: inherit;
+          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 68%);
+          background-size: 250% 250%;
+          background-position: -120% -120%;
+          pointer-events: none;
+          z-index: 2;
+          opacity: 0.6;
+          transition: background-position 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
         .room-card:hover {
           transform: translateY(-2px);
-          box-shadow: 0 14px 35px rgba(0, 0, 0, 0.28);
+          box-shadow: var(--glass-refraction), 0 20px 42px rgba(0, 0, 0, 0.42);
         }
+
+        .room-card:hover::after {
+          background-position: 140% 140%;
+          opacity: 1;
+        }
+
         .theme-light .room-card {
-          background: rgba(255, 255, 255, 0.85);
-          border-color: rgba(255, 255, 255, 0.95);
-          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08), inset 0 1px 1px #ffffff;
+          background: var(--bg-card);
+          background-image: var(--card-ripple-pattern);
+          border-color: var(--border-glass);
+          box-shadow: var(--glass-refraction), var(--shadow-ambient);
         }
+
         .theme-light .room-card:hover {
-          background: rgba(255, 255, 255, 0.94);
-          box-shadow: 0 14px 35px rgba(15, 23, 42, 0.14);
+          box-shadow: var(--glass-refraction), 0 18px 40px rgba(15, 23, 42, 0.14);
         }
 
         .room-bg-image {
@@ -3437,22 +3655,48 @@ class VisionGlassDashboard extends HTMLElement {
           scrollbar-width: thin;
         }
 
-        /* Floating Dock */
+        /* Floating Liquid Water Dock */
         .dock-container {
           position: fixed;
           bottom: 12px;
           left: 50%;
           transform: translateX(-50%);
           background: var(--dock-bg);
-          backdrop-filter: blur(28px) saturate(180%);
-          -webkit-backdrop-filter: blur(28px) saturate(180%);
+          background-image: var(--card-ripple-pattern);
+          backdrop-filter: blur(32px) saturate(200%);
+          -webkit-backdrop-filter: blur(32px) saturate(200%);
           border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          padding: 4px 12px;
+          padding: 4px 14px;
           display: flex;
           gap: 8px;
-          box-shadow: 0 16px 36px rgba(0, 0, 0, 0.25);
+          box-shadow:
+            inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.70),
+            inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.35),
+            0 18px 45px rgba(0, 0, 0, 0.40),
+            0 0 24px rgba(56, 189, 248, 0.22);
           z-index: 100;
+          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+        }
+
+        .dock-container:hover {
+          transform: translateX(-50%) translateY(-2px);
+          box-shadow:
+            inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.85),
+            inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.35),
+            0 22px 50px rgba(0, 0, 0, 0.45),
+            0 0 32px rgba(56, 189, 248, 0.32);
+        }
+
+        .theme-light .dock-container {
+          background: var(--dock-bg);
+          background-image: var(--card-ripple-pattern);
+          border-color: var(--border-glass);
+          box-shadow:
+            inset 0 2px 1.5px 0 #ffffff,
+            inset 0 -1px 1px 0 rgba(15, 23, 42, 0.05),
+            0 18px 45px rgba(15, 23, 42, 0.12),
+            0 0 25px rgba(56, 189, 248, 0.15);
         }
 
         .dock-item {
@@ -3462,16 +3706,37 @@ class VisionGlassDashboard extends HTMLElement {
           display: flex;
           align-items: center;
           justify-content: center;
-          font-size: 18px;
           cursor: pointer;
-          transition: transform 0.2s, background 0.2s;
-          background: rgba(255, 255, 255, 0.08);
-          border: 1px solid transparent;
+          position: relative;
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid rgba(255, 255, 255, 0.12);
+          color: var(--text-primary);
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.3);
+          transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s, box-shadow 0.2s;
         }
+
         .dock-item:hover {
-          transform: translateY(-3px) scale(1.12);
-          background: rgba(255, 255, 255, 0.22);
-          border-color: var(--border-glass);
+          transform: translateY(-4px) scale(1.14);
+          background: radial-gradient(circle at 50% 30%, rgba(255, 255, 255, 0.25) 0%, rgba(56, 189, 248, 0.20) 100%);
+          border-color: rgba(255, 255, 255, 0.35);
+          box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.5), 0 8px 18px rgba(0, 0, 0, 0.3), 0 0 14px rgba(56, 189, 248, 0.35);
+        }
+
+        .dock-item:active {
+          transform: translateY(-1px) scale(0.96);
+        }
+
+        .theme-light .dock-item {
+          background: rgba(255, 255, 255, 0.85);
+          border-color: rgba(255, 255, 255, 1);
+          color: #0f172a;
+          box-shadow: inset 0 1px 1px #ffffff, 0 2px 6px rgba(15, 23, 42, 0.08);
+        }
+
+        .theme-light .dock-item:hover {
+          background: radial-gradient(circle at 50% 30%, #ffffff 0%, rgba(224, 242, 254, 0.95) 100%);
+          border-color: #ffffff;
+          box-shadow: inset 0 1px 1px #ffffff, 0 8px 18px rgba(15, 23, 42, 0.12), 0 0 16px rgba(2, 132, 199, 0.25);
         }
 
         /* Modals */
@@ -3491,25 +3756,47 @@ class VisionGlassDashboard extends HTMLElement {
         .modal-overlay.hidden { display: none; }
 
         .modal-card {
+          position: relative;
           background: var(--bg-card);
-          backdrop-filter: blur(35px) saturate(190%);
-          -webkit-backdrop-filter: blur(35px) saturate(190%);
+          background-image: var(--card-ripple-pattern);
+          backdrop-filter: blur(38px) saturate(210%);
+          -webkit-backdrop-filter: blur(38px) saturate(210%);
           border: 1px solid var(--border-glass);
           border-radius: 28px;
           width: 94%;
           max-width: 940px;
           max-height: 86vh;
-          box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
+          box-shadow:
+            inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.55),
+            inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.35),
+            0 30px 80px rgba(0, 0, 0, 0.65),
+            0 0 40px rgba(56, 189, 248, 0.15);
           display: flex;
           flex-direction: column;
           overflow: hidden;
           overscroll-behavior: contain;
         }
 
+        .modal-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 12%;
+          right: 12%;
+          height: 1.5px;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+          pointer-events: none;
+          z-index: 3;
+        }
+
         .theme-light .modal-card {
-          background: rgba(255, 255, 255, 0.94);
-          border: 1px solid rgba(255, 255, 255, 1);
-          box-shadow: 0 30px 70px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.06);
+          background: var(--bg-card);
+          background-image: var(--card-ripple-pattern);
+          border: 1px solid var(--border-glass);
+          box-shadow:
+            inset 0 2px 1.5px 0 #ffffff,
+            0 35px 85px rgba(15, 23, 42, 0.18),
+            0 6px 20px rgba(15, 23, 42, 0.06);
         }
 
         .modal-header {
@@ -3832,6 +4119,14 @@ class VisionGlassDashboard extends HTMLElement {
       </style>
 
       <div class="dashboard-root theme-dark">
+        <!-- Liquid Background Morphing Orbs (Fluide Lichtwellen & Wasserbrechung) -->
+        <div class="liquid-backdrop" aria-hidden="true">
+          <div class="liquid-orb liquid-orb-1"></div>
+          <div class="liquid-orb liquid-orb-2"></div>
+          <div class="liquid-orb liquid-orb-3"></div>
+          <div class="liquid-orb liquid-orb-4"></div>
+        </div>
+
         <!-- Top Bar Navigation & Status Chips -->
         <div class="top-bar">
           <div>
