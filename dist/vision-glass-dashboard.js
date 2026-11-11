@@ -532,8 +532,22 @@ class VisionGlassDashboard extends HTMLElement {
       'sensor.prasenzmelder_badezimmer_illuminance',
       'sensor.prasenzmelder_flur_illuminance',
       'sensor.bewegungsmelder_wohnzimmer_illuminance',
+      'sensor.prasenzmelder_wohnzimmer_illuminance',
       'sensor.bewegungsmelder_kuche_illuminance',
+      'sensor.prasenzmelder_kuche_illuminance',
       'sensor.prasenzmelder_schlafzimmer_illuminance',
+      'light.livingroom',
+      'light.light_studyroom_tomada',
+      'light.light_bathroom_tomada',
+      'light.light_kitchen_tomada',
+      'light.schlafzimmerlicht',
+      'light.light_hallway_tomada',
+      'climate.better_thermostat_wohnzimmer',
+      'climate.better_thermostat_arbeitszimmer',
+      'climate.better_thermostat_badezimmer',
+      'climate.better_thermostat_kuche',
+      'climate.better_thermostat_schlafzimmer',
+      'climate.better_thermostat_flur',
       'binary_sensor.living_room_occupied',
       'binary_sensor.studyroom_occupied',
       'binary_sensor.bathroom_occupied',
@@ -587,17 +601,83 @@ class VisionGlassDashboard extends HTMLElement {
     } catch (e) {}
   }
 
-  _renderMultiLineSvgChart({ series, width = 640, height = 230, unit = '°C', timeSpanHours = 24 }) {
-    const padL = 48;
+  _renderMultiLineSvgChart({ series, stateOverlay = null, width = 780, height = 320, unit = '°C', timeSpanHours = 24 }) {
+    const padL = 52;
     const padR = 24;
     const padT = 24;
-    const padB = 32;
+    const padB = 40;
     const plotW = width - padL - padR;
     const plotH = height - padT - padB;
 
     const tEnd = Date.now();
     const tStart = tEnd - (timeSpanHours * 3600 * 1000);
     const timeSpan = tEnd - tStart;
+
+    const hasOverlay = Boolean(stateOverlay && stateOverlay.entity_id);
+    const trackH = hasOverlay ? 12 : 0;
+    const trackY = hasOverlay ? (padT + plotH - trackH - 2) : 0;
+    const curvePlotH = hasOverlay ? (plotH - trackH - 12) : plotH;
+
+    let overlayBandsMarkup = '';
+    let overlayTimelineMarkup = '';
+    let activeIntervalCount = 0;
+
+    if (hasOverlay) {
+      const hist = this._statsHistory && this._statsHistory[stateOverlay.entity_id];
+      const curStateObj = this._hass && this._hass.states[stateOverlay.entity_id];
+      const curStateVal = curStateObj ? curStateObj.state : null;
+
+      const checkActive = (s) => {
+        if (!s) return false;
+        const sl = String(s).toLowerCase();
+        if (stateOverlay.type === 'light') {
+          return sl === 'on';
+        } else if (stateOverlay.type === 'climate') {
+          return sl === 'heat' || sl === 'heating' || (!isNaN(parseFloat(sl)) && parseFloat(sl) > 0);
+        }
+        return sl === 'on' || sl === 'heat' || sl === 'true';
+      };
+
+      let rawEvents = [];
+      if (Array.isArray(hist) && hist.length > 0) {
+        hist.forEach(h => {
+          const t = h.lu ? (h.lu * 1000) : (h.last_updated ? new Date(h.last_updated).getTime() : null);
+          if (t) rawEvents.push({ t, s: h.s });
+        });
+      }
+      rawEvents.sort((a, b) => a.t - b.t);
+
+      let segments = [];
+      let lastT = tStart;
+      let lastS = rawEvents.length > 0 ? rawEvents[0].s : curStateVal;
+
+      rawEvents.forEach(ev => {
+        if (ev.t > tStart && ev.t < tEnd) {
+          segments.push({ t0: lastT, t1: ev.t, active: checkActive(lastS), state: lastS });
+          lastT = ev.t;
+          lastS = ev.s;
+        } else if (ev.t <= tStart) {
+          lastS = ev.s;
+        }
+      });
+      segments.push({ t0: lastT, t1: tEnd, active: checkActive(curStateVal || lastS), state: curStateVal || lastS });
+
+      const activeColor = stateOverlay.activeColor || '#f59e0b';
+
+      segments.forEach(seg => {
+        const x1 = padL + Math.max(0, Math.min(plotW, ((seg.t0 - tStart) / timeSpan) * plotW));
+        const x2 = padL + Math.max(0, Math.min(plotW, ((seg.t1 - tStart) / timeSpan) * plotW));
+        const bandW = Math.max(1, x2 - x1);
+
+        if (seg.active) {
+          activeIntervalCount++;
+          overlayBandsMarkup += `<rect x="${x1.toFixed(1)}" y="${padT}" width="${bandW.toFixed(1)}" height="${curvePlotH.toFixed(1)}" fill="${activeColor}" opacity="0.12" />`;
+          overlayTimelineMarkup += `<rect x="${x1.toFixed(1)}" y="${trackY.toFixed(1)}" width="${bandW.toFixed(1)}" height="${trackH}" rx="2" fill="${activeColor}" opacity="0.95" />`;
+        } else {
+          overlayTimelineMarkup += `<rect x="${x1.toFixed(1)}" y="${trackY.toFixed(1)}" width="${bandW.toFixed(1)}" height="${trackH}" rx="2" fill="rgba(255,255,255,0.06)" />`;
+        }
+      });
+    }
 
     let allVals = [];
     const processedSeries = series.map((s) => {
@@ -649,15 +729,17 @@ class VisionGlassDashboard extends HTMLElement {
       maxVal += 1;
     }
 
+    const isIntUnit = unit.trim() === 'lx' || unit.trim() === '%';
     const valSpan = maxVal - minVal;
-    const minBound = minVal - (valSpan * 0.08);
+    const minBound = isIntUnit ? Math.max(0, minVal - (valSpan * 0.05)) : (minVal - (valSpan * 0.08));
     const maxBound = maxVal + (valSpan * 0.08);
     const rangeBound = maxBound - minBound;
 
     const gridRows = [0, 0.33, 0.66, 1].map(ratio => {
-      const y = padT + (plotH * ratio);
+      const y = padT + (curvePlotH * ratio);
       const val = maxBound - (ratio * rangeBound);
-      return { y, label: val.toFixed(1).replace('.', ',') + unit };
+      const label = isIntUnit ? Math.round(val) + unit : val.toFixed(1).replace('.', ',') + unit;
+      return { y, label };
     });
 
     const timeTicks = [
@@ -672,7 +754,7 @@ class VisionGlassDashboard extends HTMLElement {
     processedSeries.forEach((s) => {
       const pts = s.points.map(p => {
         const x = padL + Math.max(0, Math.min(plotW, ((p.t - tStart) / timeSpan) * plotW));
-        const y = padT + plotH - (((p.v - minBound) / rangeBound) * plotH);
+        const y = padT + curvePlotH - (((p.v - minBound) / rangeBound) * curvePlotH);
         return { x, y, v: p.v };
       });
 
@@ -698,16 +780,24 @@ class VisionGlassDashboard extends HTMLElement {
 
     const svg = `
       <svg viewBox="0 0 ${width} ${height}" style="width:100%;height:auto;overflow:visible;" preserveAspectRatio="xMidYMid meet">
+        ${overlayBandsMarkup}
+
         ${gridRows.map(g => `
           <line x1="${padL}" y1="${g.y.toFixed(1)}" x2="${padL + plotW}" y2="${g.y.toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-dasharray="3,3" stroke-width="1" />
           <text x="${padL - 8}" y="${(g.y + 3).toFixed(1)}" text-anchor="end" fill="var(--text-secondary)" font-size="10px" font-weight="600">${g.label}</text>
         `).join('')}
 
+        ${hasOverlay ? `
+          <line x1="${padL}" y1="${(trackY - 4).toFixed(1)}" x2="${padL + plotW}" y2="${(trackY - 4).toFixed(1)}" stroke="rgba(255,255,255,0.12)" stroke-width="1" />
+          <text x="${padL - 8}" y="${(trackY + trackH - 2).toFixed(1)}" text-anchor="end" fill="var(--text-secondary)" font-size="9.5px" font-weight="700">${stateOverlay.label || 'Status'}</text>
+          ${overlayTimelineMarkup}
+        ` : ''}
+
         ${timeTicks.map(t => {
           const x = padL + (plotW * t.ratio);
           return `
             <line x1="${x.toFixed(1)}" y1="${padT + plotH}" x2="${x.toFixed(1)}" y2="${padT + plotH + 5}" stroke="rgba(255,255,255,0.2)" stroke-width="1" />
-            <text x="${x.toFixed(1)}" y="${(padT + plotH + 18).toFixed(1)}" text-anchor="${t.ratio === 0 ? 'start' : (t.ratio === 1 ? 'end' : 'middle')}" fill="var(--text-secondary)" font-size="10px" font-weight="600">${t.label}</text>
+            <text x="${x.toFixed(1)}" y="${(padT + plotH + 18).toFixed(1)}" text-anchor="${t.ratio === 0 ? 'start' : (t.ratio === 1 ? 'end' : 'middle')}" fill="var(--text-secondary)" font-size="10.5px" font-weight="600">${t.label}</text>
           `;
         }).join('')}
 
@@ -717,8 +807,10 @@ class VisionGlassDashboard extends HTMLElement {
 
     return {
       svg,
-      min: minVal.toFixed(1).replace('.', ','),
-      max: maxVal.toFixed(1).replace('.', ',')
+      min: isIntUnit ? Math.round(minVal) : minVal.toFixed(1).replace('.', ','),
+      max: isIntUnit ? Math.round(maxVal) : maxVal.toFixed(1).replace('.', ','),
+      hasOverlay,
+      activeIntervalCount
     };
   }
 
@@ -838,6 +930,15 @@ class VisionGlassDashboard extends HTMLElement {
     const otherSwitches = [];
     const otherSensors = [];
 
+    // Humidity & Illuminance for Room Overview
+    const humEntity = room.humidity_entity || `sensor.prasenzmelder_${roomSlug}_humidity` || `sensor.ir_${roomSlug}_humidity`;
+    const humObj = humEntity && this._hass.states[humEntity];
+    const curHum = humObj && humObj.state && !isNaN(parseFloat(humObj.state)) ? Math.round(parseFloat(humObj.state)) : null;
+
+    const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${roomSlug}_illuminance` || `sensor.bewegungsmelder_${roomSlug}_illuminance`;
+    const luxObj = luxEntity && this._hass.states[luxEntity];
+    const curLux = luxObj && luxObj.state && !isNaN(parseFloat(luxObj.state)) ? Math.round(parseFloat(luxObj.state)) : null;
+
     Object.keys(this._hass.states).forEach(eId => {
       if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
 
@@ -857,16 +958,30 @@ class VisionGlassDashboard extends HTMLElement {
 
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 20px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 20px;flex-wrap:wrap;gap:12px;">
           <div>
             <div style="font-size:22px;font-weight:700;">${room.name}</div>
             <div style="font-size:13px;color:var(--text-secondary);margin-top:3px;">
               ${isPres ? this._icon('motion', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' Person anwesend' : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' Keine Bewegung'} • ${isWinOpen ? this._icon('window-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' Fenster geöffnet' : this._icon('window', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' Fenster geschlossen'}
             </div>
           </div>
-          <div style="text-align:right;">
-            <div style="font-size:24px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
-            <div style="font-size:12px;color:var(--text-secondary);">Raumtemperatur</div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
+              <div style="font-size:19px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
+              <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('thermometer', { size: 11, cls: 'icon-temp' })} Temp</div>
+            </div>
+            ${curHum != null ? `
+              <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
+                <div style="font-size:19px;font-weight:700;color:#0284c7;">${curHum}%</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('droplet', { size: 11, cls: 'icon-humidity' })} Feuchte</div>
+              </div>
+            ` : ''}
+            ${curLux != null ? `
+              <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
+                <div style="font-size:19px;font-weight:700;color:#f59e0b;">${curLux} lx</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('lux', { size: 11, cls: 'icon-lux' })} Lux</div>
+              </div>
+            ` : ''}
           </div>
         </div>
 
@@ -2079,51 +2194,85 @@ class VisionGlassDashboard extends HTMLElement {
       const roomSensorsConfig = {
         wohnzimmer: {
           name: 'Wohnzimmer',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_wohnzimmer',
+          light_entity: 'light.livingroom',
+          temp_sensors: [
             { id: 'sensor.bewegungsmelder_wohnzimmer_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
-            { id: 'sensor.prasenzmelder_wohnzimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' },
+            { id: 'sensor.prasenzmelder_wohnzimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#10b981' },
             { id: 'sensor.wohnzimmer_front_temperatur', name: 'Heizung Front (TRV)', color: '#f59e0b' },
-            { id: 'sensor.fritz_smart_thermo_301_3_temperatur', name: 'Heizung Balkon (TRV)', color: '#10b981' },
-            { id: 'sensor.ir_wohnzimmer_temperature', name: 'IR-Sensor', color: '#f43f5e' }
+            { id: 'sensor.fritz_smart_thermo_301_3_temperatur', name: 'Heizung Balkon (TRV)', color: '#ec4899' },
+            { id: 'sensor.ir_wohnzimmer_temperature', name: 'IR-Sensor', color: '#a855f7' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_wohnzimmer_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' },
+            { id: 'sensor.bewegungsmelder_wohnzimmer_illuminance', name: 'Bewegungsmelder (PIR Lux)', color: '#f59e0b' }
           ]
         },
         arbeitszimmer: {
           name: 'Arbeitszimmer',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_arbeitszimmer',
+          light_entity: 'light.light_studyroom_tomada',
+          temp_sensors: [
             { id: 'sensor.bewegungsmelder_arbeitszimmer_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
-            { id: 'sensor.prasenzmelder_arbeitszimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' },
+            { id: 'sensor.prasenzmelder_arbeitszimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#10b981' },
             { id: 'sensor.arbeitszimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_arbeitszimmer_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' },
+            { id: 'sensor.bewegungsmelder_arbeitszimmer_illuminance', name: 'Bewegungsmelder (PIR Lux)', color: '#f59e0b' }
           ]
         },
         badezimmer: {
           name: 'Badezimmer',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_badezimmer',
+          light_entity: 'light.light_bathroom_tomada',
+          temp_sensors: [
             { id: 'sensor.badezimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
             { id: 'sensor.bewegungsmelder_bad_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
             { id: 'sensor.prasenzmelder_badezimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_badezimmer_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' }
           ]
         },
         kuche: {
           name: 'Küche',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_kuche',
+          light_entity: 'light.light_kitchen_tomada',
+          temp_sensors: [
             { id: 'sensor.kuche_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
             { id: 'sensor.bewegungsmelder_kuche_temperature', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
             { id: 'sensor.prasenzmelder_kuche_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_kuche_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' },
+            { id: 'sensor.bewegungsmelder_kuche_illuminance', name: 'Bewegungsmelder (PIR Lux)', color: '#f59e0b' }
           ]
         },
         schlafzimmer: {
           name: 'Schlafzimmer',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_schlafzimmer',
+          light_entity: 'light.schlafzimmerlicht',
+          temp_sensors: [
             { id: 'sensor.schlafzimmer_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
             { id: 'sensor.prasenzmelder_schlafzimmer_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_schlafzimmer_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' }
           ]
         },
         flur: {
           name: 'Flur',
-          sensors: [
+          climate_entity: 'climate.better_thermostat_flur',
+          light_entity: 'light.light_hallway_tomada',
+          temp_sensors: [
             { id: 'sensor.flur_temperatur', name: 'Thermostat (TRV)', color: '#f59e0b' },
             { id: 'sensor.bewegungsmelder_flur_temperatur', name: 'Bewegungsmelder (PIR)', color: '#38bdf8' },
             { id: 'sensor.prasenzmelder_flur_temperature', name: 'Präsenzmelder (mmWave)', color: '#a855f7' }
+          ],
+          illum_sensors: [
+            { id: 'sensor.prasenzmelder_flur_illuminance', name: 'Präsenzmelder (mmWave Lux)', color: '#38bdf8' },
+            { id: 'sensor.bewegungsmelder_flur_illuminance', name: 'Bewegungsmelder (PIR Lux)', color: '#f59e0b' }
           ]
         }
       };
@@ -2132,7 +2281,7 @@ class VisionGlassDashboard extends HTMLElement {
 
       if (tab === 'temperature') {
         const currentRoomConf = roomSensorsConfig[selectedRoom] || roomSensorsConfig.wohnzimmer;
-        const seriesData = currentRoomConf.sensors.map(s => {
+        const seriesData = currentRoomConf.temp_sensors.map(s => {
           const stateObj = this._hass.states[s.id];
           return {
             ...s,
@@ -2140,10 +2289,21 @@ class VisionGlassDashboard extends HTMLElement {
           };
         });
 
+        const climObj = currentRoomConf.climate_entity ? this._hass.states[currentRoomConf.climate_entity] : null;
+        const isHeating = climObj && (climObj.state === 'heat' || (climObj.attributes && climObj.attributes.hvac_action === 'heating'));
+
         const chart = this._renderMultiLineSvgChart({
           series: seriesData,
-          width: 640,
-          height: 230,
+          stateOverlay: {
+            entity_id: currentRoomConf.climate_entity,
+            label: 'Heizung',
+            type: 'climate',
+            activeColor: '#ef4444',
+            activeLabel: 'Heizung AKTIV',
+            idleLabel: 'Heizung AUS / Bereit'
+          },
+          width: 780,
+          height: 320,
           unit: '°C',
           timeSpanHours: 24
         });
@@ -2162,16 +2322,22 @@ class VisionGlassDashboard extends HTMLElement {
             }).join('')}
           </div>
 
-          <!-- Combined Multi-Line Chart -->
+          <!-- Combined Multi-Line Chart with Heating Overlay -->
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
               <div>
-                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Alle Temperatursensoren</span>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Vergleich aller ${seriesData.length} Messstellen über 24 Stunden</div>
+                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Temperaturverlauf & Heizung</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+                  Alle ${seriesData.length} Messstellen über 24h • Farbige Hinterlegung & Zeitleiste zeigen Heizphasen (AN/AUS)
+                </div>
               </div>
               <div style="text-align:right;">
-                <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Trend</span>
-                <div style="font-size:11px;color:var(--text-secondary);">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
+                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isHeating ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isHeating ? 'rgba(239,68,68,0.3)' : 'var(--border-subtle)'};">
+                  <span style="font-size:12.5px;font-weight:700;color:${isHeating ? '#ef4444' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
+                    ${isHeating ? this._icon('flame', { size: 13, color: '#ef4444' }) + ' Heizung: AN' : this._icon('motion-idle', { size: 13 }) + ' Heizung: AUS / Bereit'}
+                  </span>
+                </div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
               </div>
             </div>
 
@@ -2183,35 +2349,25 @@ class VisionGlassDashboard extends HTMLElement {
 
           <!-- Sensor Legend & Details -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
-            ${seriesData.map(s => {
-              return `
-                <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
-                  <div style="flex:1;">
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
-                      <span style="font-weight:600;font-size:13px;">${s.name}</span>
-                    </div>
-                    <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+            ${seriesData.map(s => `
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
+                <div style="flex:1;">
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
+                    <span style="font-weight:600;font-size:13px;">${s.name}</span>
                   </div>
-                  <div style="text-align:right;">
-                    <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
-                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
                 </div>
-              `;
-            }).join('')}
+                <div style="text-align:right;">
+                  <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
+                </div>
+              </div>
+            `).join('')}
           </div>
         `;
       } else if (tab === 'illuminance') {
-        const illumSensors = [
-          { id: 'sensor.prasenzmelder_arbeitszimmer_illuminance', name: 'Arbeitszimmer (mmWave)', color: '#38bdf8' },
-          { id: 'sensor.prasenzmelder_badezimmer_illuminance', name: 'Badezimmer (mmWave)', color: '#10b981' },
-          { id: 'sensor.prasenzmelder_flur_illuminance', name: 'Flur (mmWave)', color: '#f59e0b' },
-          { id: 'sensor.bewegungsmelder_wohnzimmer_illuminance', name: 'Wohnzimmer (PIR)', color: '#a855f7' },
-          { id: 'sensor.bewegungsmelder_kuche_illuminance', name: 'Küche (PIR)', color: '#f43f5e' },
-          { id: 'sensor.prasenzmelder_schlafzimmer_illuminance', name: 'Schlafzimmer (mmWave)', color: '#6366f1' }
-        ];
-
-        const seriesData = illumSensors.map(s => {
+        const currentRoomConf = roomSensorsConfig[selectedRoom] || roomSensorsConfig.wohnzimmer;
+        const seriesData = currentRoomConf.illum_sensors.map(s => {
           const stateObj = this._hass.states[s.id];
           return {
             ...s,
@@ -2219,24 +2375,55 @@ class VisionGlassDashboard extends HTMLElement {
           };
         });
 
+        const lightObj = currentRoomConf.light_entity ? this._hass.states[currentRoomConf.light_entity] : null;
+        const isLightOn = lightObj && lightObj.state === 'on';
+
         const chart = this._renderMultiLineSvgChart({
           series: seriesData,
-          width: 640,
-          height: 230,
+          stateOverlay: {
+            entity_id: currentRoomConf.light_entity,
+            label: 'Licht',
+            type: 'light',
+            activeColor: '#f59e0b',
+            activeLabel: 'Licht AN',
+            idleLabel: 'Licht AUS'
+          },
+          width: 780,
+          height: 320,
           unit: ' lx',
           timeSpanHours: 24
         });
 
         tabContent = `
+          <!-- Room Selector Tabs -->
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+            ${Object.keys(roomSensorsConfig).map(rKey => {
+              const r = roomSensorsConfig[rKey];
+              const isSel = selectedRoom === rKey;
+              return `
+                <button class="btn-micro ${isSel ? 'active' : ''}" data-stat-room="${rKey}">
+                  ${r.name}
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+          <!-- Single Room Illuminance Chart with Light On/Off Overlay -->
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
               <div>
-                <span style="font-weight:700;font-size:16px;">Helligkeitsverläufe (Lux) • Alle Räume</span>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Tageslicht & Raumbeleuchtungs-Verlauf der letzten 24h</div>
+                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • Helligkeitsverlauf & Licht</span>
+                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+                  24h Lux-Messkurve • Farbige Hinterlegung & Zeitleiste zeigen wann das Licht an war
+                </div>
               </div>
               <div style="text-align:right;">
-                <span style="font-size:13px;color:var(--accent);font-weight:700;">24h Lux-Kurven</span>
-                <div style="font-size:11px;color:var(--text-secondary);">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
+                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isLightOn ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isLightOn ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'};">
+                  <span style="font-size:12.5px;font-weight:700;color:${isLightOn ? '#f59e0b' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
+                    ${isLightOn ? this._icon('light', { size: 13, cls: 'icon-light' }) + ' Licht: AN' : this._icon('light', { size: 13 }) + ' Licht: AUS'}
+                  </span>
+                </div>
+                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
               </div>
             </div>
 
@@ -2246,7 +2433,7 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
           </div>
 
-          <!-- Sensor Legend -->
+          <!-- Sensor Legend & Light Status -->
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
             ${seriesData.map(s => `
               <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
@@ -2331,8 +2518,8 @@ class VisionGlassDashboard extends HTMLElement {
 
         const chart = this._renderMultiLineSvgChart({
           series: seriesData,
-          width: 640,
-          height: 230,
+          width: 780,
+          height: 320,
           unit: '%',
           timeSpanHours: 24
         });
@@ -3477,44 +3664,76 @@ class VisionGlassDashboard extends HTMLElement {
 
           <!-- Rooms Grid -->
           <div class="rooms-grid" id="roomsContainer">
-            ${this._config.rooms.map((room, idx) => `
-              <div class="room-card" id="roomCard_${idx}" data-room-idx="${idx}">
-                ${room.picture ? `<div class="room-bg-image" style="background-image:url('${room.picture}');"></div>` : ''}
-                
-                <!-- Room Header -->
-                <div class="room-header">
-                  <div>
-                    <div class="room-name">${room.name} &rsaquo;</div>
-                    <div class="room-sub">Wird geladen...</div>
-                  </div>
-                </div>
+            ${this._config.rooms.map((room, idx) => {
+              let initTemp = '--°C';
+              let initHum = null;
+              let initLux = null;
 
-                <!-- Room Environmental Readings (Temp, Humidity, Illuminance) -->
-                <div class="room-env-bar">
-                  <span class="env-pill env-temp">${this._icon('thermometer', { size: 13, cls: 'icon-temp', style: 'margin-right:4px;' })} --°C</span>
-                  <span class="env-pill env-humidity" style="display:none;">${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:4px;' })} --%</span>
-                  <span class="env-pill env-lux" style="display:none;">${this._icon('lux', { size: 13, cls: 'icon-lux', style: 'margin-right:4px;' })} -- lx</span>
-                </div>
+              if (this._hass) {
+                let tVal = null;
+                if (room.climate_entity && this._hass.states[room.climate_entity]) {
+                  const c = this._hass.states[room.climate_entity];
+                  tVal = c.attributes.current_temperature || c.attributes.temperature;
+                }
+                if (!tVal && room.temp_entity && this._hass.states[room.temp_entity]) {
+                  tVal = this._hass.states[room.temp_entity].state;
+                }
+                if (tVal && !isNaN(parseFloat(tVal))) {
+                  initTemp = `${parseFloat(tVal).toFixed(1)}°C`;
+                }
 
-                <!-- Bottom Row: Actions & Heating Quick Stepper -->
-                <div class="room-bottom-row">
-                  <div class="room-actions">
-                    ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">${this._icon('light', { size: 18, cls: 'icon-light' })}</div>` : ''}
-                    ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 18, cls: 'icon-climate' })}</div>` : ''}
-                    ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">${this._icon('music', { size: 18, cls: 'icon-media' })}</div>` : ''}
-                    ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 18, cls: 'icon-security' })}</div>` : ''}
-                  </div>
+                const hEntity = room.humidity_entity || `sensor.prasenzmelder_${room.id}_humidity` || `sensor.ir_${room.id}_humidity`;
+                const hState = this._hass.states[hEntity];
+                if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
+                  initHum = `${Math.round(parseFloat(hState.state))}%`;
+                }
 
-                  ${room.climate_entity ? `
-                    <div class="quick-climate-stepper" title="Zieltemperatur anpassen">
-                      <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 12 })}</button>
-                      <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
-                      <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 12 })}</button>
+                const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${room.id}_illuminance` || `sensor.bewegungsmelder_${room.id}_illuminance`;
+                const luxState = this._hass.states[luxEntity];
+                if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
+                  initLux = `${Math.round(parseFloat(luxState.state))} lx`;
+                }
+              }
+
+              return `
+                <div class="room-card" id="roomCard_${idx}" data-room-idx="${idx}">
+                  ${room.picture ? `<div class="room-bg-image" style="background-image:url('${room.picture}');"></div>` : ''}
+                  
+                  <!-- Room Header -->
+                  <div class="room-header">
+                    <div>
+                      <div class="room-name">${room.name} &rsaquo;</div>
+                      <div class="room-sub">Wird geladen...</div>
                     </div>
-                  ` : ''}
+                  </div>
+
+                  <!-- Room Environmental Readings (Temp, Humidity, Illuminance) -->
+                  <div class="room-env-bar">
+                    <span class="env-pill env-temp">${this._icon('thermometer', { size: 13, cls: 'icon-temp', style: 'margin-right:4px;' })} ${initTemp}</span>
+                    <span class="env-pill env-humidity" style="${initHum ? 'display:inline-flex;' : 'display:none;'}">${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:4px;' })} ${initHum || '--%'}</span>
+                    <span class="env-pill env-lux" style="${initLux ? 'display:inline-flex;' : 'display:none;'}">${this._icon('lux', { size: 13, cls: 'icon-lux', style: 'margin-right:4px;' })} ${initLux || '-- lx'}</span>
+                  </div>
+
+                  <!-- Bottom Row: Actions & Heating Quick Stepper -->
+                  <div class="room-bottom-row">
+                    <div class="room-actions">
+                      ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">${this._icon('light', { size: 18, cls: 'icon-light' })}</div>` : ''}
+                      ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 18, cls: 'icon-climate' })}</div>` : ''}
+                      ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">${this._icon('music', { size: 18, cls: 'icon-media' })}</div>` : ''}
+                      ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 18, cls: 'icon-security' })}</div>` : ''}
+                    </div>
+
+                    ${room.climate_entity ? `
+                      <div class="quick-climate-stepper" title="Zieltemperatur anpassen">
+                        <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 12 })}</button>
+                        <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
+                        <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 12 })}</button>
+                      </div>
+                    ` : ''}
+                  </div>
                 </div>
-              </div>
-            `).join('')}
+              `;
+            }).join('')}
           </div>
         </div>
 
