@@ -1035,3 +1035,4 @@ window.customCards.push({
   name: 'Vision Glass Dashboard',
   description: 'Ultra-modern translucent glassmorphism smart home dashboard with interactive modals, day/night auto-switching and floating dock.'
 });
+
