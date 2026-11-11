@@ -41,6 +41,7 @@ class VisionGlassDashboard extends HTMLElement {
           light_entity: 'light.livingroom',
           media_entity: 'media_player.denon_avr_x3300w_3',
           switch_entity: 'switch.switch_livingroom_tv_smartplug_switch',
+          multimedia_switch: 'switch.livingroom_multimedia',
           presence_entity: 'binary_sensor.living_room_occupied',
           window_entity: 'binary_sensor.fensterkontakte_wohnzimmer'
         },
@@ -319,16 +320,30 @@ class VisionGlassDashboard extends HTMLElement {
     const isWinOpen = winObj && winObj.state === 'on';
 
     const roomSlug = room.id.toLowerCase();
+    const slugAliases = {
+      'wohnzimmer': ['livingroom', 'living_room', 'denon', 'shield', 'subwoofer'],
+      'arbeitszimmer': ['studyroom', 'study_room', 'office'],
+      'badezimmer': ['bathroom', 'bath'],
+      'kuche': ['kitchen'],
+      'schlafzimmer': ['bedroom'],
+      'flur': ['hallway']
+    };
+    const aliases = slugAliases[roomSlug] || [];
+
+    const mmSwitchObj = (room.multimedia_switch && this._hass.states[room.multimedia_switch]) || (room.id === 'wohnzimmer' && this._hass.states['switch.livingroom_multimedia']) || null;
+
     const otherSwitches = [];
     const otherSensors = [];
 
     Object.keys(this._hass.states).forEach(eId => {
-      if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity) return;
+      if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
 
       const eIdLower = eId.toLowerCase();
       const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
 
-      if (eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase())) {
+      const matches = eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase()) || aliases.some(a => eIdLower.includes(a));
+
+      if (matches) {
         if (eId.startsWith('switch.') || eId.startsWith('light.')) {
           otherSwitches.push({ id: eId, state: this._hass.states[eId] });
         } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
@@ -353,6 +368,18 @@ class VisionGlassDashboard extends HTMLElement {
         </div>
 
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+          ${mmSwitchObj ? `
+            <div class="control-row" style="background:rgba(56,189,248,0.14);border:1px solid rgba(56,189,248,0.4);grid-column:1/-1;">
+              <div>
+                <div style="font-weight:700;font-size:15px;color:var(--text-primary);">📺 Multimedia-Zentrale</div>
+                <div style="font-size:12px;color:var(--text-secondary);">Schaltet TV, AVR-Receiver, Subwoofer & Shield zusammen • ${mmSwitchObj.state === 'on' ? '🟢 Ein' : '⚪ Aus'}</div>
+              </div>
+              <button class="toggle-pill ${mmSwitchObj.state === 'on' ? 'active-blue' : ''}" id="roomModalMultimediaToggle">
+                ${mmSwitchObj.state === 'on' ? 'EIN' : 'AUS'}
+              </button>
+            </div>
+          ` : ''}
+
           ${room.light_entity ? `
             <div class="control-row">
               <div>
@@ -446,6 +473,13 @@ class VisionGlassDashboard extends HTMLElement {
       </div>
     `;
 
+    if (body.querySelector('#roomModalMultimediaToggle')) {
+      body.querySelector('#roomModalMultimediaToggle').onclick = () => {
+        const mmId = room.multimedia_switch || 'switch.livingroom_multimedia';
+        this._callService('switch', 'toggle', { entity_id: mmId });
+      };
+    }
+
     if (room.light_entity && body.querySelector('#roomModalLightToggle')) {
       body.querySelector('#roomModalLightToggle').onclick = () => {
         this._callService('light', 'toggle', { entity_id: room.light_entity });
@@ -537,20 +571,18 @@ class VisionGlassDashboard extends HTMLElement {
       chipPS.innerHTML = `<span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span> 👤 Shanty: ${isHome ? 'Zuhause' : (pS ? (pS.state === 'not_home' ? 'Abwesend' : pS.state) : 'Unbekannt')}`;
     }
 
-    // Lights Chip
-    const allLightsState = this._hass.states[this._config.all_lights_entity];
+    // Lights Chip (Counts only individual rooms, strictly excluding Wohnung aggregate)
     const chipLights = this.shadowRoot.getElementById('chipLights');
     if (chipLights) {
       let activeLightsCount = 0;
       this._config.rooms.forEach(r => {
+        if (r.id === 'wohnung' || r.light_entity === 'light.licht_wohnung' || r.light_entity === this._config.all_lights_entity) return;
         if (r.light_entity && this._hass.states[r.light_entity] && this._hass.states[r.light_entity].state === 'on') {
           activeLightsCount++;
         }
       });
       if (activeLightsCount > 0) {
         chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${activeLightsCount} Licht${activeLightsCount > 1 ? 'er' : ''} an`;
-      } else if (allLightsState && allLightsState.state === 'on') {
-        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> Licht an`;
       } else {
         chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> Alle Lichter aus`;
       }
@@ -1268,6 +1300,7 @@ class VisionGlassDashboard extends HTMLElement {
     } else if (type === 'switches') {
       title.textContent = '🔌 Geräte & Steckdosen';
       const switches = [
+        { id: 'switch.livingroom_multimedia', name: '📺 Multimedia-Zentrale (TV, AVR, Shield, Sub)' },
         { id: 'switch.switch_washingmachine_smartplug_switch', name: 'Waschmaschine', pwr: 'sensor.switch_washingmachine_smartplug_power' },
         { id: 'switch.switch_denon_659190_smartplug_switch', name: 'Denon AVR Receiver' },
         { id: 'switch.switch_subwoofer_smartplug_switch', name: 'Subwoofer' },
