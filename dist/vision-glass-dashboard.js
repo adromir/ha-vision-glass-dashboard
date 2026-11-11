@@ -31,50 +31,58 @@ class VisionGlassDashboard extends HTMLElement {
           id: 'wohnzimmer',
           name: 'Wohnzimmer',
           picture: '/api/image/serve/7a6844ff1859c2ea6c7ee3ac46a32765/512x512',
-          temp_entity: 'input_number.wohnzimmer_komfort_temperatur',
+          temp_entity: 'sensor.bewegungsmelder_wohnzimmer_temperatur',
+          target_temp_entity: 'input_number.wohnzimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_wohnzimmer',
           light_entity: 'light.livingroom',
           media_entity: 'media_player.denon_avr_x3300w_3',
-          switch_entity: 'switch.switch_livingroom_tv',
+          switch_entity: 'switch.switch_livingroom_tv_smartplug_switch',
           presence_entity: 'binary_sensor.prasenzmelder_wohnzimmer_presence',
-          window_entity: 'binary_sensor.fensterkontakt_wohnzimmerfenster_contact'
+          window_entity: 'binary_sensor.fensterkontakte_wohnzimmer'
         },
         {
           id: 'arbeitszimmer',
           name: 'Arbeitszimmer',
           picture: '/api/image/serve/bafdc8f4ac59eaa27f9821b007af5cd1/512x512',
-          temp_entity: 'input_number.arbeitszimmer_komfort_temperatur',
+          temp_entity: 'sensor.bewegungsmelder_arbeitszimmer_temperatur',
+          target_temp_entity: 'input_number.arbeitszimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_arbeitszimmer',
           light_entity: 'light.light_studyroom_tomada',
           media_entity: 'media_player.arbeitszimmer_andreas_echo_show',
-          switch_entity: 'switch.switch_denon',
-          presence_entity: 'binary_sensor.prasenzmelder_arbeitszimmer_presence'
+          switch_entity: 'switch.switch_denon_659190_smartplug_switch',
+          presence_entity: 'binary_sensor.prasenzmelder_arbeitszimmer_presence',
+          window_entity: 'binary_sensor.fensterkontakt_arbeitszimmerfenster_contact'
         },
         {
           id: 'schlafzimmer',
           name: 'Schlafzimmer',
           picture: '/api/image/serve/c232467fe87758f1622031d777e965b5/512x512',
-          temp_entity: 'input_number.schlafzimmer_komfort_temperatur',
+          temp_entity: 'sensor.bewegungsmelder_schlafzimmer_temperature',
+          target_temp_entity: 'input_number.schlafzimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_schlafzimmer',
           light_entity: 'light.schlafzimmerlicht',
-          media_entity: 'media_player.schlafzimmer_tv',
-          switch_entity: 'switch.switch_bedroom_tv',
-          presence_entity: 'binary_sensor.prasenzmelder_schlafzimmer_presence'
+          media_entity: 'media_player.schlafzimmer_tv_2',
+          switch_entity: 'switch.switch_bedroom_tv_smartplug_switch',
+          presence_entity: 'binary_sensor.prasenzmelder_schlafzimmer_presence',
+          window_entity: 'binary_sensor.fensterkontakt_schlafzimmer_contact'
         },
         {
           id: 'kuche',
           name: 'Küche',
           picture: '/api/image/serve/f95a2403326e0cbe78953ca98a93f878/512x512',
-          temp_entity: 'input_number.kuche_komfort_temperatur',
+          temp_entity: 'sensor.bewegungsmelder_kuche_temperature',
+          target_temp_entity: 'input_number.kuche_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_kuche',
           light_entity: 'light.light_kitchen_tomada',
-          presence_entity: 'binary_sensor.prasenzmelder_kuche_presence'
+          presence_entity: 'binary_sensor.prasenzmelder_kuche_presence',
+          window_entity: 'binary_sensor.fensterkontakt_kuche_contact'
         },
         {
           id: 'badezimmer',
           name: 'Badezimmer',
           picture: '/api/image/serve/ce49978764aa284ddd21dfaac0f671f1/512x512',
-          temp_entity: 'input_number.bad_komfort_temperatur',
+          temp_entity: 'sensor.badezimmer_temperatur',
+          target_temp_entity: 'input_number.bad_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_badezimmer',
           light_entity: 'light.light_bathroom_tomada',
           switch_entity: 'switch.switch_washingmachine_smartplug_switch',
@@ -84,18 +92,21 @@ class VisionGlassDashboard extends HTMLElement {
           id: 'flur',
           name: 'Flur',
           picture: '/api/image/serve/bb7e01034e0b85ae2cfb23fa422d252e/512x512',
-          temp_entity: 'input_number.flur_komfort_temperatur',
+          temp_entity: 'sensor.bewegungsmelder_flur_temperatur',
+          target_temp_entity: 'input_number.flur_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_flur',
           light_entity: 'light.light_hallway_tomada',
           lock_entity: 'lock.wohnungsschloss',
-          presence_entity: 'binary_sensor.prasenzmelder_flur_presence'
+          presence_entity: 'binary_sensor.prasenzmelder_flur_presence',
+          window_entity: 'binary_sensor.fensterkontakt_flur_contact'
         },
         {
           id: 'wohnung',
           name: 'Wohnung',
           picture: '/api/image/serve/d7e8a8480c1bd844b145b8b423af0c83/512x512',
           temp_entity: 'input_number.wohnung_eco_temperatur',
-          light_entity: 'light.licht_wohnung'
+          light_entity: 'light.licht_wohnung',
+          lock_entity: 'lock.wohnungsschloss'
         },
         {
           id: 'kellerraum',
@@ -248,13 +259,31 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // Climate Chip
+    // Climate Chip (calculate min - max across rooms)
     const chipClimate = this.shadowRoot.getElementById('chipClimate');
     if (chipClimate) {
-      const wzTemp = this._hass.states['input_number.wohnzimmer_komfort_temperatur'];
-      const wzClimate = this._hass.states['climate.better_thermostat_wohnzimmer'];
-      const tempVal = wzClimate ? (wzClimate.attributes.current_temperature || wzClimate.attributes.temperature) : (wzTemp ? wzTemp.state : '22.0');
-      chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> Wohnzimmer ${tempVal}°C`;
+      const climateIds = [
+        'climate.better_thermostat_wohnzimmer',
+        'climate.better_thermostat_arbeitszimmer',
+        'climate.better_thermostat_schlafzimmer',
+        'climate.better_thermostat_kuche',
+        'climate.better_thermostat_badezimmer',
+        'climate.better_thermostat_flur'
+      ];
+      let temps = [];
+      climateIds.forEach(cid => {
+        const cs = this._hass.states[cid];
+        if (cs && cs.attributes && cs.attributes.current_temperature != null) {
+          temps.push(parseFloat(cs.attributes.current_temperature));
+        }
+      });
+      if (temps.length > 0) {
+        const minT = Math.min(...temps).toFixed(1).replace('.', ',');
+        const maxT = Math.max(...temps).toFixed(1).replace('.', ',');
+        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> Raumklima ${minT} - ${maxT} °C`;
+      } else {
+        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> Raumklima 22°C`;
+      }
     }
 
     // Lock Chip
@@ -601,29 +630,45 @@ class VisionGlassDashboard extends HTMLElement {
         };
       });
     } else if (type === 'security') {
-      title.textContent = '🔒 Sicherheit & Zutritt';
+      title.textContent = '🔒 Sicherheit, Schloss & Kontakte';
       const lockState = this._hass.states['lock.wohnungsschloss'];
       const isLocked = lockState && lockState.state === 'locked';
-      const windowState = this._hass.states['binary_sensor.fensterkontakt_wohnzimmerfenster_contact'];
-      const isWindowOpen = windowState && windowState.state === 'on';
+
+      const contacts = [
+        { id: 'binary_sensor.turkontakt_hausture_contact', name: 'Haustüre', icon: '🚪' },
+        { id: 'binary_sensor.turkontakt_balkontur_contact', name: 'Balkontüre', icon: '🚪' },
+        { id: 'binary_sensor.fensterkontakte_wohnzimmer', name: 'Wohnzimmerfenster', icon: '🪟' },
+        { id: 'binary_sensor.fensterkontakt_arbeitszimmerfenster_contact', name: 'Arbeitszimmerfenster', icon: '🪟' },
+        { id: 'binary_sensor.fensterkontakt_kuche_contact', name: 'Küchenfenster', icon: '🪟' },
+        { id: 'binary_sensor.fensterkontakt_flur_contact', name: 'Flurfenster', icon: '🪟' },
+        { id: 'binary_sensor.fensterkontakt_schlafzimmer_contact', name: 'Schlafzimmerfenster', icon: '🪟' }
+      ];
 
       body.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:16px;">
+        <div style="display:flex;flex-direction:column;gap:14px;">
           <div class="control-row">
             <div>
-              <div style="font-size:16px;font-weight:600;">Wohnungsschloss (SwitchBot Lock Ultra)</div>
-              <div style="font-size:13px;color:var(--text-secondary);">${isLocked ? 'Sicher verriegelt' : 'Aktuell ENTRIEGELT'}</div>
+              <div style="font-size:16px;font-weight:700;">Wohnungsschloss (SwitchBot Lock Ultra)</div>
+              <div style="font-size:13px;color:var(--text-secondary);">${isLocked ? '✔️ Sicher verriegelt' : '⚠️ Aktuell ENTRIEGELT'}</div>
             </div>
             <button class="btn-micro ${isLocked ? 'active-green' : 'active-amber'}" id="toggleLockBtn">
               ${isLocked ? 'VERRIEGELT' : 'ENTRIEGELT'}
             </button>
           </div>
-          <div class="control-row">
-            <div>
-              <div style="font-size:15px;font-weight:600;">Wohnzimmerfenster</div>
-              <div style="font-size:13px;color:var(--text-secondary);">${isWindowOpen ? '⚠️ Fenster ist geöffnet' : '✔️ Fenster ist geschlossen'}</div>
-            </div>
-            <span style="font-size:18px;">${isWindowOpen ? '🪟 ⚠️' : '🪟 ✔️'}</span>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+            ${contacts.map(c => {
+              const cs = this._hass.states[c.id];
+              const isOpen = cs && cs.state === 'on';
+              return `
+                <div class="control-row">
+                  <div>
+                    <div style="font-weight:600;font-size:14px;">${c.icon} ${c.name}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${isOpen ? '⚠️ Geöffnet' : '✔️ Geschlossen'}</div>
+                  </div>
+                  <span class="toggle-pill ${isOpen ? 'active-amber' : ''}">${isOpen ? 'OFFEN' : 'ZU'}</span>
+                </div>
+              `;
+            }).join('')}
           </div>
         </div>
       `;
@@ -635,11 +680,13 @@ class VisionGlassDashboard extends HTMLElement {
       title.textContent = '🔌 Geräte & Steckdosen';
       const switches = [
         { id: 'switch.switch_washingmachine_smartplug_switch', name: 'Waschmaschine', pwr: 'sensor.switch_washingmachine_smartplug_power' },
-        { id: 'switch.switch_denon', name: 'Denon AVR Steckdose' },
-        { id: 'switch.switch_subwoofer', name: 'Subwoofer' },
-        { id: 'switch.switch_livingroom_tv', name: 'Wohnzimmer TV' },
-        { id: 'switch.switch_bedroom_tv', name: 'Schlafzimmer TV' },
-        { id: 'switch.switch_shield', name: 'Nvidia Shield' }
+        { id: 'switch.switch_denon_659190_smartplug_switch', name: 'Denon AVR Receiver' },
+        { id: 'switch.switch_subwoofer_smartplug_switch', name: 'Subwoofer' },
+        { id: 'switch.switch_livingroom_tv_smartplug_switch', name: 'Samsung TV Wohnzimmer' },
+        { id: 'switch.switch_bedroom_tv_smartplug_switch', name: 'Schlafzimmer TV' },
+        { id: 'switch.switch_shield_smartplug_switch', name: 'Nvidia Shield' },
+        { id: 'switch.switch_harmonyhub_smartplug_switch', name: 'Harmony Hub' },
+        { id: 'switch.switch_libreelec_bedroom_smartplug_switch', name: 'LibreELEC Schlafzimmer' }
       ];
 
       body.innerHTML = `
@@ -752,7 +799,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         .dashboard-root {
           min-height: calc(100vh - 64px);
-          padding: 24px 36px 120px 36px;
+          padding: 32px 36px 120px 36px;
           box-sizing: border-box;
           position: relative;
           color: var(--text-primary);
@@ -1193,7 +1240,7 @@ class VisionGlassDashboard extends HTMLElement {
         <div class="top-bar">
           <div>
             <div class="date-title" id="dateTitle">Mittwoch, 11. November</div>
-            <div class="name-day" id="subHeader">Wohnung Andreas • Smart Home Zentrale</div>
+            <div class="name-day" id="subHeader">Willkommen Andreas Pilz • Smart Home Zentrale</div>
           </div>
 
           <div class="chips-container">
