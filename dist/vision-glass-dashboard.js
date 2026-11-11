@@ -45,6 +45,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.bewegungsmelder_wohnzimmer_temperatur',
           target_temp_entity: 'input_number.wohnzimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_wohnzimmer',
+          humidity_entity: 'sensor.prasenzmelder_wohnzimmer_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_wohnzimmer_illuminance',
           light_entity: 'light.livingroom',
           media_entity: 'media_player.denon_avr_x3300w_3',
           switch_entity: 'switch.switch_livingroom_tv_smartplug_switch',
@@ -59,6 +61,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.bewegungsmelder_arbeitszimmer_temperatur',
           target_temp_entity: 'input_number.arbeitszimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_arbeitszimmer',
+          humidity_entity: 'sensor.prasenzmelder_arbeitszimmer_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_arbeitszimmer_illuminance',
           light_entity: 'light.light_studyroom_tomada',
           media_entity: 'media_player.arbeitszimmer_andreas_echo_show',
           switch_entity: 'switch.switch_denon_659190_smartplug_switch',
@@ -72,6 +76,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.bewegungsmelder_schlafzimmer_temperature',
           target_temp_entity: 'input_number.schlafzimmer_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_schlafzimmer',
+          humidity_entity: 'sensor.prasenzmelder_schlafzimmer_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_schlafzimmer_illuminance',
           light_entity: 'light.schlafzimmerlicht',
           media_entity: 'media_player.schlafzimmer_tv_2',
           switch_entity: 'switch.switch_bedroom_tv_smartplug_switch',
@@ -85,6 +91,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.bewegungsmelder_kuche_temperature',
           target_temp_entity: 'input_number.kuche_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_kuche',
+          humidity_entity: 'sensor.prasenzmelder_kuche_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_kuche_illuminance',
           light_entity: 'light.light_kitchen_tomada',
           presence_entity: 'binary_sensor.kuche_occupied',
           window_entity: 'binary_sensor.fensterkontakt_kuche_contact'
@@ -96,6 +104,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.badezimmer_temperatur',
           target_temp_entity: 'input_number.bad_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_badezimmer',
+          humidity_entity: 'sensor.prasenzmelder_badezimmer_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_badezimmer_illuminance',
           light_entity: 'light.light_bathroom_tomada',
           switch_entity: 'switch.switch_washingmachine_smartplug_switch',
           presence_entity: 'binary_sensor.bathroom_occupied'
@@ -107,6 +117,8 @@ class VisionGlassDashboard extends HTMLElement {
           temp_entity: 'sensor.bewegungsmelder_flur_temperatur',
           target_temp_entity: 'input_number.flur_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_flur',
+          humidity_entity: 'sensor.prasenzmelder_flur_humidity',
+          illuminance_entity: 'sensor.prasenzmelder_flur_illuminance',
           light_entity: 'light.light_hallway_tomada',
           lock_entity: 'lock.wohnungsschloss',
           presence_entity: 'binary_sensor.hallway_occupied',
@@ -145,7 +157,15 @@ class VisionGlassDashboard extends HTMLElement {
       all_lights_entity: config.all_lights_entity || stub.all_lights_entity,
       washing_machine_switch: config.washing_machine_switch || stub.washing_machine_switch,
       washing_machine_power: config.washing_machine_power || stub.washing_machine_power,
-      rooms: (config.rooms && config.rooms.length > 0) ? config.rooms : stub.rooms
+      rooms: (config.rooms && config.rooms.length > 0) ? config.rooms.map(r => {
+        const sr = stub.rooms.find(s => s.id === r.id) || {};
+        return {
+          ...sr,
+          ...r,
+          humidity_entity: r.humidity_entity || sr.humidity_entity,
+          illuminance_entity: r.illuminance_entity || sr.illuminance_entity
+        };
+      }) : stub.rooms
     };
     this._render();
     this._initialRenderDone = true;
@@ -237,7 +257,7 @@ class VisionGlassDashboard extends HTMLElement {
           (msg) => {
             if (msg && msg.forecast) {
               this._hourlyForecast = msg.forecast;
-              if (this._activeModal === 'weather') this._renderModalContent('weather');
+              if (this._activeModal === 'weather') this._updateForecastCarousels();
             }
           },
           { type: 'weather/subscribe_forecast', forecast_type: 'hourly', entity_id: wEntity }
@@ -249,7 +269,7 @@ class VisionGlassDashboard extends HTMLElement {
           (msg) => {
             if (msg && msg.forecast) {
               this._dailyForecast = msg.forecast;
-              if (this._activeModal === 'weather') this._renderModalContent('weather');
+              if (this._activeModal === 'weather') this._updateForecastCarousels();
             }
           },
           { type: 'weather/subscribe_forecast', forecast_type: 'daily', entity_id: wEntity }
@@ -285,8 +305,107 @@ class VisionGlassDashboard extends HTMLElement {
       } catch (e) {}
 
       if (this._activeModal === 'weather') {
-        this._renderModalContent('weather');
+        this._updateForecastCarousels();
       }
+    }
+  }
+
+  _updateWeatherModalValues() {
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!body || !this._hass) return;
+    const w = this._hass.states['weather.hannover_hannover'];
+    if (!w) return;
+    const a = w.attributes;
+
+    const tempEl = body.querySelector('#weatherHeroTemp');
+    if (tempEl && a.temperature != null) tempEl.textContent = `${a.temperature}°C`;
+
+    const condEl = body.querySelector('#weatherHeroCond');
+    if (condEl) condEl.textContent = `${this._translateWeather(w.state)} • Hannover`;
+
+    const emojiEl = body.querySelector('#weatherHeroEmoji');
+    if (emojiEl) emojiEl.textContent = this._getWeatherEmoji(w.state);
+
+    const humEl = body.querySelector('#weatherMetricHum');
+    if (humEl && a.humidity != null) humEl.textContent = `${a.humidity}%`;
+
+    const pressEl = body.querySelector('#weatherMetricPress');
+    if (pressEl && a.pressure != null) pressEl.textContent = `${a.pressure} hPa`;
+
+    const windEl = body.querySelector('#weatherMetricWind');
+    if (windEl && a.wind_speed != null) windEl.textContent = `${a.wind_speed} km/h (${a.wind_bearing})`;
+
+    const visEl = body.querySelector('#weatherMetricVis');
+    if (visEl && a.visibility != null) visEl.textContent = `${a.visibility} km`;
+  }
+
+  _renderHourlyItemsHtml(hourlyItems) {
+    if (!hourlyItems || hourlyItems.length === 0) {
+      return '<div class="control-row" style="font-size:13px;color:var(--text-secondary);">Stündliche Wettervorhersage wird geladen...</div>';
+    }
+    return hourlyItems.map((item, hIdx) => {
+      const d = new Date(item.datetime);
+      const timeStr = hIdx === 0 ? 'Jetzt' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const emoji = this._getWeatherEmoji(item.condition);
+      const t = Math.round(item.temperature);
+      const rain = item.precipitation != null && item.precipitation > 0 ? `${item.precipitation.toFixed(1)} mm` : '';
+      return `
+        <div class="control-row" style="flex-direction:column;align-items:center;gap:6px;min-width:68px;padding:10px 8px;flex-shrink:0;">
+          <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${timeStr}</span>
+          <span style="font-size:24px;">${emoji}</span>
+          <span style="font-size:15px;font-weight:700;">${t}°</span>
+          ${rain ? `<span style="font-size:10px;color:#38bdf8;font-weight:600;">💧${rain}</span>` : '<span style="font-size:10px;color:transparent;">•</span>'}
+        </div>
+      `;
+    }).join('');
+  }
+
+  _renderDailyItemsHtml(dailyItems) {
+    if (!dailyItems || dailyItems.length === 0) {
+      return '<div class="control-row" style="font-size:13px;color:var(--text-secondary);">Tagesvorhersage wird geladen...</div>';
+    }
+    return dailyItems.map((item, idx) => {
+      const d = new Date(item.datetime);
+      const dayName = idx === 0 ? 'Heute' : (idx === 1 ? 'Morgen' : d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }));
+      const emoji = this._getWeatherEmoji(item.condition);
+      const condText = this._translateWeather(item.condition);
+      const maxT = Math.round(item.temperature);
+      const minT = item.templow != null ? Math.round(item.templow) : (maxT - 4);
+      const rain = item.precipitation ? `${item.precipitation.toFixed(1)} mm` : '0 mm';
+      return `
+        <div class="control-row" style="padding:10px 16px;display:grid;grid-template-columns:105px 36px 1fr 140px;align-items:center;gap:10px;">
+          <span style="font-weight:700;font-size:14px;">${dayName}</span>
+          <span style="font-size:22px;">${emoji}</span>
+          <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${condText}</span>
+          <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
+            <span style="font-size:12px;color:var(--text-secondary);width:26px;text-align:right;">${minT}°</span>
+            <div style="width:48px;height:4px;border-radius:2px;background:linear-gradient(90deg, #38bdf8, #f59e0b);"></div>
+            <span style="font-size:14px;font-weight:700;width:26px;">${maxT}°</span>
+            <span style="font-size:11px;color:#38bdf8;font-weight:600;margin-left:4px;">💧${rain}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  _updateForecastCarousels() {
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!body) return;
+
+    const hourlyContainer = body.querySelector('#weatherHourlyContainer');
+    if (hourlyContainer) {
+      const hourlyItems = (this._hourlyForecast && this._hourlyForecast.length > 0)
+        ? this._hourlyForecast.slice(0, 24)
+        : [];
+      hourlyContainer.innerHTML = this._renderHourlyItemsHtml(hourlyItems);
+    }
+
+    const dailyContainer = body.querySelector('#weatherDailyContainer');
+    if (dailyContainer) {
+      const dailyItems = (this._dailyForecast && this._dailyForecast.length > 0)
+        ? this._dailyForecast.slice(0, 7)
+        : [];
+      dailyContainer.innerHTML = this._renderDailyItemsHtml(dailyItems);
     }
   }
 
@@ -825,7 +944,8 @@ class VisionGlassDashboard extends HTMLElement {
     const wEntity = this._config.weather_entity;
     if (wEntity && this._hass.states[wEntity]) {
       const w = this._hass.states[wEntity];
-      const temp = w.attributes.temperature;
+      const a = w.attributes;
+      const temp = a.temperature;
       const weatherTempEl = this.shadowRoot.getElementById('weatherTemp');
       const weatherStateEl = this.shadowRoot.getElementById('weatherCondition');
       const weatherIconEl = this.shadowRoot.getElementById('weatherIcon');
@@ -841,21 +961,83 @@ class VisionGlassDashboard extends HTMLElement {
       if (chipWeather && temp !== undefined) {
         chipWeather.textContent = `🌦️ Hannover ${temp}°C`;
       }
+
+      // Sidebar Weather Mini Pills
+      const sidebarMiniHum = this.shadowRoot.getElementById('sidebarMiniHum');
+      if (sidebarMiniHum && a.humidity != null) sidebarMiniHum.textContent = `💧 ${a.humidity}%`;
+      const sidebarMiniWind = this.shadowRoot.getElementById('sidebarMiniWind');
+      if (sidebarMiniWind && a.wind_speed != null) sidebarMiniWind.textContent = `💨 ${a.wind_speed} km/h`;
+      const sunObj = this._hass.states['sun.sun'];
+      const sidebarMiniSun = this.shadowRoot.getElementById('sidebarMiniSun');
+      if (sidebarMiniSun && sunObj && sunObj.attributes && sunObj.attributes.next_setting) {
+        const d = new Date(sunObj.attributes.next_setting);
+        sidebarMiniSun.textContent = `🌅 ${d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
+      }
+    }
+
+    // Sidebar Date
+    const sidebarDateSub = this.shadowRoot.getElementById('sidebarDateSub');
+    if (sidebarDateSub) {
+      sidebarDateSub.textContent = now.toLocaleDateString('de-DE', { weekday: 'long', day: 'numeric', month: 'short' });
+    }
+
+    // Sidebar Glance Bar (active lights, open windows, door lock)
+    const glanceEl = this.shadowRoot.getElementById('sidebarGlance');
+    if (glanceEl) {
+      let lightsOn = 0;
+      let windowsOpen = 0;
+      this._config.rooms.forEach(r => {
+        if (r.id !== 'wohnung' && r.light_entity && this._hass.states[r.light_entity] && this._hass.states[r.light_entity].state === 'on') {
+          lightsOn++;
+        }
+        if (r.window_entity && this._hass.states[r.window_entity] && this._hass.states[r.window_entity].state === 'on') {
+          windowsOpen++;
+        }
+      });
+      const lockS = this._hass.states['lock.wohnungsschloss'];
+      const isLocked = lockS && lockS.state === 'locked';
+
+      glanceEl.innerHTML = `
+        <span class="sidebar-mini-pill" style="cursor:pointer;" id="glanceLights" title="Beleuchtungs-Übersicht">💡 ${lightsOn} an</span>
+        <span class="sidebar-mini-pill" style="cursor:pointer;${windowsOpen > 0 ? 'color:#f59e0b;font-weight:700;' : ''}" id="glanceWindows" title="Fenster-Übersicht">${windowsOpen > 0 ? `⚠️ ${windowsOpen} offen` : '✔️ Fenster zu'}</span>
+        <span class="sidebar-mini-pill" style="cursor:pointer;" id="glanceLock" title="Schloss-Übersicht">${isLocked ? '🔒 Zu' : '🔓 Offen'}</span>
+      `;
+      const gL = glanceEl.querySelector('#glanceLights');
+      if (gL) gL.onclick = (e) => { e.stopPropagation(); this._openModal('lighting'); };
+      const gW = glanceEl.querySelector('#glanceWindows');
+      if (gW) gW.onclick = (e) => { e.stopPropagation(); this._openModal('security'); };
+      const gLo = glanceEl.querySelector('#glanceLock');
+      if (gLo) gLo.onclick = (e) => { e.stopPropagation(); this._openModal('security'); };
     }
 
     // 3. Update Chips
-    // Persons Chips
+    // Persons Chips (with live profile pictures and status)
     const chipPA = this.shadowRoot.getElementById('chipPersonAndreas');
     if (chipPA) {
       const pA = this._hass.states['person.andreas'];
       const isHome = pA && pA.state === 'home';
-      chipPA.innerHTML = `<span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span> 👤 Andreas: ${isHome ? 'Zuhause' : (pA ? (pA.state === 'not_home' ? 'Abwesend' : pA.state) : 'Unbekannt')}`;
+      const pic = (pA && pA.attributes && pA.attributes.entity_picture) || '/api/image/serve/77e1449b97a3b297a3359c4bf2290f43/512x512';
+      const statusText = isHome ? 'Zuhause' : (pA ? (pA.state === 'not_home' ? 'Abwesend' : pA.state) : 'Unbekannt');
+      chipPA.innerHTML = `
+        <img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Andreas" />
+        <span class="chip-name">Andreas</span>
+        <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
+        <span class="chip-status-text">${statusText}</span>
+      `;
     }
     const chipPS = this.shadowRoot.getElementById('chipPersonShanty');
     if (chipPS) {
       const pS = this._hass.states['person.shanty'];
       const isHome = pS && pS.state === 'home';
-      chipPS.innerHTML = `<span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span> 👤 Shanty: ${isHome ? 'Zuhause' : (pS ? (pS.state === 'not_home' ? 'Abwesend' : pS.state) : 'Unbekannt')}`;
+      const pic = (pS && pS.attributes && pS.attributes.entity_picture) || null;
+      const statusText = isHome ? 'Zuhause' : (pS ? (pS.state === 'not_home' ? 'Abwesend' : pS.state) : 'Unbekannt');
+      chipPS.innerHTML = `
+        ${pic ? `<img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Shanty" />`
+              : `<div class="chip-avatar chip-avatar-initial" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">S</div>`}
+        <span class="chip-name">Shanty</span>
+        <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
+        <span class="chip-status-text">${statusText}</span>
+      `;
     }
 
     // Lights Chip (Counts only individual rooms, strictly excluding Wohnung aggregate)
@@ -944,7 +1126,11 @@ class VisionGlassDashboard extends HTMLElement {
 
     // 6. Update Active Modal if open
     if (this._activeModal) {
-      if (typeof this._activeModal === 'string') {
+      if (this._activeModal === 'weather') {
+        this._updateWeatherModalValues();
+      } else if (this._activeModal === 'stats') {
+        // preserve stats modal without re-render flicker
+      } else if (typeof this._activeModal === 'string') {
         this._renderModalContent(this._activeModal);
       } else if (this._activeModal.type === 'room') {
         this._renderRoomModal(this._activeModal.room);
@@ -956,8 +1142,9 @@ class VisionGlassDashboard extends HTMLElement {
     const card = this.shadowRoot.getElementById(`roomCard_${idx}`);
     if (!card) return;
 
-    // Temperature Badge
-    const tempEl = card.querySelector('.room-temp-badge');
+    // Environmental Badges: Temperature, Humidity, Illuminance
+    // 1. Temperature
+    const tempEl = card.querySelector('.env-temp');
     if (tempEl) {
       let tVal = null;
       if (room.climate_entity && this._hass.states[room.climate_entity]) {
@@ -967,11 +1154,46 @@ class VisionGlassDashboard extends HTMLElement {
       if (!tVal && room.temp_entity && this._hass.states[room.temp_entity]) {
         tVal = this._hass.states[room.temp_entity].state;
       }
-      if (tVal) {
-        tempEl.textContent = `${parseFloat(tVal).toFixed(1)}°C`;
+      if (tVal && !isNaN(parseFloat(tVal))) {
+        tempEl.textContent = `🌡️ ${parseFloat(tVal).toFixed(1)}°C`;
+        tempEl.style.display = 'inline-flex';
       } else {
-        tempEl.textContent = '';
+        tempEl.style.display = 'none';
       }
+    }
+
+    // 2. Humidity
+    const humEl = card.querySelector('.env-humidity');
+    if (humEl) {
+      const hEntity = room.humidity_entity || `sensor.prasenzmelder_${room.id}_humidity` || `sensor.ir_${room.id}_humidity`;
+      const hState = this._hass.states[hEntity];
+      if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
+        humEl.textContent = `💧 ${Math.round(parseFloat(hState.state))}%`;
+        humEl.style.display = 'inline-flex';
+      } else {
+        humEl.style.display = 'none';
+      }
+    }
+
+    // 3. Illuminance / Lux
+    const luxEl = card.querySelector('.env-lux');
+    if (luxEl) {
+      const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${room.id}_illuminance` || `sensor.bewegungsmelder_${room.id}_illuminance`;
+      const luxState = this._hass.states[luxEntity];
+      if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
+        luxEl.textContent = `💡 ${Math.round(parseFloat(luxState.state))} lx`;
+        luxEl.style.display = 'inline-flex';
+      } else {
+        luxEl.style.display = 'none';
+      }
+    }
+
+    // 4. Quick Target Temp Stepper
+    const targetValEl = card.querySelector(`#targetTemp_${idx}`);
+    if (targetValEl && room.climate_entity && this._hass.states[room.climate_entity]) {
+      const cObj = this._hass.states[room.climate_entity];
+      let targetTemp = cObj.attributes.temperature != null ? parseFloat(cObj.attributes.temperature) : 21.0;
+      targetValEl.textContent = `${targetTemp.toFixed(1)}°`;
     }
 
     // Subtitle / Status
@@ -1632,6 +1854,14 @@ class VisionGlassDashboard extends HTMLElement {
       });
     } else if (type === 'weather') {
       title.textContent = '🌦️ Wetter, Vorhersage & Regenradar';
+
+      const existingIframe = body.querySelector('#weatherRadarIframe');
+      if (existingIframe) {
+        this._updateWeatherModalValues();
+        this._updateForecastCarousels();
+        return;
+      }
+
       const w = this._hass.states['weather.hannover_hannover'];
       if (!w) {
         body.innerHTML = '<div>Keine Wetterdaten verfügbar.</div>';
@@ -1650,15 +1880,15 @@ class VisionGlassDashboard extends HTMLElement {
           <!-- Current Weather Hero -->
           <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:22px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
             <div style="display:flex;gap:20px;align-items:center;">
-              <div style="font-size:58px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.25));">${this._getWeatherEmoji(w.state)}</div>
+              <div style="font-size:58px;filter:drop-shadow(0 4px 12px rgba(0,0,0,0.25));" id="weatherHeroEmoji">${this._getWeatherEmoji(w.state)}</div>
               <div>
-                <div style="font-size:36px;font-weight:800;letter-spacing:-0.5px;">${a.temperature}°C</div>
-                <div style="font-size:16px;color:var(--text-secondary);font-weight:500;">${this._translateWeather(w.state)} • Hannover</div>
+                <div style="font-size:36px;font-weight:800;letter-spacing:-0.5px;" id="weatherHeroTemp">${a.temperature}°C</div>
+                <div style="font-size:16px;color:var(--text-secondary);font-weight:500;" id="weatherHeroCond">${this._translateWeather(w.state)} • Hannover</div>
               </div>
             </div>
             <div style="text-align:right;">
               <div style="font-size:12px;color:var(--text-secondary);font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Heute</div>
-              <div style="font-size:18px;font-weight:700;margin-top:2px;">
+              <div style="font-size:18px;font-weight:700;margin-top:2px;" id="weatherHeroToday">
                 ${dailyItems[0] && dailyItems[0].templow != null ? `${Math.round(dailyItems[0].templow)}° / ` : ''}${dailyItems[0] ? `${Math.round(dailyItems[0].temperature)}°C` : `${a.temperature}°C`}
               </div>
               <div style="font-size:11px;color:var(--accent);margin-top:4px;">Deutscher Wetterdienst</div>
@@ -1669,50 +1899,30 @@ class VisionGlassDashboard extends HTMLElement {
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;">
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
               <span style="font-size:11px;color:var(--text-secondary);">Luftfeuchtigkeit</span>
-              <span style="font-size:17px;font-weight:700;">${a.humidity}%</span>
+              <span style="font-size:17px;font-weight:700;" id="weatherMetricHum">${a.humidity}%</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
               <span style="font-size:11px;color:var(--text-secondary);">Luftdruck</span>
-              <span style="font-size:17px;font-weight:700;">${a.pressure} hPa</span>
+              <span style="font-size:17px;font-weight:700;" id="weatherMetricPress">${a.pressure} hPa</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
               <span style="font-size:11px;color:var(--text-secondary);">Wind</span>
-              <span style="font-size:17px;font-weight:700;">${a.wind_speed} km/h (${a.wind_bearing})</span>
+              <span style="font-size:17px;font-weight:700;" id="weatherMetricWind">${a.wind_speed} km/h (${a.wind_bearing})</span>
             </div>
             <div class="control-row" style="flex-direction:column;align-items:flex-start;padding:12px 14px;">
               <span style="font-size:11px;color:var(--text-secondary);">Sichtweite</span>
-              <span style="font-size:17px;font-weight:700;">${a.visibility} km</span>
+              <span style="font-size:17px;font-weight:700;" id="weatherMetricVis">${a.visibility} km</span>
             </div>
           </div>
 
-          <!-- Hourly Forecast Carousel (24 Hours) -->
+          <!-- Hourly Forecast Carousel (24 Hours - No rubberbanding) -->
           <div style="display:flex;flex-direction:column;gap:8px;">
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
               ⏱️ <span>Stündliche Vorhersage (Nächste 24 Stunden)</span>
             </div>
-            ${hourlyItems.length > 0 ? `
-              <div style="display:flex;gap:10px;overflow-x:auto;padding:8px 4px;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;">
-                ${hourlyItems.map((item, hIdx) => {
-                  const d = new Date(item.datetime);
-                  const timeStr = hIdx === 0 ? 'Jetzt' : d.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
-                  const emoji = this._getWeatherEmoji(item.condition);
-                  const t = Math.round(item.temperature);
-                  const rain = item.precipitation != null && item.precipitation > 0 ? `${item.precipitation.toFixed(1)} mm` : '';
-                  return `
-                    <div class="control-row" style="flex-direction:column;align-items:center;gap:6px;min-width:68px;padding:10px 8px;scroll-snap-align:start;flex-shrink:0;">
-                      <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${timeStr}</span>
-                      <span style="font-size:24px;">${emoji}</span>
-                      <span style="font-size:15px;font-weight:700;">${t}°</span>
-                      ${rain ? `<span style="font-size:10px;color:#38bdf8;font-weight:600;">💧${rain}</span>` : '<span style="font-size:10px;color:transparent;">•</span>'}
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : `
-              <div class="control-row" style="font-size:13px;color:var(--text-secondary);">
-                Stündliche Wettervorhersage wird geladen...
-              </div>
-            `}
+            <div class="weather-hourly-carousel" id="weatherHourlyContainer">
+              ${this._renderHourlyItemsHtml(hourlyItems)}
+            </div>
           </div>
 
           <!-- 7-Day Forecast Trend -->
@@ -1720,51 +1930,29 @@ class VisionGlassDashboard extends HTMLElement {
             <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
               📅 <span>7-Tage Wettertrend</span>
             </div>
-            ${dailyItems.length > 0 ? `
-              <div style="display:flex;flex-direction:column;gap:8px;">
-                ${dailyItems.map((item, idx) => {
-                  const d = new Date(item.datetime);
-                  const dayName = idx === 0 ? 'Heute' : (idx === 1 ? 'Morgen' : d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' }));
-                  const emoji = this._getWeatherEmoji(item.condition);
-                  const condText = this._translateWeather(item.condition);
-                  const maxT = Math.round(item.temperature);
-                  const minT = item.templow != null ? Math.round(item.templow) : (maxT - 4);
-                  const rain = item.precipitation ? `${item.precipitation.toFixed(1)} mm` : '0 mm';
-                  return `
-                    <div class="control-row" style="padding:10px 16px;display:grid;grid-template-columns:105px 36px 1fr 140px;align-items:center;gap:10px;">
-                      <span style="font-weight:700;font-size:14px;">${dayName}</span>
-                      <span style="font-size:22px;">${emoji}</span>
-                      <span style="font-size:13px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${condText}</span>
-                      <div style="display:flex;align-items:center;gap:8px;justify-content:flex-end;">
-                        <span style="font-size:12px;color:var(--text-secondary);width:26px;text-align:right;">${minT}°</span>
-                        <div style="width:48px;height:4px;border-radius:2px;background:linear-gradient(90deg, #38bdf8, #f59e0b);"></div>
-                        <span style="font-size:14px;font-weight:700;width:26px;">${maxT}°</span>
-                        <span style="font-size:11px;color:#38bdf8;font-weight:600;margin-left:4px;">💧${rain}</span>
-                      </div>
-                    </div>
-                  `;
-                }).join('')}
-              </div>
-            ` : `
-              <div class="control-row" style="font-size:13px;color:var(--text-secondary);">
-                Tagesvorhersage wird geladen...
-              </div>
-            `}
+            <div style="display:flex;flex-direction:column;gap:8px;" id="weatherDailyContainer">
+              ${this._renderDailyItemsHtml(dailyItems)}
+            </div>
           </div>
 
           <!-- Live Weather Map & Radar -->
           <div style="display:flex;flex-direction:column;gap:8px;">
-            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;">
               <div style="display:flex;align-items:center;gap:6px;">
                 📡 <span>Live Niederschlagsradar Hannover & Region</span>
               </div>
-              <a href="https://www.windy.com/?52.3889,9.8297,9" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;">
-                Vollbild öffnen &nearr;
-              </a>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn-micro active" id="btnRadarRain" style="padding:4px 10px;font-size:12px;">🌧️ Regenradar</button>
+                <button class="btn-micro" id="btnRadarWindy" style="padding:4px 10px;font-size:12px;">🌀 Windy</button>
+                <a href="https://www.rainviewer.com/map.html?loc=52.3889,9.8297,9" target="_blank" rel="noopener" style="font-size:12px;color:var(--accent);text-decoration:none;font-weight:600;margin-left:4px;">
+                  Vollbild &nearr;
+                </a>
+              </div>
             </div>
-            <div style="position:relative;width:100%;height:320px;border-radius:20px;overflow:hidden;border:1px solid var(--border-glass);background:rgba(0,0,0,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.25);">
+            <div style="position:relative;width:100%;height:340px;border-radius:20px;overflow:hidden;border:1px solid var(--border-glass);background:rgba(0,0,0,0.3);box-shadow:0 8px 24px rgba(0,0,0,0.25);">
               <iframe
-                src="https://embed.windy.com/embed2.html?lat=52.3889&lon=9.8297&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1"
+                id="weatherRadarIframe"
+                src="https://www.rainviewer.com/map.html?loc=52.3889,9.8297,9&oFa=0&oC=1&oU=0&oCS=1&oF=0&oAP=1&rmt=4&c=1&o=83&lm=1&th=0&sm=1&sn=1"
                 width="100%"
                 height="100%"
                 frameborder="0"
@@ -1775,11 +1963,31 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--text-secondary);margin-top:2px;">
               <span>📍 Misburg-Nord / Hannover (52.39° N, 9.83° O)</span>
-              <span>Deutscher Wetterdienst (DWD) & Windy Radar</span>
+              <span id="radarSourceLabel">RainViewer HD Niederschlagsradar</span>
             </div>
           </div>
         </div>
       `;
+
+      const btnRain = body.querySelector('#btnRadarRain');
+      const btnWindy = body.querySelector('#btnRadarWindy');
+      const iframe = body.querySelector('#weatherRadarIframe');
+      const lbl = body.querySelector('#radarSourceLabel');
+
+      if (btnRain && btnWindy && iframe) {
+        btnRain.onclick = () => {
+          btnRain.classList.add('active');
+          btnWindy.classList.remove('active');
+          iframe.src = 'https://www.rainviewer.com/map.html?loc=52.3889,9.8297,9&oFa=0&oC=1&oU=0&oCS=1&oF=0&oAP=1&rmt=4&c=1&o=83&lm=1&th=0&sm=1&sn=1';
+          if (lbl) lbl.textContent = 'RainViewer HD Niederschlagsradar';
+        };
+        btnWindy.onclick = () => {
+          btnWindy.classList.add('active');
+          btnRain.classList.remove('active');
+          iframe.src = 'https://embed.windy.com/embed2.html?lat=52.3889&lon=9.8297&zoom=9&level=surface&overlay=radar&product=radar&menu=&message=&marker=true&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=default&metricTemp=default&radarRange=-1';
+          if (lbl) lbl.textContent = 'Windy Wetterradar Hannover';
+        };
+      }
     } else if (type === 'stats') {
       title.textContent = '📊 Statistiken & Verläufe';
 
@@ -2229,7 +2437,7 @@ class VisionGlassDashboard extends HTMLElement {
           -webkit-backdrop-filter: blur(20px);
           border: 1px solid var(--border-glass);
           border-radius: 9999px;
-          padding: 7px 14px;
+          padding: 6px 14px;
           font-size: 13px;
           font-weight: 500;
           cursor: pointer;
@@ -2239,6 +2447,39 @@ class VisionGlassDashboard extends HTMLElement {
         .chip:hover {
           transform: translateY(-1px);
           background: var(--bg-surface-hover);
+        }
+
+        .chip-avatar {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          object-fit: cover;
+          flex-shrink: 0;
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+        .avatar-online {
+          border: 1.5px solid #10b981;
+        }
+        .avatar-offline {
+          border: 1.5px solid #94a3b8;
+          opacity: 0.75;
+        }
+        .chip-avatar-initial {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 11px;
+          color: #fff;
+          line-height: 1;
+        }
+        .chip-name {
+          font-weight: 600;
+          margin-right: 2px;
+        }
+        .chip-status-text {
+          font-size: 12px;
+          color: var(--text-secondary);
         }
 
         .chip-dot {
@@ -2272,66 +2513,221 @@ class VisionGlassDashboard extends HTMLElement {
         /* Layout Grid */
         .dashboard-body {
           display: grid;
-          grid-template-columns: 280px 1fr;
+          grid-template-columns: 290px 1fr;
           gap: 24px;
         }
         @media (max-width: 1024px) {
           .dashboard-body { grid-template-columns: 1fr; }
         }
 
-        /* Left Sidebar */
+        /* Left Sidebar Card */
         .sidebar-card {
           background: var(--bg-card);
-          backdrop-filter: blur(25px);
-          -webkit-backdrop-filter: blur(25px);
+          backdrop-filter: blur(30px);
+          -webkit-backdrop-filter: blur(30px);
           border: 1px solid var(--border-glass);
-          border-radius: 24px;
+          border-radius: 28px;
           padding: 24px;
           box-shadow: var(--shadow-ambient);
           display: flex;
           flex-direction: column;
-          gap: 20px;
+          gap: 18px;
+          transition: all 0.3s ease;
+        }
+
+        .theme-light .sidebar-card {
+          background: rgba(255, 255, 255, 0.90);
+          border: 1px solid rgba(255, 255, 255, 1);
+          box-shadow: 0 20px 48px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(15, 23, 42, 0.05), inset 0 1px 1px #ffffff;
+        }
+
+        .sidebar-header-badge {
+          display: flex;
+          align-items: center;
+        }
+
+        .sidebar-pill {
+          font-size: 11px;
+          font-weight: 700;
+          text-transform: uppercase;
+          letter-spacing: 0.8px;
+          padding: 4px 10px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-subtle);
+          color: var(--accent);
+        }
+
+        .theme-light .sidebar-pill {
+          background: rgba(2, 132, 199, 0.10);
+          border-color: rgba(2, 132, 199, 0.25);
+          color: #0284c7;
+        }
+
+        .sidebar-clock-wrap {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
         }
 
         .clock-display {
-          font-size: 44px;
-          font-weight: 700;
-          letter-spacing: -1px;
+          font-size: 46px;
+          font-weight: 800;
+          letter-spacing: -1.5px;
           line-height: 1;
+          color: var(--text-primary);
+          font-feature-settings: "tnum";
         }
 
-        .weather-banner {
+        .theme-light .clock-display {
+          color: #0f172a;
+        }
+
+        .sidebar-date-sub {
+          font-size: 13.5px;
+          font-weight: 600;
+          color: var(--text-secondary);
+        }
+
+        .theme-light .sidebar-date-sub {
+          color: #334155;
+        }
+
+        .sidebar-weather-box {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          padding: 16px 18px;
+          background: rgba(255, 255, 255, 0.06);
+          border-radius: 20px;
+          border: 1px solid var(--border-subtle);
+          cursor: pointer;
+          transition: transform 0.2s, background 0.2s, box-shadow 0.2s;
+        }
+
+        .sidebar-weather-box:hover {
+          transform: translateY(-2px);
+          background: rgba(255, 255, 255, 0.12);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .theme-light .sidebar-weather-box {
+          background: rgba(240, 246, 254, 0.85);
+          border-color: rgba(219, 234, 254, 1);
+          box-shadow: 0 4px 14px rgba(2, 132, 199, 0.08);
+        }
+
+        .theme-light .sidebar-weather-box:hover {
+          background: rgba(230, 242, 254, 0.95);
+          box-shadow: 0 8px 22px rgba(2, 132, 199, 0.15);
+        }
+
+        .sidebar-weather-top {
           display: flex;
           justify-content: space-between;
           align-items: center;
-          padding: 14px 16px;
-          background: rgba(255, 255, 255, 0.05);
-          border-radius: 18px;
-          border: 1px solid var(--border-subtle);
         }
+
         .weather-temp {
-          font-size: 26px;
-          font-weight: 700;
+          font-size: 28px;
+          font-weight: 800;
+          letter-spacing: -0.5px;
+        }
+
+        .theme-light .weather-temp {
+          color: #0f172a;
+        }
+
+        .weather-cond {
+          color: var(--text-secondary);
+          font-size: 13px;
+          font-weight: 600;
+          margin-top: 1px;
+        }
+
+        .theme-light .weather-cond {
+          color: #334155;
+        }
+
+        .weather-icon-glow {
+          font-size: 40px;
+          filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
+          transition: transform 0.3s ease;
+        }
+
+        .sidebar-weather-box:hover .weather-icon-glow {
+          transform: scale(1.1);
+        }
+
+        .sidebar-weather-mini-row {
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+        }
+
+        .sidebar-mini-pill {
+          font-size: 11px;
+          font-weight: 600;
+          padding: 3px 8px;
+          border-radius: 9999px;
+          background: rgba(255, 255, 255, 0.1);
+          border: 1px solid var(--border-subtle);
+          color: var(--text-secondary);
+        }
+
+        .theme-light .sidebar-mini-pill {
+          background: #ffffff;
+          border-color: rgba(203, 213, 225, 0.8);
+          color: #334155;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
         }
 
         .agenda-block {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          margin-top: 10px;
+          margin-top: 4px;
         }
+
         .agenda-title {
-          font-size: 12px;
+          font-size: 11.5px;
           text-transform: uppercase;
-          letter-spacing: 0.5px;
+          letter-spacing: 0.8px;
           color: var(--text-secondary);
-          font-weight: 600;
+          font-weight: 700;
         }
+
+        .theme-light .agenda-title {
+          color: #475569;
+        }
+
         .agenda-item {
           display: flex;
           align-items: center;
           gap: 10px;
           font-size: 13px;
+          font-weight: 500;
+          padding: 8px 12px;
+          border-radius: 14px;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--border-subtle);
+          transition: background 0.2s;
+        }
+
+        .theme-light .agenda-item {
+          background: rgba(248, 250, 252, 0.95);
+          border-color: rgba(226, 232, 240, 1);
+          color: #0f172a;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+
+        .sidebar-glance-bar {
+          margin-top: auto;
+          padding-top: 12px;
+          border-top: 1px solid var(--border-subtle);
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
         }
 
         /* Rooms Bento Grid */
@@ -2349,7 +2745,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         .room-card {
           position: relative;
-          min-height: 170px;
+          min-height: 185px;
           border-radius: 24px;
           overflow: hidden;
           background: var(--bg-card);
@@ -2367,6 +2763,15 @@ class VisionGlassDashboard extends HTMLElement {
         .room-card:hover {
           transform: translateY(-3px);
           box-shadow: 0 18px 45px rgba(0, 0, 0, 0.28);
+        }
+        .theme-light .room-card {
+          background: rgba(255, 255, 255, 0.85);
+          border-color: rgba(255, 255, 255, 0.95);
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08), inset 0 1px 1px #ffffff;
+        }
+        .theme-light .room-card:hover {
+          background: rgba(255, 255, 255, 0.94);
+          box-shadow: 0 18px 45px rgba(15, 23, 42, 0.14);
         }
 
         .room-bg-image {
@@ -2405,19 +2810,50 @@ class VisionGlassDashboard extends HTMLElement {
           margin-top: 3px;
         }
 
-        .room-temp-badge {
-          background: rgba(255, 255, 255, 0.15);
-          backdrop-filter: blur(10px);
-          border: 1px solid var(--border-glass);
-          padding: 4px 10px;
-          border-radius: 12px;
-          font-size: 13px;
+        /* Environmental Badges (Temp, Humidity, Lux) */
+        .room-env-bar {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          gap: 6px;
+          flex-wrap: wrap;
+          align-items: center;
+          margin: 10px 0 14px 0;
+        }
+
+        .env-pill {
+          background: rgba(255, 255, 255, 0.12);
+          backdrop-filter: blur(8px);
+          -webkit-backdrop-filter: blur(8px);
+          border: 1px solid var(--border-subtle);
+          border-radius: 9999px;
+          padding: 3px 9px;
+          font-size: 11.5px;
           font-weight: 600;
+          color: var(--text-primary);
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .theme-light .env-pill {
+          background: rgba(241, 245, 249, 0.9);
+          border-color: rgba(226, 232, 240, 0.95);
+          color: #1e293b;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        }
+
+        .room-bottom-row {
+          position: relative;
+          z-index: 2;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: auto;
+          gap: 10px;
         }
 
         .room-actions {
-          position: relative;
-          z-index: 2;
           display: flex;
           gap: 10px;
           align-items: center;
@@ -2462,6 +2898,85 @@ class VisionGlassDashboard extends HTMLElement {
           background: #0284c7;
           color: #fff;
           box-shadow: 0 0 14px rgba(2, 132, 199, 0.6);
+        }
+
+        /* Quick Climate Stepper */
+        .quick-climate-stepper {
+          display: inline-flex;
+          align-items: center;
+          background: rgba(255, 255, 255, 0.14);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid var(--border-glass);
+          border-radius: 9999px;
+          padding: 2px 4px;
+          gap: 2px;
+          box-shadow: var(--shadow-ambient);
+          user-select: none;
+        }
+
+        .theme-light .quick-climate-stepper {
+          background: rgba(255, 255, 255, 0.92);
+          border-color: rgba(226, 232, 240, 1);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+        }
+
+        .quick-step-btn {
+          width: 28px;
+          height: 28px;
+          border-radius: 50%;
+          border: none;
+          background: rgba(255, 255, 255, 0.18);
+          color: var(--text-primary);
+          font-size: 16px;
+          font-weight: 700;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .theme-light .quick-step-btn {
+          background: rgba(226, 232, 240, 0.85);
+          color: #0f172a;
+        }
+
+        .quick-step-btn:hover {
+          transform: scale(1.15);
+          background: var(--accent);
+          color: #ffffff;
+        }
+
+        .quick-step-btn:active {
+          transform: scale(0.95);
+        }
+
+        .quick-step-val {
+          font-size: 13px;
+          font-weight: 700;
+          padding: 0 6px;
+          min-width: 36px;
+          text-align: center;
+          color: var(--text-primary);
+        }
+
+        .theme-light .quick-step-val {
+          color: #0f172a;
+        }
+
+        /* Weather Hourly Carousel (Smooth scroll, NO rubberbanding) */
+        .weather-hourly-carousel {
+          display: flex;
+          gap: 10px;
+          overflow-x: auto;
+          overflow-y: hidden;
+          padding: 8px 4px;
+          overscroll-behavior-x: contain;
+          overscroll-behavior-y: none;
+          touch-action: pan-x;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: thin;
         }
 
         /* Floating Dock */
@@ -2678,20 +3193,41 @@ class VisionGlassDashboard extends HTMLElement {
         <div class="dashboard-body">
           <!-- Left Glanceable Sidebar -->
           <div class="sidebar-card">
-            <div class="clock-display" id="liveClock">--:--:--</div>
-
-            <div class="weather-banner" id="sidebarWeather">
-              <div>
-                <div class="weather-temp" id="weatherTemp">--°C</div>
-                <div style="color:var(--text-secondary);font-size:13px;" id="weatherCondition">Laden...</div>
-              </div>
-              <div style="font-size:36px;" id="weatherIcon">⛅</div>
+            <!-- Top Location & Greeting -->
+            <div class="sidebar-header-badge">
+              <span class="sidebar-pill">📍 Misburg-Nord • Hannover</span>
             </div>
 
+            <!-- Live Clock & Date -->
+            <div class="sidebar-clock-wrap">
+              <div class="clock-display" id="liveClock">--:--:--</div>
+              <div class="sidebar-date-sub" id="sidebarDateSub">Wird geladen...</div>
+            </div>
+
+            <!-- Weather Hero Box (Clickable to open weather modal) -->
+            <div class="sidebar-weather-box" id="sidebarWeather" title="Wetterübersicht & Vorhersage öffnen">
+              <div class="sidebar-weather-top">
+                <div>
+                  <div class="weather-temp" id="weatherTemp">--°C</div>
+                  <div class="weather-cond" id="weatherCondition">Laden...</div>
+                </div>
+                <div class="weather-icon-glow" id="weatherIcon">⛅</div>
+              </div>
+              <div class="sidebar-weather-mini-row" id="sidebarWeatherMini">
+                <span class="sidebar-mini-pill" id="sidebarMiniHum">💧 --%</span>
+                <span class="sidebar-mini-pill" id="sidebarMiniWind">💨 -- km/h</span>
+                <span class="sidebar-mini-pill" id="sidebarMiniSun">🌅 --:--</span>
+              </div>
+            </div>
+
+            <!-- Termine & Müllabfuhr -->
             <div class="agenda-block" id="sidebarAgenda">
-              <div class="agenda-title">Termine & Müllabfuhr</div>
+              <div class="agenda-title">📅 TERMINE & MÜLLABFUHR</div>
               <div class="agenda-item"><span>Wird geladen...</span></div>
             </div>
+
+            <!-- Quick House Glance Bar -->
+            <div class="sidebar-glance-bar" id="sidebarGlance"></div>
           </div>
 
           <!-- Rooms Grid -->
@@ -2699,19 +3235,38 @@ class VisionGlassDashboard extends HTMLElement {
             ${this._config.rooms.map((room, idx) => `
               <div class="room-card" id="roomCard_${idx}" data-room-idx="${idx}">
                 ${room.picture ? `<div class="room-bg-image" style="background-image:url('${room.picture}');"></div>` : ''}
+                
+                <!-- Room Header -->
                 <div class="room-header">
                   <div>
                     <div class="room-name">${room.name} &rsaquo;</div>
                     <div class="room-sub">Wird geladen...</div>
                   </div>
-                  <div class="room-temp-badge">--°C</div>
                 </div>
 
-                <div class="room-actions">
-                  ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">💡</div>` : ''}
-                  ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">🌡️</div>` : ''}
-                  ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">🎵</div>` : ''}
-                  ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">🔒</div>` : ''}
+                <!-- Room Environmental Readings (Temp, Humidity, Illuminance) -->
+                <div class="room-env-bar">
+                  <span class="env-pill env-temp">🌡️ --°C</span>
+                  <span class="env-pill env-humidity" style="display:none;">💧 --%</span>
+                  <span class="env-pill env-lux" style="display:none;">💡 -- lx</span>
+                </div>
+
+                <!-- Bottom Row: Actions & Heating Quick Stepper -->
+                <div class="room-bottom-row">
+                  <div class="room-actions">
+                    ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">💡</div>` : ''}
+                    ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">🌡️</div>` : ''}
+                    ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">🎵</div>` : ''}
+                    ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">🔒</div>` : ''}
+                  </div>
+
+                  ${room.climate_entity ? `
+                    <div class="quick-climate-stepper" title="Zieltemperatur anpassen">
+                      <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken">−</button>
+                      <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
+                      <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen">+</button>
+                    </div>
+                  ` : ''}
                 </div>
               </div>
             `).join('')}
@@ -2749,6 +3304,10 @@ class VisionGlassDashboard extends HTMLElement {
     // Event Listeners
     this.shadowRoot.getElementById('themeToggleBtn').addEventListener('click', () => this._toggleDayNight());
 
+    // Sidebar Weather Card Click -> Open Weather Modal
+    const swEl = this.shadowRoot.getElementById('sidebarWeather');
+    if (swEl) swEl.addEventListener('click', () => this._openModal('weather'));
+
     // Top Bar Chips
     this.shadowRoot.getElementById('chipPersonAndreas').addEventListener('click', () => this._openModal('security'));
     this.shadowRoot.getElementById('chipPersonShanty').addEventListener('click', () => this._openModal('security'));
@@ -2777,7 +3336,7 @@ class VisionGlassDashboard extends HTMLElement {
     // Room Card Click (Opens Room Detail Overlay)
     this.shadowRoot.querySelectorAll('.room-card').forEach(card => {
       card.addEventListener('click', (e) => {
-        if (e.target.closest('.action-circle')) return;
+        if (e.target.closest('.action-circle') || e.target.closest('.quick-climate-stepper')) return;
         const idx = parseInt(card.getAttribute('data-room-idx'));
         const room = this._config.rooms[idx];
         if (room) {
@@ -2786,7 +3345,7 @@ class VisionGlassDashboard extends HTMLElement {
       });
     });
 
-    // Room Action Circles
+    // Room Action Circles & Climate Steppers
     this.shadowRoot.querySelectorAll('[data-action]').forEach(btn => {
       btn.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -2807,6 +3366,36 @@ class VisionGlassDashboard extends HTMLElement {
           this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: room.lock_entity });
         } else if (action === 'switch' && room.switch_entity) {
           this._callService('switch', 'toggle', { entity_id: room.switch_entity });
+        } else if (action === 'temp-plus') {
+          const cEntity = room.climate_entity;
+          if (cEntity && this._hass && this._hass.states[cEntity]) {
+            const cObj = this._hass.states[cEntity];
+            let curTarget = (cObj.attributes && cObj.attributes.temperature != null)
+              ? parseFloat(cObj.attributes.temperature)
+              : 21.0;
+            const newTarget = Math.min(28.0, Math.round((curTarget + 0.5) * 10) / 10);
+            this._callService('climate', 'set_temperature', { entity_id: cEntity, temperature: newTarget });
+            if (room.target_temp_entity && this._hass.states[room.target_temp_entity]) {
+              this._callService('input_number', 'set_value', { entity_id: room.target_temp_entity, value: newTarget });
+            }
+            const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
+            if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
+          }
+        } else if (action === 'temp-minus') {
+          const cEntity = room.climate_entity;
+          if (cEntity && this._hass && this._hass.states[cEntity]) {
+            const cObj = this._hass.states[cEntity];
+            let curTarget = (cObj.attributes && cObj.attributes.temperature != null)
+              ? parseFloat(cObj.attributes.temperature)
+              : 21.0;
+            const newTarget = Math.max(14.0, Math.round((curTarget - 0.5) * 10) / 10);
+            this._callService('climate', 'set_temperature', { entity_id: cEntity, temperature: newTarget });
+            if (room.target_temp_entity && this._hass.states[room.target_temp_entity]) {
+              this._callService('input_number', 'set_value', { entity_id: room.target_temp_entity, value: newTarget });
+            }
+            const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
+            if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
+          }
         }
       });
     });

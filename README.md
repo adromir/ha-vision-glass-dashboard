@@ -13,13 +13,17 @@ A groundbreaking, spatial **Glassmorphism Smart Home Dashboard** for Home Assist
 
 - 💎 **Authentic Spatial Glassmorphism**: Cards and docks render hardware-accelerated translucent acrylic (`backdrop-filter: blur(28px)`), specular edge lighting, and ambient colored glows.
 - 🌓 **Dynamic Day & Night Transitions**: Automatically detects sun elevation (`sun.sun`) or system time to transition smoothly between a bright daylight glass atmosphere and an obsidian midnight glass atmosphere. Includes a manual one-click toggle.
-- 🎛️ **3x3 Bento Room Grid**: 9 rich room panels featuring live status indicators, temperatures, and responsive circular action buttons (lighting, blinds, multimedia, gaming, locks) with click animations.
+- 🎛️ **3x3 Bento Room Grid**: 9 rich room panels featuring live status indicators, temperatures, **humidity** (💧), **illuminance** (💡 lx), and a direct **heating quick-stepper** (`[-]` / `[+]`) to adjust target temperatures instantly without opening overlays.
+- 👤 **Resident Profile Badges**: Real avatar photos and status indicators for home residents (`person.andreas`, `person.shanty`).
+- 🧭 **Glanceable Left Sidebar**: High-contrast spatial widget in both Light and Dark themes with bold typography, live clock, date, clickable weather capsule with mini-stats (humidity, wind, sunset), trash calendar collection alerts, and whole-home status pills.
 - 🛥️ **Floating VisionOS Dock**: Pinned frosted dock bar at the bottom for quick access to whole-home lighting, climate, shading, and weather.
 - 📑 **Interactive Popups**:
   - 💡 **Lighting & Scenes**: Whole-home on/off toggles, circadian daylight presets, and per-room sliders.
   - 🌡️ **Climate & Curves**: Smooth SVG temperature history charts, domestic hot water (DHW) status, and `[-]` / `[+]` target steppers.
-  - 🪟 **Blinds & Shading**: Live solar azimuth/elevation compass tracking and position controls.
-  - 🌦️ **Atmospheric Weather**: Real-time precipitation radar simulation, 5-hour forecast, and comprehensive air quality metrics (PM2.5, PM10, NO2, O3).
+  - 📊 **Multi-Sensor Statistics**: Interactive multi-line SVG charts combining all temperature sensors of each room into one graph, 24h Lux curves, occupancy & heating cycles, and battery discharge trends.
+  - 🌦️ **Atmospheric Weather & Radar**: RainViewer HD precipitation radar with Windy toggle (persistent iframe, no flickering), smooth kinetic 24h hourly forecast without rubberbanding, and 7-day weather trend.
+  - 🛡️ **Alarmanlage & Sicherheit**: Full Alarmo panel with mode switching and numeric keypad, plus 3-state front door lock (Tür offen, Entriegelt, Verriegelt).
+  - 🔋 **Battery & Maintenance Monitor**: Filterable battery monitor (Critical, Low, Good) with animated level bars.
 - ⚡ **Zero-Dependency Vanilla Web Component**: Built entirely with standards-based Web Components and CSS3. Requires no NodeJS build pipeline or heavy frameworks.
 
 ---
