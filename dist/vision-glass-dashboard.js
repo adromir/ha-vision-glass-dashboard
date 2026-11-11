@@ -41,7 +41,7 @@ class VisionGlassDashboard extends HTMLElement {
           light_entity: 'light.livingroom',
           media_entity: 'media_player.denon_avr_x3300w_3',
           switch_entity: 'switch.switch_livingroom_tv_smartplug_switch',
-          presence_entity: 'binary_sensor.prasenzmelder_wohnzimmer_presence',
+          presence_entity: 'binary_sensor.living_room_occupied',
           window_entity: 'binary_sensor.fensterkontakte_wohnzimmer'
         },
         {
@@ -54,7 +54,7 @@ class VisionGlassDashboard extends HTMLElement {
           light_entity: 'light.light_studyroom_tomada',
           media_entity: 'media_player.arbeitszimmer_andreas_echo_show',
           switch_entity: 'switch.switch_denon_659190_smartplug_switch',
-          presence_entity: 'binary_sensor.prasenzmelder_arbeitszimmer_presence',
+          presence_entity: 'binary_sensor.studyroom_occupied',
           window_entity: 'binary_sensor.fensterkontakt_arbeitszimmerfenster_contact'
         },
         {
@@ -67,7 +67,7 @@ class VisionGlassDashboard extends HTMLElement {
           light_entity: 'light.schlafzimmerlicht',
           media_entity: 'media_player.schlafzimmer_tv_2',
           switch_entity: 'switch.switch_bedroom_tv_smartplug_switch',
-          presence_entity: 'binary_sensor.prasenzmelder_schlafzimmer_presence',
+          presence_entity: 'binary_sensor.bedroom_occupied',
           window_entity: 'binary_sensor.fensterkontakt_schlafzimmer_contact'
         },
         {
@@ -78,7 +78,7 @@ class VisionGlassDashboard extends HTMLElement {
           target_temp_entity: 'input_number.kuche_komfort_temperatur',
           climate_entity: 'climate.better_thermostat_kuche',
           light_entity: 'light.light_kitchen_tomada',
-          presence_entity: 'binary_sensor.prasenzmelder_kuche_presence',
+          presence_entity: 'binary_sensor.kuche_occupied',
           window_entity: 'binary_sensor.fensterkontakt_kuche_contact'
         },
         {
@@ -90,7 +90,7 @@ class VisionGlassDashboard extends HTMLElement {
           climate_entity: 'climate.better_thermostat_badezimmer',
           light_entity: 'light.light_bathroom_tomada',
           switch_entity: 'switch.switch_washingmachine_smartplug_switch',
-          presence_entity: 'binary_sensor.prasenzmelder_badezimmer_presence'
+          presence_entity: 'binary_sensor.bathroom_occupied'
         },
         {
           id: 'flur',
@@ -101,7 +101,7 @@ class VisionGlassDashboard extends HTMLElement {
           climate_entity: 'climate.better_thermostat_flur',
           light_entity: 'light.light_hallway_tomada',
           lock_entity: 'lock.wohnungsschloss',
-          presence_entity: 'binary_sensor.prasenzmelder_flur_presence',
+          presence_entity: 'binary_sensor.hallway_occupied',
           window_entity: 'binary_sensor.fensterkontakt_flur_contact'
         },
         {
@@ -1355,22 +1355,28 @@ class VisionGlassDashboard extends HTMLElement {
 
         /* --- THEME DESIGN TOKENS --- */
         .dashboard-root.theme-light {
-          --bg-surface: rgba(255, 255, 255, 0.65);
-          --bg-surface-hover: rgba(255, 255, 255, 0.85);
-          --bg-card: rgba(255, 255, 255, 0.55);
+          background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%),
+                      radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.65) 0%, transparent 50%),
+                      linear-gradient(135deg, #cbe3f7 0%, #dbeafe 30%, #eef5ff 65%, #cde2f8 100%);
+          --bg-surface: rgba(255, 255, 255, 0.68);
+          --bg-surface-hover: rgba(255, 255, 255, 0.88);
+          --bg-card: rgba(255, 255, 255, 0.60);
           --border-glass: rgba(255, 255, 255, 0.85);
-          --border-subtle: rgba(255, 255, 255, 0.5);
+          --border-subtle: rgba(255, 255, 255, 0.55);
           --text-primary: #0f172a;
           --text-secondary: #475569;
           --accent: #0284c7;
           --accent-amber: #ea580c;
           --accent-green: #10b981;
-          --dock-bg: rgba(255, 255, 255, 0.65);
+          --dock-bg: rgba(255, 255, 255, 0.70);
           --shadow-ambient: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95);
           --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.7) 0%, rgba(255,255,255,0.4) 100%);
         }
 
         .dashboard-root.theme-dark {
+          background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.12) 0%, transparent 45%),
+                      radial-gradient(circle at 15% 85%, rgba(30, 58, 138, 0.20) 0%, transparent 50%),
+                      linear-gradient(135deg, #090e18 0%, #101828 35%, #182338 70%, #0c121e 100%);
           --bg-surface: rgba(24, 32, 48, 0.70);
           --bg-surface-hover: rgba(30, 41, 59, 0.85);
           --bg-card: rgba(20, 27, 42, 0.65);
@@ -1916,7 +1922,6 @@ class VisionGlassDashboard extends HTMLElement {
                   ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">🌡️</div>` : ''}
                   ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">🎵</div>` : ''}
                   ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">🔒</div>` : ''}
-                  ${room.switch_entity ? `<div class="action-circle action-switch" title="Steckdose/Gerät umschalten" data-action="switch" data-idx="${idx}">🔌</div>` : ''}
                 </div>
               </div>
             `).join('')}
@@ -1946,6 +1951,9 @@ class VisionGlassDashboard extends HTMLElement {
         </div>
       </div>
     `;
+
+    // Apply active theme class immediately
+    this._applyThemeClass();
 
     // Event Listeners
     this.shadowRoot.getElementById('themeToggleBtn').addEventListener('click', () => this._toggleDayNight());
