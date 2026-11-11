@@ -24,6 +24,7 @@ A groundbreaking, spatial **Glassmorphism Smart Home Dashboard** for Home Assist
   - 🌦️ **Atmospheric Weather & Radar**: RainViewer HD precipitation radar with Windy toggle (persistent iframe, no flickering), smooth kinetic 24h hourly forecast without rubberbanding, and 7-day weather trend.
   - 🛡️ **Alarmanlage & Sicherheit**: Full Alarmo panel with mode switching and numeric keypad, plus 3-state front door lock (Tür offen, Entriegelt, Verriegelt).
   - 🔋 **Battery & Maintenance Monitor**: Filterable battery monitor (Critical, Low, Good) with animated level bars.
+- 🎨 **Modern Dual-Theme Vector Icon Library**: Completely replaced all Unicode emojis with 60+ bespoke, hand-crafted vector SVG icons. Dual-set theme engine features razor-sharp slate outlines with jewel accents in Light Mode and luminous specular neon-glass glows in Dark Mode.
 - ⚡ **Zero-Dependency Vanilla Web Component**: Built entirely with standards-based Web Components and CSS3. Requires no NodeJS build pipeline or heavy frameworks.
 
 ---
