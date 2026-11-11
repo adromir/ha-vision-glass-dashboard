@@ -1168,7 +1168,7 @@ class VisionGlassDashboard extends HTMLElement {
         weatherStateEl.textContent = this._translateWeather(w.state);
       }
       if (weatherIconEl) {
-        weatherIconEl.textContent = this._getWeatherEmoji(w.state);
+        weatherIconEl.innerHTML = this._getWeatherIcon(w.state, 44, 'icon-weather');
       }
       if (chipWeather && temp !== undefined) {
         chipWeather.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._getWeatherIcon(w.state, 15, 'icon-weather')} Hannover ${temp}°C`;
