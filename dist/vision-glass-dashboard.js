@@ -92,7 +92,18 @@ class VisionGlassDashboard extends HTMLElement {
   "weather-snowy-rainy": "<path d=\"M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25\"/><path d=\"M8 18l-1 3M16 18l-1 3\"/><path d=\"M12 18v.01M12 21v.01\" stroke-width=\"2.8\"/>",
   "weather-windy": "<path d=\"M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z\"/><path d=\"M4 22h14a2 2 0 1 0-1.4-3.4M2 19h10a2 2 0 1 1-1.4 3.4\"/>",
   "weather-fog": "<path d=\"M4 14h16M2 18h20M5 22h14M17.5 11H9a6 6 0 1 1 5.8-8h1.2a4 4 0 1 1 1.5 8Z\"/>",
-  "weather-hail": "<path d=\"M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25\"/><circle cx=\"8\" cy=\"20\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"19\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"21\" r=\"1.5\" fill=\"currentColor\"/>"
+  "weather-hail": "<path d=\"M20 16.58A5 5 0 0 0 18 7h-1.26A8 8 0 1 0 4 15.25\"/><circle cx=\"8\" cy=\"20\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"12\" cy=\"19\" r=\"1.5\" fill=\"currentColor\"/><circle cx=\"16\" cy=\"21\" r=\"1.5\" fill=\"currentColor\"/>",
+  "plane": "<path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.3c.4-.2.6-.6.5-1.1z\"/>",
+  "restart": "<path d=\"M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16\"/>",
+  "eye": "<path d=\"M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/>",
+  "zap": "<polygon points=\"13 2 3 14 12 14 11 22 21 10 12 10 13 2\"/>",
+  "percent": "<line x1=\"19\" y1=\"5\" x2=\"5\" y2=\"19\"/><circle cx=\"6.5\" cy=\"6.5\" r=\"2.5\"/><circle cx=\"17.5\" cy=\"17.5\" r=\"2.5\"/>",
+  "sliders": "<line x1=\"4\" y1=\"21\" x2=\"4\" y2=\"14\"/><line x1=\"4\" y1=\"10\" x2=\"4\" y2=\"3\"/><line x1=\"12\" y1=\"21\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"3\"/><line x1=\"20\" y1=\"21\" x2=\"20\" y2=\"16\"/><line x1=\"20\" y1=\"12\" x2=\"20\" y2=\"3\"/><line x1=\"1\" y1=\"14\" x2=\"7\" y2=\"14\"/><line x1=\"9\" y1=\"8\" x2=\"15\" y2=\"8\"/><line x1=\"17\" y1=\"16\" x2=\"23\" y2=\"16\"/>",
+  "wifi": "<path d=\"M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01\"/>",
+  "activity": "<polyline points=\"22 12 18 12 15 21 9 3 6 12 2 12\"/>",
+  "washing-machine": "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"3\"/><circle cx=\"12\" cy=\"13\" r=\"5\"/><circle cx=\"12\" cy=\"13\" r=\"2.5\" fill=\"currentColor\" opacity=\"0.4\"/><circle cx=\"7\" cy=\"6\" r=\"1\" fill=\"currentColor\"/><circle cx=\"10\" cy=\"6\" r=\"1\" fill=\"currentColor\"/>",
+  "speaker": "<rect x=\"4\" y=\"2\" width=\"16\" height=\"20\" rx=\"2\"/><circle cx=\"12\" cy=\"14\" r=\"4\"/><circle cx=\"12\" cy=\"6\" r=\"1.5\" fill=\"currentColor\"/>",
+  "power": "<path d=\"M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10\"/>"
 };
   }
 
@@ -123,6 +134,144 @@ class VisionGlassDashboard extends HTMLElement {
     };
     const iconName = map[state] || 'weather-partlycloudy';
     return this._icon(iconName, { size, cls: 'icon-weather ' + cls });
+  }
+
+  _resolveEntityIcon(entityId, stateObj) {
+    if (!entityId) return this._icon('activity', { size: 16 });
+
+    const attrs = (stateObj && stateObj.attributes) || {};
+    const devClass = (attrs.device_class || '').toLowerCase();
+    const unit = (attrs.unit_of_measurement || '').toLowerCase();
+    const eId = entityId.toLowerCase();
+    const fn = (attrs.friendly_name || '').toLowerCase();
+    const val = stateObj ? String(stateObj.state).toLowerCase() : '';
+
+    // 1. Device classes
+    if (devClass === 'temperature') return this._icon('thermometer', { size: 16, cls: 'icon-temp' });
+    if (devClass === 'humidity') return this._icon('droplet', { size: 16, cls: 'icon-humidity' });
+    if (devClass === 'illuminance') return this._icon('lux', { size: 16, cls: 'icon-lux' });
+    if (devClass === 'battery') {
+      const num = parseFloat(val);
+      if (!isNaN(num) && num < 20) return this._icon('battery-critical', { size: 16, color: '#ef4444' });
+      if (!isNaN(num) && num <= 40) return this._icon('battery-low', { size: 16, color: '#f59e0b' });
+      return this._icon('battery-full', { size: 16, cls: 'icon-battery' });
+    }
+    if (devClass === 'motion' || devClass === 'occupancy' || devClass === 'presence') {
+      return this._icon(val === 'on' ? 'motion' : 'motion-idle', { size: 16, cls: 'icon-security' });
+    }
+    if (devClass === 'window') return this._icon(val === 'on' ? 'window-open' : 'window', { size: 16, cls: 'icon-climate' });
+    if (devClass === 'door' || devClass === 'garage_door') return this._icon(val === 'on' ? 'door-open' : 'door', { size: 16, cls: 'icon-security' });
+    if (devClass === 'lock') return this._icon(val === 'locked' ? 'lock-closed' : 'lock-open', { size: 16, cls: 'icon-security' });
+    if (devClass === 'power' || devClass === 'energy' || devClass === 'current' || devClass === 'voltage') {
+      return this._icon('zap', { size: 16, color: '#f59e0b' });
+    }
+    if (devClass === 'signal_strength') return this._icon('wifi', { size: 16, cls: 'icon-stats' });
+    if (devClass === 'restart') return this._icon('restart', { size: 16, cls: 'icon-switch' });
+
+    // 2. Units of measurement
+    if (unit.includes('°c') || unit.includes('°f') || unit === 'k') {
+      return this._icon('thermometer', { size: 16, cls: 'icon-temp' });
+    }
+    if (unit === 'lx' || unit === 'lux') {
+      return this._icon('lux', { size: 16, cls: 'icon-lux' });
+    }
+    if (unit === '%') {
+      if (eId.includes('batt') || fn.includes('batt')) {
+        const num = parseFloat(val);
+        if (!isNaN(num) && num < 20) return this._icon('battery-critical', { size: 16, color: '#ef4444' });
+        if (!isNaN(num) && num <= 40) return this._icon('battery-low', { size: 16, color: '#f59e0b' });
+        return this._icon('battery-full', { size: 16, cls: 'icon-battery' });
+      }
+      if (eId.includes('feucht') || eId.includes('hum') || fn.includes('feucht') || fn.includes('hum')) {
+        return this._icon('droplet', { size: 16, cls: 'icon-humidity' });
+      }
+      return this._icon('percent', { size: 16, cls: 'icon-stats' });
+    }
+    if (unit === 'w' || unit === 'kw' || unit === 'kwh' || unit === 'v' || unit === 'a') {
+      return this._icon('zap', { size: 16, color: '#f59e0b' });
+    }
+    if (unit === 'km/h' || unit === 'm/s') {
+      return this._icon('wind', { size: 16, cls: 'icon-weather' });
+    }
+    if (unit === 'db' || unit === 'dbm') {
+      return this._icon('wifi', { size: 16, cls: 'icon-stats' });
+    }
+    if (unit === 's' || unit === 'min' || unit === 'h' || unit === 'd') {
+      return this._icon('clock', { size: 16, cls: 'icon-calendar' });
+    }
+
+    // 3. Name & Entity ID keywords
+    const text = `${eId} ${fn}`;
+    if (text.includes('indikator') || text.includes('indicator') || text.includes('led')) {
+      return this._icon('eye', { size: 16, cls: 'icon-light' });
+    }
+    if (text.includes('restart') || text.includes('neustart') || text.includes('reboot')) {
+      return this._icon('restart', { size: 16, cls: 'icon-switch' });
+    }
+    if (text.includes('tastensperre') || text.includes('childlock') || text.includes('kindersicherung') || text.includes('sperre')) {
+      return this._icon('lock-closed', { size: 16, cls: 'icon-security' });
+    }
+    if (text.includes('urlaub') || text.includes('holiday') || text.includes('vacation')) {
+      return this._icon('plane', { size: 16, cls: 'icon-stats' });
+    }
+    if (text.includes('sommer') || text.includes('summer')) {
+      return this._icon('sun', { size: 16, cls: 'icon-sun' });
+    }
+    if (text.includes('winter') || text.includes('frost')) {
+      return this._icon('weather-snowy', { size: 16, cls: 'icon-weather' });
+    }
+    if (text.includes('fenster') || text.includes('window')) {
+      return this._icon(val === 'on' ? 'window-open' : 'window', { size: 16, cls: 'icon-climate' });
+    }
+    if (text.includes('tür') || text.includes('door') || text.includes('tor')) {
+      return this._icon(val === 'on' ? 'door-open' : 'door', { size: 16, cls: 'icon-security' });
+    }
+    if (text.includes('beweg') || text.includes('motion') || text.includes('präsenz') || text.includes('presence')) {
+      return this._icon(val === 'on' ? 'motion' : 'motion-idle', { size: 16, cls: 'icon-security' });
+    }
+    if (text.includes('komfort') || text.includes('comfort') || text.includes('heizen') || text.includes('heat')) {
+      return this._icon('flame', { size: 16, cls: 'icon-climate' });
+    }
+    if (text.includes('eco') || text.includes('spar') || text.includes('leaf')) {
+      return this._icon('leaf', { size: 16, cls: 'icon-battery' });
+    }
+    if (text.includes('temperatur') || text.includes('temp') || text.includes('wärme')) {
+      return this._icon('thermometer', { size: 16, cls: 'icon-temp' });
+    }
+    if (text.includes('feucht') || text.includes('humidity')) {
+      return this._icon('droplet', { size: 16, cls: 'icon-humidity' });
+    }
+    if (text.includes('hellig') || text.includes('lux') || text.includes('illuminance')) {
+      return this._icon('lux', { size: 16, cls: 'icon-lux' });
+    }
+    if (text.includes('batterie') || text.includes('battery')) {
+      return this._icon('battery-medium', { size: 16, cls: 'icon-battery' });
+    }
+    if (text.includes('waschmaschine') || text.includes('washing')) {
+      return this._icon('washing-machine', { size: 16, cls: 'icon-switch' });
+    }
+    if (text.includes('multimedia') || text.includes('tv') || text.includes('fernseh') || text.includes('shield')) {
+      return this._icon('tv', { size: 16, cls: 'icon-media' });
+    }
+    if (text.includes('receiver') || text.includes('denon') || text.includes('subwoofer') || text.includes('audio') || text.includes('sound') || text.includes('lautsprecher')) {
+      return this._icon('speaker', { size: 16, cls: 'icon-media' });
+    }
+    if (text.includes('plan') || text.includes('zeit') || text.includes('time') || text.includes('dauer') || text.includes('nächste')) {
+      return this._icon('clock', { size: 16, cls: 'icon-calendar' });
+    }
+    if (text.includes('sensitiv') || text.includes('empfind') || text.includes('distanz') || text.includes('bereich') || text.includes('modus') || text.includes('mode')) {
+      return this._icon('sliders', { size: 16, cls: 'icon-stats' });
+    }
+
+    // 4. Domain Fallbacks
+    if (eId.startsWith('light.')) return this._icon('light', { size: 16, cls: 'icon-light' });
+    if (eId.startsWith('switch.')) return this._icon('power', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('climate.')) return this._icon('climate', { size: 16, cls: 'icon-climate' });
+    if (eId.startsWith('media_player.')) return this._icon('music', { size: 16, cls: 'icon-media' });
+    if (eId.startsWith('binary_sensor.')) return this._icon(val === 'on' ? 'check' : 'activity', { size: 16, cls: 'icon-security' });
+    if (eId.startsWith('sensor.')) return this._icon('activity', { size: 16, cls: 'icon-stats' });
+
+    return this._icon('activity', { size: 16 });
   }
 
   static getStubConfig() {
@@ -1058,12 +1207,14 @@ class VisionGlassDashboard extends HTMLElement {
               const isOn = s.state && s.state.state === 'on';
               const name = (s.state && s.state.attributes.friendly_name) || s.id;
               const domain = s.id.split('.')[0];
+              const icon = this._resolveEntityIcon(s.id, s.state);
               return `
-                <div class="control-row">
-                  <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="${name}">
-                    ${domain === 'light' ? this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:6px;' }) : this._icon('plug', { size: 14, cls: 'icon-switch', style: 'margin-right:6px;' })} ${name}
+                <div class="control-row" style="padding:10px 14px;min-height:48px;">
+                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+                    <div style="flex-shrink:0;">${icon}</div>
+                    <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
                   </div>
-                  <button class="toggle-pill ${isOn ? 'active' : ''}" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
+                  <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
                     ${isOn ? 'EIN' : 'AUS'}
                   </button>
                 </div>
@@ -1074,15 +1225,42 @@ class VisionGlassDashboard extends HTMLElement {
 
         ${otherSensors.length > 0 ? `
           <div style="font-size:14px;font-weight:700;margin-top:8px;">Messwerte & Sensoren (${otherSensors.length})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;">
-            ${otherSensors.slice(0, 16).map(s => {
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
+            ${otherSensors.map(s => {
               const name = (s.state && s.state.attributes.friendly_name) || s.id;
-              const val = s.state ? s.state.state : '--';
+              let rawVal = s.state ? s.state.state : '--';
               const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
+
+              let valDisplay = rawVal;
+              let valColor = 'var(--text-primary)';
+              if (rawVal === 'unknown') {
+                valDisplay = 'Unbekannt';
+                valColor = 'var(--text-secondary)';
+              } else if (rawVal === 'unavailable') {
+                valDisplay = 'Nicht verf.';
+                valColor = 'var(--text-secondary)';
+              } else if (rawVal === 'on') {
+                valDisplay = 'AN';
+                valColor = '#10b981';
+              } else if (rawVal === 'off') {
+                valDisplay = 'AUS';
+                valColor = 'var(--text-secondary)';
+              } else if (!isNaN(parseFloat(rawVal))) {
+                const num = parseFloat(rawVal);
+                valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
+              } else if (unit) {
+                valDisplay = `${rawVal} ${unit}`;
+              }
+
+              const icon = this._resolveEntityIcon(s.id, s.state);
+
               return `
-                <div class="control-row" style="padding:8px 12px;">
-                  <span style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:130px;" title="${name}">${name}</span>
-                  <span style="font-size:12px;font-weight:700;">${val} ${unit}</span>
+                <div class="sensor-badge">
+                  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
+                    <div style="flex-shrink:0;">${icon}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
+                  </div>
+                  <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
                 </div>
               `;
             }).join('')}
@@ -1590,12 +1768,15 @@ class VisionGlassDashboard extends HTMLElement {
             const isOn = s && s.state === 'on';
             const bri = s && s.attributes.brightness ? Math.round((s.attributes.brightness / 255) * 100) : 100;
             return `
-              <div class="control-row">
-                <div style="flex:1;">
-                  <div style="font-weight:600;font-size:14px;">${l.name}</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">${isOn ? `An (${bri}%)` : 'Aus'}</div>
+              <div class="control-row" style="padding:10px 14px;min-height:50px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+                  <div style="flex-shrink:0;">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${l.name}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? `An (${bri}%)` : 'Aus'}</div>
+                  </div>
                 </div>
-                <button class="toggle-pill ${isOn ? 'active' : ''}" data-light="${l.id}">
+                <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-light="${l.id}">
                   ${isOn ? 'AN' : 'AUS'}
                 </button>
               </div>
@@ -1781,12 +1962,15 @@ class VisionGlassDashboard extends HTMLElement {
               const cs = this._hass.states[c.id];
               const isOpen = cs && cs.state === 'on';
               return `
-                <div class="control-row">
-                  <div>
-                    <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon(c.iconName, { size: 16, cls: 'icon-security' })} ${c.name}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;">${isOpen ? this._icon('alert-triangle', { size: 12, cls: 'icon-temp' }) + ' Geöffnet' : this._icon('check', { size: 12, cls: 'icon-security' }) + ' Geschlossen'}</div>
+                <div class="control-row" style="padding:10px 14px;min-height:48px;">
+                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+                    <div style="flex-shrink:0;">${this._icon(c.iconName, { size: 16, cls: 'icon-security' })}</div>
+                    <div style="flex:1;min-width:0;">
+                      <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${c.name}</div>
+                      <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:4px;">${isOpen ? this._icon('alert-triangle', { size: 12, cls: 'icon-temp' }) + ' Geöffnet' : this._icon('check', { size: 12, cls: 'icon-security' }) + ' Geschlossen'}</div>
+                    </div>
                   </div>
-                  <span class="toggle-pill ${isOpen ? 'active-amber' : ''}">${isOpen ? 'OFFEN' : 'ZU'}</span>
+                  <span class="toggle-pill ${isOpen ? 'active-amber' : ''}" style="flex-shrink:0;">${isOpen ? 'OFFEN' : 'ZU'}</span>
                 </div>
               `;
             }).join('')}
@@ -1987,11 +2171,12 @@ class VisionGlassDashboard extends HTMLElement {
               }
               return `
                 <div class="control-row" style="flex-direction:column;align-items:stretch;gap:8px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:210px;" title="${d.name}">
-                      ${icon} ${d.name}
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                    <div style="font-weight:600;font-size:13px;line-height:1.3;word-break:break-word;white-space:normal;display:flex;align-items:center;gap:8px;flex:1;min-width:0;" title="${d.name}">
+                      <div style="flex-shrink:0;">${icon}</div>
+                      <div>${d.name}</div>
                     </div>
-                    <span style="font-weight:700;font-size:14px;color:${color};">${d.level}%</span>
+                    <span style="font-weight:700;font-size:14px;color:${color};flex-shrink:0;margin-left:6px;">${d.level}%</span>
                   </div>
                   <div style="height:6px;border-radius:9999px;background:rgba(255,255,255,0.12);overflow:hidden;">
                     <div style="width:${d.level}%;height:100%;background:${color};border-radius:9999px;transition:width 0.4s;"></div>
@@ -2028,13 +2213,17 @@ class VisionGlassDashboard extends HTMLElement {
             const s = this._hass.states[sw.id];
             const isOn = s && s.state === 'on';
             const pwrSensor = sw.pwr && this._hass.states[sw.pwr] ? `${Math.round(parseFloat(this._hass.states[sw.pwr].state))} W` : '';
+            const icon = sw.icon ? this._icon(sw.icon, { size: 16, cls: 'icon-switch' }) : this._resolveEntityIcon(sw.id, s);
             return `
-              <div class="control-row">
-                <div style="flex:1;">
-                  <div style="font-weight:600;font-size:14px;">${sw.name}</div>
-                  <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `Aktiv • ${pwrSensor}` : 'Ein') : 'Aus'}</div>
+              <div class="control-row" style="padding:10px 14px;min-height:50px;">
+                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+                  <div style="flex-shrink:0;">${icon}</div>
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${sw.name}</div>
+                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `Aktiv • ${pwrSensor}` : 'Ein') : 'Aus'}</div>
+                  </div>
                 </div>
-                <button class="toggle-pill ${isOn ? 'active' : ''}" data-switch="${sw.id}">
+                <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-switch="${sw.id}">
                   ${isOn ? 'EIN' : 'AUS'}
                 </button>
               </div>
@@ -3307,9 +3496,9 @@ class VisionGlassDashboard extends HTMLElement {
           -webkit-backdrop-filter: blur(35px) saturate(190%);
           border: 1px solid var(--border-glass);
           border-radius: 28px;
-          width: 100%;
-          max-width: 720px;
-          max-height: 85vh;
+          width: 94%;
+          max-width: 940px;
+          max-height: 86vh;
           box-shadow: 0 25px 60px rgba(0, 0, 0, 0.55);
           display: flex;
           flex-direction: column;
@@ -3317,12 +3506,18 @@ class VisionGlassDashboard extends HTMLElement {
           overscroll-behavior: contain;
         }
 
+        .theme-light .modal-card {
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(255, 255, 255, 1);
+          box-shadow: 0 30px 70px rgba(15, 23, 42, 0.18), 0 4px 16px rgba(15, 23, 42, 0.06);
+        }
+
         .modal-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 1px solid var(--border-subtle);
-          padding: 20px 28px;
+          padding: 18px 26px;
           flex-shrink: 0;
           background: rgba(255, 255, 255, 0.02);
         }
@@ -3350,7 +3545,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .modal-body {
-          padding: 24px 28px;
+          padding: 22px 26px;
           overflow-y: auto;
           overscroll-behavior: contain;
           -webkit-overflow-scrolling: touch;
@@ -3378,10 +3573,45 @@ class VisionGlassDashboard extends HTMLElement {
           background: rgba(255, 255, 255, 0.08);
           border: 1px solid var(--border-subtle);
           border-radius: 18px;
-          padding: 14px 18px;
+          padding: 12px 16px;
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 12px;
+          box-sizing: border-box;
+          transition: background 0.2s;
+        }
+
+        .theme-light .control-row {
+          background: rgba(248, 250, 252, 0.92);
+          border: 1px solid rgba(226, 232, 240, 1);
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+
+        .sensor-badge {
+          background: rgba(255, 255, 255, 0.06);
+          border: 1px solid var(--border-subtle);
+          border-radius: 14px;
+          padding: 8px 12px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 10px;
+          box-sizing: border-box;
+          min-height: 44px;
+          transition: background 0.2s;
+        }
+        .sensor-badge:hover {
+          background: rgba(255, 255, 255, 0.10);
+        }
+
+        .theme-light .sensor-badge {
+          background: rgba(248, 250, 252, 0.92);
+          border: 1px solid rgba(226, 232, 240, 1);
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+        }
+        .theme-light .sensor-badge:hover {
+          background: #ffffff;
         }
 
         .btn-micro {
