@@ -74,6 +74,8 @@ class VisionGlassDashboard extends HTMLElement {
         off: 'AUS',
         heat: 'HEIZEN',
         target: 'Ziel',
+        comfort: 'Komfort',
+        eco: 'Eco',
         temp: 'Temp',
         humidity: 'Feuchte',
         lux: 'Lux',
@@ -214,6 +216,8 @@ class VisionGlassDashboard extends HTMLElement {
         off: 'OFF',
         heat: 'HEAT',
         target: 'Target',
+        comfort: 'Comfort',
+        eco: 'Eco',
         temp: 'Temp',
         humidity: 'Humidity',
         lux: 'Lux',
@@ -317,6 +321,7 @@ class VisionGlassDashboard extends HTMLElement {
   static get ICONS() {
     return {
   "sun": "<circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41\"/>",
+  "snowflake": "<path d=\"M12 2v20M2 12h20M20 16l-4-4 4-4M4 8l4 4-4 4M16 4l-4 4-4-4M8 20l4-4 4 4\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/>",
   "moon": "<path d=\"M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z\"/>",
   "light": "<path d=\"M9 18h6M10 22h4M12 2a7 7 0 0 0-7 7c0 2.5 1.3 4.7 3.2 6h7.6c1.9-1.3 3.2-3.5 3.2-6a7 7 0 0 0-7-7z\"/><path d=\"M10 9l2-2 2 2\" stroke-width=\"1.4\" opacity=\"0.75\"/>",
   "climate": "<path d=\"M14 14.76V3.5a2.5 2.5 0 0 0-5 0v11.26a4.5 4.5 0 1 0 5 0z\"/><circle cx=\"11.5\" cy=\"17.5\" r=\"2\" fill=\"currentColor\"/><path d=\"M11.5 8v6.5\" stroke-width=\"1.8\"/>",
@@ -1553,6 +1558,15 @@ class VisionGlassDashboard extends HTMLElement {
     const luxObj = luxEntity && this._hass.states[luxEntity];
     const curLux = luxObj && luxObj.state && !isNaN(parseFloat(luxObj.state)) ? Math.round(parseFloat(luxObj.state)) : null;
 
+    // Room-specific Komfort & Eco temperature helpers
+    const helperRoomKey = roomSlug === 'badezimmer' ? 'bad' : roomSlug;
+    const komfortHelperId = `input_number.${helperRoomKey}_komfort_temperatur`;
+    const ecoHelperId = `input_number.${helperRoomKey}_eco_temperatur`;
+    const komfortObj = this._hass.states[komfortHelperId];
+    const ecoObj = this._hass.states[ecoHelperId];
+    const komfortVal = komfortObj && komfortObj.state != null && !isNaN(parseFloat(komfortObj.state)) ? parseFloat(komfortObj.state).toFixed(1) : null;
+    const ecoVal = ecoObj && ecoObj.state != null && !isNaN(parseFloat(ecoObj.state)) ? parseFloat(ecoObj.state).toFixed(1) : null;
+
     if (!this._roomEntitiesCache[roomSlug]) {
       const matchSwitches = [];
       const matchSensors = [];
@@ -1650,6 +1664,29 @@ class VisionGlassDashboard extends HTMLElement {
                   ${isHeat ? this._t('heat') : this._t('off')}
                 </button>
               </div>
+
+              ${(komfortVal != null || ecoVal != null) ? `
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:2px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:6px 8px;">
+                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
+                      ${this._icon('sun', { size: 12, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal || '--'}°C</strong>
+                    </span>
+                    <div style="display:flex;gap:4px;">
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:6px 8px;">
+                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
+                      ${this._icon('snowflake', { size: 12, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal || '--'}°C</strong>
+                    </span>
+                    <div style="display:flex;gap:4px;">
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                    </div>
+                  </div>
+                </div>
+              ` : ''}
             </div>
           ` : ''}
 
@@ -1792,6 +1829,19 @@ class VisionGlassDashboard extends HTMLElement {
         const ent = b.getAttribute('data-dyn-toggle');
         const dom = b.getAttribute('data-dyn-domain');
         this._callService(dom, 'toggle', { entity_id: ent });
+      };
+    });
+    body.querySelectorAll('.btn-step[data-helper]').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const hId = b.getAttribute('data-helper');
+        const delta = parseFloat(b.getAttribute('data-delta'));
+        const s = this._hass.states[hId];
+        if (s && s.state != null) {
+          const curVal = parseFloat(s.state) || 20.0;
+          const newVal = Math.round((curVal + delta) * 2) / 2;
+          this._callService('input_number', 'set_value', { entity_id: hId, value: newVal });
+        }
       };
     });
   }
@@ -2304,12 +2354,12 @@ class VisionGlassDashboard extends HTMLElement {
     } else if (type === 'climate') {
       title.innerHTML = `${this._icon('climate', { size: 22, cls: 'icon-climate', style: 'margin-right:8px;' })} ${this._t('climate_control')}`;
       const thermostats = [
-        { id: 'climate.better_thermostat_wohnzimmer', roomKey: 'wohnzimmer', tempSensor: 'sensor.bewegungsmelder_wohnzimmer_temperatur' },
-        { id: 'climate.better_thermostat_arbeitszimmer', roomKey: 'arbeitszimmer', tempSensor: 'sensor.bewegungsmelder_arbeitszimmer_temperatur' },
-        { id: 'climate.better_thermostat_schlafzimmer', roomKey: 'schlafzimmer', tempSensor: 'sensor.bewegungsmelder_schlafzimmer_temperature' },
-        { id: 'climate.better_thermostat_kuche', roomKey: 'kuche', tempSensor: 'sensor.bewegungsmelder_kuche_temperature' },
-        { id: 'climate.better_thermostat_badezimmer', roomKey: 'badezimmer', tempSensor: 'sensor.badezimmer_temperatur' },
-        { id: 'climate.better_thermostat_flur', roomKey: 'flur', tempSensor: 'sensor.bewegungsmelder_flur_temperatur' }
+        { id: 'climate.better_thermostat_wohnzimmer', roomKey: 'wohnzimmer', tempSensor: 'sensor.bewegungsmelder_wohnzimmer_temperatur', helperPrefix: 'wohnzimmer' },
+        { id: 'climate.better_thermostat_arbeitszimmer', roomKey: 'arbeitszimmer', tempSensor: 'sensor.bewegungsmelder_arbeitszimmer_temperatur', helperPrefix: 'arbeitszimmer' },
+        { id: 'climate.better_thermostat_schlafzimmer', roomKey: 'schlafzimmer', tempSensor: 'sensor.bewegungsmelder_schlafzimmer_temperature', helperPrefix: 'schlafzimmer' },
+        { id: 'climate.better_thermostat_kuche', roomKey: 'kuche', tempSensor: 'sensor.bewegungsmelder_kuche_temperature', helperPrefix: 'kuche' },
+        { id: 'climate.better_thermostat_badezimmer', roomKey: 'badezimmer', tempSensor: 'sensor.badezimmer_temperatur', helperPrefix: 'bad' },
+        { id: 'climate.better_thermostat_flur', roomKey: 'flur', tempSensor: 'sensor.bewegungsmelder_flur_temperatur', helperPrefix: 'flur' }
       ];
 
       if (!this._historyFetched) {
@@ -2328,6 +2378,13 @@ class VisionGlassDashboard extends HTMLElement {
 
             const historyVals = this._tempHistory[t.tempSensor];
             const curve = this._generateSvgCurve(historyVals, cur, 290, 55);
+
+            const komfortHelperId = `input_number.${t.helperPrefix}_komfort_temperatur`;
+            const ecoHelperId = `input_number.${t.helperPrefix}_eco_temperatur`;
+            const komfortObj = this._hass.states[komfortHelperId];
+            const ecoObj = this._hass.states[ecoHelperId];
+            const komfortVal = komfortObj && komfortObj.state != null && !isNaN(parseFloat(komfortObj.state)) ? parseFloat(komfortObj.state).toFixed(1) : '--';
+            const ecoVal = ecoObj && ecoObj.state != null && !isNaN(parseFloat(ecoObj.state)) ? parseFloat(ecoObj.state).toFixed(1) : '--';
 
             return `
               <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:16px;">
@@ -2371,13 +2428,35 @@ class VisionGlassDashboard extends HTMLElement {
                     </button>
                   </div>
                 </div>
+
+                <!-- Individual Room Helpers: Komfort & Eco -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:2px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:6px 8px;">
+                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
+                      ${this._icon('sun', { size: 12, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal}°C</strong>
+                    </span>
+                    <div style="display:flex;gap:4px;">
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                    </div>
+                  </div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:6px 8px;">
+                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
+                      ${this._icon('snowflake', { size: 12, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal}°C</strong>
+                    </span>
+                    <div style="display:flex;gap:4px;">
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                    </div>
+                  </div>
+                </div>
               </div>
             `;
           }).join('')}
         </div>
       `;
 
-      body.querySelectorAll('.btn-step').forEach(btn => {
+      body.querySelectorAll('.btn-step[data-climate]').forEach(btn => {
         btn.onclick = () => {
           const cId = btn.getAttribute('data-climate');
           const delta = parseFloat(btn.getAttribute('data-delta'));
@@ -2386,6 +2465,20 @@ class VisionGlassDashboard extends HTMLElement {
             const curTarget = s.attributes.temperature || 21.0;
             const newTarget = Math.round((curTarget + delta) * 2) / 2;
             this._callService('climate', 'set_temperature', { entity_id: cId, temperature: newTarget });
+          }
+        };
+      });
+
+      body.querySelectorAll('.btn-step[data-helper]').forEach(btn => {
+        btn.onclick = (e) => {
+          e.stopPropagation();
+          const hId = btn.getAttribute('data-helper');
+          const delta = parseFloat(btn.getAttribute('data-delta'));
+          const s = this._hass.states[hId];
+          if (s && s.state != null) {
+            const curVal = parseFloat(s.state) || 20.0;
+            const newVal = Math.round((curVal + delta) * 2) / 2;
+            this._callService('input_number', 'set_value', { entity_id: hId, value: newVal });
           }
         };
       });
