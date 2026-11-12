@@ -1527,14 +1527,14 @@ class VisionGlassDashboard extends HTMLElement {
       ...stub,
       ...config,
       rooms: (config.rooms && config.rooms.length > 0) ? config.rooms.map(r => {
-        const sr = stub.rooms.find(s => s.id === r.id) || {};
+        const sr = (stub.rooms && stub.rooms.find(s => s.id === r.id)) || {};
         return {
           ...sr,
           ...r,
           humidity_entity: r.humidity_entity !== undefined ? r.humidity_entity : (sr.humidity_entity || null),
           illuminance_entity: r.illuminance_entity !== undefined ? r.illuminance_entity : (sr.illuminance_entity || null)
         };
-      }) : stub.rooms,
+      }) : (stub.rooms || []),
       dock: config.dock || stub.dock || { auto_detect: true, items: [] }
     };
     this._render();
@@ -5207,7 +5207,7 @@ class VisionGlassDashboard extends HTMLElement {
     setTimeout(() => searchInp.focus(), 50);
   }
 
-  _renderSettingsContent(container) {
+  _renderSettingsContent(container, isModal = false) {
     if (!container || !this._config) return;
 
     if (!this._settingsActiveTab) this._settingsActiveTab = 'rooms';
