@@ -46,6 +46,15 @@ class VisionGlassDashboard extends HTMLElement {
       de: {
         welcome: 'Willkommen',
         smart_home_center: 'Smart Home Zentrale',
+        edit_banner_title: 'Vision Glass Dashboard Bearbeitungsmodus',
+        edit_banner_subtitle: 'Räume, Bento-Kacheln, Overlays und Dock-Navigation werden zentral auf der Einstellungsseite konfiguriert.',
+        open_settings_page: 'Zur Einstellungsseite öffnen',
+        sync_areas_btn: 'HA-Bereiche synchronisieren & entdecken',
+        sync_areas_success: 'Räume erfolgreich mit Home Assistant synchronisiert!',
+        managed_by_ha_areas: 'Gesteuert via HA-Bereiche',
+        ha_area_notice: 'Raumname, ID und Hintergrundbild werden direkt in Home Assistant unter Einstellungen → Bereiche & Zonen gepflegt.',
+        dashboard_title_label: 'Dashboard Titel',
+        auto_localized: 'Automatisch lokalisiert',
         today: 'Heute',
         tomorrow: 'Morgen',
         now: 'Jetzt',
@@ -245,11 +254,56 @@ class VisionGlassDashboard extends HTMLElement {
         move_down: 'Nach unten',
         general: 'Allgemein',
         dock: 'Bottom-Leiste',
-        provisioning: 'Ersteinrichtung'
+        provisioning: 'Ersteinrichtung',
+        video_player: 'Videoplayer (Shield, Kodi etc.)',
+        audio_player: 'Audioplayer (Verstärker, HiFi)',
+        tv_display: 'Fernseher (TV-Display)',
+        streaming: 'Videowiedergabe & Streaming',
+        dpad_up: 'Hoch',
+        dpad_down: 'Runter',
+        dpad_left: 'Links',
+        dpad_right: 'Rechts',
+        dpad_select: 'OK',
+        back: 'Zurück',
+        home: 'Home',
+        menu: 'Menü',
+        bg_mode: 'Hintergrund-Farbschema-Zuordnung',
+        bg_mode_auto: 'Automatisch (nach Preset & Sonne)',
+        bg_mode_dark: 'Dunkles Farbschema (Helle Schrift & Glas)',
+        bg_mode_light: 'Helles Farbschema (Dunkle Schrift & Glas)',
+        color_scheme: 'Farbschema für Schriften, Modal & Pillen',
+        scheme_auto: 'Standard (Passend zum Hintergrund)',
+        scheme_neon: 'Cosmic Neon (Cyan & Sapphire)',
+        scheme_sunset: 'Sunset Warm (Bernstein & Terracotta)',
+        scheme_emerald: 'Emerald Mint (Smaragd & Mint)',
+        scheme_monochrome: 'Monochrome Glass (Neutral)',
+        scheme_high_contrast: 'High Contrast Light (Tageslicht)',
+        scheme_custom: 'Benutzerdefiniert (Eigene Farben)',
+        color_text_primary: 'Hauptschriftfarbe',
+        color_text_secondary: 'Nebenschriftfarbe',
+        color_modal_bg: 'Modal-Hintergrundfarbe',
+        color_pill_bg: 'Pillen-Hintergrundfarbe',
+        stop: 'Stoppen',
+        toggle_light: 'Licht umschalten',
+        open_climate: 'Heizung öffnen',
+        toggle_media: 'Medien abspielen/pausieren',
+        toggle_lock: 'Schloss verriegeln/entriegeln',
+        adjust_temp: 'Zieltemperatur anpassen',
+        temp_down: 'Temperatur senken',
+        temp_up: 'Temperatur erhöhen'
       },
       en: {
         welcome: 'Welcome',
         smart_home_center: 'Smart Home Center',
+        edit_banner_title: 'Vision Glass Dashboard Edit Mode',
+        edit_banner_subtitle: 'Rooms, Bento tiles, overlays, and dock navigation are configured centrally on the dedicated settings page.',
+        open_settings_page: 'Open Settings Page',
+        sync_areas_btn: 'Sync & Discover HA Areas',
+        sync_areas_success: 'Rooms successfully synced with Home Assistant!',
+        managed_by_ha_areas: 'Managed via HA Areas',
+        ha_area_notice: 'Room name, ID, and background image are managed directly in Home Assistant under Settings → Areas & Zones.',
+        dashboard_title_label: 'Dashboard Title',
+        auto_localized: 'Auto-localized',
         today: 'Today',
         tomorrow: 'Tomorrow',
         now: 'Now',
@@ -449,11 +503,56 @@ class VisionGlassDashboard extends HTMLElement {
         move_down: 'Move down',
         general: 'General',
         dock: 'Bottom Bar',
-        provisioning: 'Setup'
+        provisioning: 'Setup',
+        video_player: 'Video Player (Shield, Kodi etc.)',
+        audio_player: 'Audio Player (Receiver, HiFi)',
+        tv_display: 'Television (TV Display)',
+        streaming: 'Video Playback & Streaming',
+        dpad_up: 'Up',
+        dpad_down: 'Down',
+        dpad_left: 'Left',
+        dpad_right: 'Right',
+        dpad_select: 'OK',
+        back: 'Back',
+        home: 'Home',
+        menu: 'Menu',
+        bg_mode: 'Background Color Mode',
+        bg_mode_auto: 'Automatic (by Preset & Sun)',
+        bg_mode_dark: 'Dark Color Scheme (Light Text & Glass)',
+        bg_mode_light: 'Light Color Scheme (Dark Text & Glass)',
+        color_scheme: 'Color Scheme (Fonts, Modal & Pills)',
+        scheme_auto: 'Default (Matched to Background)',
+        scheme_neon: 'Cosmic Neon (Cyan & Sapphire)',
+        scheme_sunset: 'Sunset Warm (Amber & Terracotta)',
+        scheme_emerald: 'Emerald Mint (Emerald & Mint)',
+        scheme_monochrome: 'Monochrome Glass (Neutral)',
+        scheme_high_contrast: 'High Contrast Light (Daylight)',
+        scheme_custom: 'Custom (User Defined)',
+        color_text_primary: 'Primary Text Color',
+        color_text_secondary: 'Secondary Text Color',
+        color_modal_bg: 'Modal Background Color',
+        color_pill_bg: 'Pill Background Color',
+        stop: 'Stop',
+        toggle_light: 'Toggle light',
+        open_climate: 'Open climate',
+        toggle_media: 'Play/pause media',
+        toggle_lock: 'Lock/unlock',
+        adjust_temp: 'Adjust target temperature',
+        temp_down: 'Lower temperature',
+        temp_up: 'Raise temperature'
       },
       id: {
         welcome: 'Selamat datang',
         smart_home_center: 'Pusat Smart Home',
+        edit_banner_title: 'Mode Edit Dasbor Vision Glass',
+        edit_banner_subtitle: 'Ruangan, ubin Bento, overlay, dan navigasi dock dikonfigurasi secara terpusat di halaman pengaturan.',
+        open_settings_page: 'Buka Halaman Pengaturan',
+        sync_areas_btn: 'Sinkronkan & Temukan Area HA',
+        sync_areas_success: 'Ruangan berhasil disinkronkan dengan Home Assistant!',
+        managed_by_ha_areas: 'Dikelola via Area HA',
+        ha_area_notice: 'Nama ruangan, ID, dan gambar latar belakang dikelola langsung di Home Assistant di bawah Pengaturan → Area & Zona.',
+        dashboard_title_label: 'Judul Dasbor',
+        auto_localized: 'Diterjemahkan otomatis',
         today: 'Hari Ini',
         tomorrow: 'Besok',
         now: 'Sekarang',
@@ -653,7 +752,43 @@ class VisionGlassDashboard extends HTMLElement {
         move_down: 'Pindah ke bawah',
         general: 'Umum',
         dock: 'Bilah Bawah',
-        provisioning: 'Pengaturan Awal'
+        provisioning: 'Pengaturan Awal',
+        video_player: 'Pemutar Video (Shield, Kodi dll.)',
+        audio_player: 'Pemutar Audio (Amplifier, HiFi)',
+        tv_display: 'Televisi (Layar TV)',
+        streaming: 'Streaming & Pemutaran Video',
+        dpad_up: 'Atas',
+        dpad_down: 'Bawah',
+        dpad_left: 'Kiri',
+        dpad_right: 'Kanan',
+        dpad_select: 'OK',
+        back: 'Kembali',
+        home: 'Beranda',
+        menu: 'Menu',
+        bg_mode: 'Mode Latar Belakang',
+        bg_mode_auto: 'Otomatis (Berdasarkan Preset & Matahari)',
+        bg_mode_dark: 'Skema Gelap (Teks & Kaca Terang)',
+        bg_mode_light: 'Skema Terang (Teks & Kaca Gelap)',
+        color_scheme: 'Skema Warna (Font, Modal & Pil)',
+        scheme_auto: 'Standar (Sesuai Latar Belakang)',
+        scheme_neon: 'Neon Kosmik (Sian & Safir)',
+        scheme_sunset: 'Senja Hangat (Amber & Terakota)',
+        scheme_emerald: 'Mint Zamrud (Zamrud & Mint)',
+        scheme_monochrome: 'Kaca Monokrom (Netral)',
+        scheme_high_contrast: 'Kontras Tinggi Terang (Siang Hari)',
+        scheme_custom: 'Kustom (Ditentukan Pengguna)',
+        color_text_primary: 'Warna Teks Utama',
+        color_text_secondary: 'Warna Teks Sekunder',
+        color_modal_bg: 'Warna Latar Belakang Modal',
+        color_pill_bg: 'Warna Latar Belakang Pil',
+        stop: 'Berhenti',
+        toggle_light: 'Nyalakan/matikan lampu',
+        open_climate: 'Buka pengatur suhu',
+        toggle_media: 'Putar/jeda media',
+        toggle_lock: 'Kunci/buka kunci',
+        adjust_temp: 'Sesuaikan suhu target',
+        temp_down: 'Turunkan suhu',
+        temp_up: 'Naikkan suhu'
       }
     };
   }
@@ -747,7 +882,10 @@ class VisionGlassDashboard extends HTMLElement {
   "arrow-left": "<line x1=\"19\" y1=\"12\" x2=\"5\" y2=\"12\"/><polyline points=\"12 19 5 12 12 5\"/>",
   "arrow-right": "<line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/><polyline points=\"12 5 19 12 12 19\"/>",
   "sparkles": "<path d=\"m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z\"/>",
-  "power": "<path d=\"M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10\"/>"
+  "power": "<path d=\"M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10\"/>",
+  "stop": "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\" fill=\"currentColor\"/>",
+  "rotate-ccw": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>",
+  "menu": "<line x1=\"4\" y1=\"6\" x2=\"20\" y2=\"6\"/><line x1=\"4\" y1=\"12\" x2=\"20\" y2=\"12\"/><line x1=\"4\" y1=\"18\" x2=\"20\" y2=\"18\"/>"
 };
   }
 
@@ -1064,6 +1202,7 @@ class VisionGlassDashboard extends HTMLElement {
                   if (view.cards[i].type === 'custom:vision-glass-dashboard' && view.cards[i].mode !== 'settings') {
                     const saveConfig = JSON.parse(JSON.stringify(this._config));
                     delete saveConfig.mode;
+                    delete saveConfig.title;
                     view.cards[i] = saveConfig;
                     found = true;
                     break;
@@ -1107,6 +1246,115 @@ class VisionGlassDashboard extends HTMLElement {
         saveBtn.textContent = this._t('save_changes');
       }
     }
+  }
+
+  async _ensureSettingsViewExists() {
+    if (this._checkedSettingsView || !this._hass || !this._hass.callWS) return;
+    this._checkedSettingsView = true;
+    try {
+      const dash = await this._hass.callWS({ type: 'lovelace/config', url_path: 'vision-glass', force_reload: true });
+      if (dash && dash.views) {
+        const hasSettings = dash.views.some(v => v.path === 'settings');
+        if (!hasSettings) {
+          console.info('[VisionGlass] Automatically provisioning settings view in dashboard...');
+          dash.views.push({
+            title: 'Einstellungen',
+            path: 'settings',
+            icon: 'mdi:cog',
+            type: 'panel',
+            cards: [{ type: 'custom:vision-glass-dashboard', mode: 'settings' }]
+          });
+          await this._hass.callWS({ type: 'lovelace/config/save', url_path: 'vision-glass', config: dash });
+          console.info('[VisionGlass] Settings view created successfully.');
+        }
+      }
+    } catch (e) {
+      console.debug('[VisionGlass] Check settings view:', e);
+    }
+  }
+
+  async _syncAreas() {
+    if (!this._hass) return { updatedCount: 0, discoveredCount: 0, total: 0 };
+    console.info('[VisionGlass] Synchronizing areas from Home Assistant...');
+    let areas = [];
+    if (this._hass.callWS) {
+      try {
+        areas = await this._hass.callWS({ type: 'config/area_registry/list' });
+      } catch (e) {
+        if (this._hass.areas) areas = Object.values(this._hass.areas);
+      }
+    } else if (this._hass && this._hass.areas) {
+      areas = Object.values(this._hass.areas);
+    }
+
+    if (!areas || areas.length === 0) return { updatedCount: 0, discoveredCount: 0, total: 0 };
+
+    if (!this._config.rooms) this._config.rooms = [];
+
+    let updatedCount = 0;
+    let discoveredCount = 0;
+
+    // 1. Update existing rooms by area_id (r.id)
+    for (const r of this._config.rooms) {
+      const area = areas.find(a => a.area_id === r.id);
+      if (area) {
+        if (area.name && r.name !== area.name) {
+          console.info(`[VisionGlass] Tracking renamed room: ${r.name} -> ${area.name} (area_id: ${r.id})`);
+          r.name = area.name;
+          updatedCount++;
+        }
+        if (area.picture !== undefined && r.picture !== area.picture) {
+          r.picture = area.picture;
+          updatedCount++;
+        }
+      }
+    }
+
+    // 2. Discover new areas from HA not yet in this._config.rooms
+    for (const area of areas) {
+      const exists = this._config.rooms.some(r => r.id === area.area_id);
+      if (!exists) {
+        const matched = [];
+        Object.keys(this._hass.states).forEach(eId => {
+          if (this._hass.entities && this._hass.entities[eId] && this._hass.entities[eId].area_id === area.area_id) {
+            matched.push(eId);
+          } else if (eId.includes(area.area_id)) {
+            matched.push(eId);
+          }
+        });
+        const lights = matched.filter(e => e.startsWith('light.'));
+        const climates = matched.filter(e => e.startsWith('climate.'));
+        const switches = matched.filter(e => e.startsWith('switch.'));
+        const temps = matched.filter(e => e.startsWith('sensor.') && (e.includes('temperatur') || e.includes('temperature') || this._hass.states[e]?.attributes?.device_class === 'temperature'));
+        const humidities = matched.filter(e => e.startsWith('sensor.') && (e.includes('humidity') || e.includes('feucht') || this._hass.states[e]?.attributes?.device_class === 'humidity'));
+        const illuminances = matched.filter(e => e.startsWith('sensor.') && (e.includes('illuminance') || e.includes('helligkeit') || e.includes('lux') || this._hass.states[e]?.attributes?.device_class === 'illuminance'));
+        const presences = matched.filter(e => e.startsWith('binary_sensor.') && (e.includes('occupied') || e.includes('motion') || e.includes('prasenz') || e.includes('presence')));
+        const windows = matched.filter(e => e.startsWith('binary_sensor.') && (e.includes('fenster') || e.includes('window') || e.includes('contact')));
+        const media = matched.filter(e => e.startsWith('media_player.'));
+
+        this._config.rooms.push({
+          id: area.area_id,
+          name: area.name,
+          picture: area.picture || null,
+          light_entity: lights[0] || null,
+          climate_entity: climates[0] || null,
+          temp_entity: temps[0] || null,
+          humidity_entity: humidities[0] || null,
+          illuminance_entity: illuminances[0] || null,
+          presence_entity: presences[0] || null,
+          window_entity: windows[0] || null,
+          switch_entity: switches[0] || null,
+          media_entity: media[0] || null,
+          overlay_categories: []
+        });
+        discoveredCount++;
+        console.info(`[VisionGlass] Discovered new area: ${area.name} (${area.area_id})`);
+      }
+    }
+
+    // 3. Save config
+    await this._saveDashboardConfig(this._config);
+    return { updatedCount, discoveredCount, total: areas.length };
   }
 
   render() {
@@ -1317,12 +1565,50 @@ class VisionGlassDashboard extends HTMLElement {
     this.dispatchEvent(event);
   }
 
+  set editMode(val) {
+    this._isEditMode = Boolean(val);
+    this._updateEditModeBanner();
+  }
+
+  get editMode() {
+    return this._isEditMode || false;
+  }
+
+  _checkIsEditMode() {
+    if (this._isEditMode) return true;
+    if (typeof window !== 'undefined' && window.location.search && window.location.search.includes('edit=1')) return true;
+    const parent = this.closest ? this.closest('hui-view, hui-panel-view, [edit-mode]') : null;
+    if (parent && (parent.hasAttribute('edit-mode') || parent.classList.contains('edit-mode'))) return true;
+    return false;
+  }
+
+  _updateEditModeBanner() {
+    const banner = this.shadowRoot ? this.shadowRoot.getElementById('editModeBanner') : null;
+    if (!banner) return;
+    const isEdit = this._checkIsEditMode();
+    banner.style.display = isEdit ? 'flex' : 'none';
+  }
+
   connectedCallback() {
     this._startClock();
+    this._ensureSettingsViewExists();
+    try {
+      const viewParent = this.closest ? this.closest('hui-view, hui-panel-view, ha-panel-lovelace') : null;
+      if (viewParent && window.MutationObserver) {
+        this._editModeObserver = new MutationObserver(() => {
+          this._updateEditModeBanner();
+        });
+        this._editModeObserver.observe(viewParent, { attributes: true, attributeFilter: ['edit-mode', 'class'] });
+      }
+    } catch (e) {}
   }
 
   disconnectedCallback() {
     if (this._timer) clearInterval(this._timer);
+    if (this._editModeObserver) {
+      this._editModeObserver.disconnect();
+      this._editModeObserver = null;
+    }
   }
 
   _startClock() {
@@ -1354,11 +1640,34 @@ class VisionGlassDashboard extends HTMLElement {
     return hour >= 7 && hour < 18;
   }
 
+  _resolveEffectiveThemeMode() {
+    const bgStyle = (this._config && this._config.background_style) || 'aurora';
+    const bgMode = (this._config && this._config.background_mode) || 'auto'; // 'auto' | 'dark' | 'light'
+    const themeMode = (this._config && this._config.theme_mode) || 'auto';   // 'auto' | 'dark' | 'light'
+
+    // 1. Explicit background_mode override
+    if (bgMode === 'dark') return 'dark';
+    if (bgMode === 'light') return 'light';
+
+    // 2. Preset intrinsic modes if background_mode is 'auto'
+    if (bgStyle === 'deep_space') return 'dark';
+    if (bgStyle === 'sunset') return 'dark';
+
+    // 3. User's theme_mode setting
+    if (themeMode === 'light') return 'light';
+    if (themeMode === 'dark') return 'dark';
+
+    // 4. Sun daylight fallback
+    return this._isDaytime() ? 'light' : 'dark';
+  }
+
   _applyThemeClass() {
     const root = this.shadowRoot.querySelector('.dashboard-root');
     if (!root) return;
-    const isDay = this._isDaytime();
-    if (isDay) {
+    const effMode = this._resolveEffectiveThemeMode();
+    const isLight = effMode === 'light';
+
+    if (isLight) {
       root.classList.remove('theme-dark');
       root.classList.add('theme-light');
     } else {
@@ -1384,11 +1693,149 @@ class VisionGlassDashboard extends HTMLElement {
     const animSpeed = (this._config && this._config.ambient_speed) || 'normal';
     ['anim-relaxed', 'anim-normal', 'anim-vivid'].forEach(cls => root.classList.remove(cls));
     root.classList.add(`anim-${animSpeed}`);
+
+    // Apply Farbschema für Schriften, Modal und Pillenhintergründe
+    const scheme = (this._config && this._config.color_scheme) || 'auto';
+    ['scheme-neon_cyan', 'scheme-warm_amber', 'scheme-emerald_mint', 'scheme-monochrome_frosted', 'scheme-high_contrast_light', 'scheme-custom'].forEach(cls => root.classList.remove(cls));
+
+    if (scheme === 'neon_cyan') {
+      root.style.setProperty('--accent', '#38bdf8');
+      root.style.setProperty('--bg-modal', 'rgba(10, 20, 38, 0.93)');
+      root.style.setProperty('--bg-pill', 'rgba(56, 189, 248, 0.12)');
+      root.style.setProperty('--text-primary', '#f0f9ff');
+      root.style.setProperty('--text-secondary', '#7dd3fc');
+    } else if (scheme === 'warm_amber') {
+      root.style.setProperty('--accent', '#f59e0b');
+      root.style.setProperty('--bg-modal', 'rgba(28, 18, 38, 0.93)');
+      root.style.setProperty('--bg-pill', 'rgba(245, 158, 11, 0.14)');
+      root.style.setProperty('--text-primary', '#fffbeb');
+      root.style.setProperty('--text-secondary', '#fde68a');
+    } else if (scheme === 'emerald_mint') {
+      root.style.setProperty('--accent', '#10b981');
+      root.style.setProperty('--bg-modal', 'rgba(6, 32, 28, 0.93)');
+      root.style.setProperty('--bg-pill', 'rgba(16, 185, 129, 0.12)');
+      root.style.setProperty('--text-primary', '#ecfdf5');
+      root.style.setProperty('--text-secondary', '#6ee7b7');
+    } else if (scheme === 'monochrome_frosted') {
+      root.style.setProperty('--accent', isLight ? '#0f172a' : '#ffffff');
+      root.style.setProperty('--bg-modal', isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(18, 18, 18, 0.93)');
+      root.style.setProperty('--bg-pill', isLight ? 'rgba(0, 0, 0, 0.05)' : 'rgba(255, 255, 255, 0.08)');
+      root.style.setProperty('--text-primary', isLight ? '#0f172a' : '#ffffff');
+      root.style.setProperty('--text-secondary', isLight ? '#52525b' : '#a1a1aa');
+    } else if (scheme === 'high_contrast_light') {
+      root.style.setProperty('--accent', '#0284c7');
+      root.style.setProperty('--bg-modal', 'rgba(255, 255, 255, 0.97)');
+      root.style.setProperty('--bg-pill', 'rgba(241, 245, 249, 0.95)');
+      root.style.setProperty('--text-primary', '#0f172a');
+      root.style.setProperty('--text-secondary', '#334155');
+    } else if (scheme === 'custom') {
+      if (this._config.color_accent) root.style.setProperty('--accent', this._config.color_accent);
+      if (this._config.color_modal_bg) root.style.setProperty('--bg-modal', this._config.color_modal_bg);
+      if (this._config.color_pill_bg) root.style.setProperty('--bg-pill', this._config.color_pill_bg);
+      if (this._config.color_text_primary) root.style.setProperty('--text-primary', this._config.color_text_primary);
+      if (this._config.color_text_secondary) root.style.setProperty('--text-secondary', this._config.color_text_secondary);
+    } else {
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--bg-modal');
+      root.style.removeProperty('--bg-pill');
+      root.style.removeProperty('--text-primary');
+      root.style.removeProperty('--text-secondary');
+    }
   }
 
   _callService(domain, service, data) {
     if (!this._hass) return;
     this._hass.callService(domain, service, data);
+  }
+
+  _sendRemoteCommand(mediaPlayerId, commandKey) {
+    if (!this._hass) return;
+    const mpObj = this._hass.states[mediaPlayerId];
+    const mpName = ((mpObj?.attributes?.friendly_name || '') + ' ' + mediaPlayerId).toLowerCase();
+
+    // 1. Kodi JSON-RPC methods
+    if (mpName.includes('kodi') || mediaPlayerId.includes('kodi')) {
+      const kodiMap = {
+        'up': 'Input.Up',
+        'down': 'Input.Down',
+        'left': 'Input.Left',
+        'right': 'Input.Right',
+        'select': 'Input.Select',
+        'back': 'Input.Back',
+        'home': 'Input.Home',
+        'menu': 'Input.ContextMenu',
+        'info': 'Input.Info'
+      };
+      const method = kodiMap[commandKey] || 'Input.Select';
+      this._callService('kodi', 'call_method', { entity_id: mediaPlayerId, method: method });
+      return;
+    }
+
+    // 2. Resolve paired remote entity
+    let remoteEntity = mediaPlayerId.replace('media_player.', 'remote.');
+    if (!this._hass.states[remoteEntity]) {
+      const remKeys = Object.keys(this._hass.states).filter(k => k.startsWith('remote.'));
+      const found = remKeys.find(rId => {
+        const rName = ((this._hass.states[rId]?.attributes?.friendly_name || '') + ' ' + rId).toLowerCase();
+        if (mpName.includes('shield') && (rName.includes('shield') || rId.includes('shield'))) return true;
+        if (mpName.includes('tv') && rName.includes('tv')) return true;
+        return false;
+      });
+      if (found) remoteEntity = found;
+    }
+
+    if (this._hass.states[remoteEntity]) {
+      const rObj = this._hass.states[remoteEntity];
+      const rName = ((rObj?.attributes?.friendly_name || '') + ' ' + remoteEntity).toLowerCase();
+
+      if (rName.includes('samsung') || rName.includes('tv')) {
+        const samsungMap = {
+          'up': 'KEY_UP',
+          'down': 'KEY_DOWN',
+          'left': 'KEY_LEFT',
+          'right': 'KEY_RIGHT',
+          'select': 'KEY_ENTER',
+          'back': 'KEY_RETURN',
+          'home': 'KEY_HOME',
+          'menu': 'KEY_MENU',
+          'info': 'KEY_INFO'
+        };
+        const cmd = samsungMap[commandKey] || 'KEY_ENTER';
+        this._callService('remote', 'send_command', { entity_id: remoteEntity, command: [cmd] });
+        return;
+      }
+
+      // Android TV / Shield standard remote commands
+      const androidMap = {
+        'up': 'DPAD_UP',
+        'down': 'DPAD_DOWN',
+        'left': 'DPAD_LEFT',
+        'right': 'DPAD_RIGHT',
+        'select': 'DPAD_CENTER',
+        'back': 'BACK',
+        'home': 'HOME',
+        'menu': 'MENU',
+        'info': 'INFO'
+      };
+      const cmd = androidMap[commandKey] || 'DPAD_CENTER';
+      this._callService('remote', 'send_command', { entity_id: remoteEntity, command: [cmd] });
+      return;
+    }
+
+    // 3. Fallback to androidtv adb_command if available
+    const adbMap = {
+      'up': 'UP',
+      'down': 'DOWN',
+      'left': 'LEFT',
+      'right': 'RIGHT',
+      'select': 'CENTER',
+      'back': 'BACK',
+      'home': 'HOME',
+      'menu': 'MENU',
+      'info': 'INFO'
+    };
+    const adbCmd = adbMap[commandKey] || 'CENTER';
+    this._callService('androidtv', 'adb_command', { entity_id: mediaPlayerId, command: adbCmd });
   }
 
   _openPersonModal(targetEntityId) {
@@ -2154,7 +2601,7 @@ class VisionGlassDashboard extends HTMLElement {
       const matchSensors = [];
       const matchMedia = [];
       Object.keys(this._hass.states).forEach(eId => {
-        if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === room.tv_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
+        if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.audio_entity || eId === room.video_entity || eId === room.temp_entity || eId === room.tv_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
 
         const eIdLower = eId.toLowerCase();
         const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
@@ -2182,23 +2629,48 @@ class VisionGlassDashboard extends HTMLElement {
       if (this._hass.states[id]) otherSensors.push({ id, state: this._hass.states[id] });
     });
 
-    // Resolve TV entity (Strictly media_player with device_class === 'tv' or explicit tv_entity)
-    let tvId = null;
-    if (room.tv_entity && this._hass.states[room.tv_entity]) {
-      tvId = room.tv_entity;
-    } else if (room.media_entity && this._hass.states[room.media_entity]?.attributes?.device_class === 'tv') {
-      tvId = room.media_entity;
-    } else if (cached.media) {
-      const tvMatch = cached.media.find(id => this._hass.states[id]?.attributes?.device_class === 'tv');
+    // Resolve media players: TV Screen, Videoplayer (Shield, Kodi etc.), Audioplayer (HiFi, Echo etc.)
+    const roomMedia = (cached.media || []).filter(id => this._hass.states[id]);
+
+    // 1. Resolve TV Screen (Display)
+    let tvId = (room.tv_entity && this._hass.states[room.tv_entity]) ? room.tv_entity : null;
+    if (!tvId) {
+      const tvMatch = roomMedia.find(id => {
+        const s = this._hass.states[id];
+        const name = ((s?.attributes?.friendly_name || '') + ' ' + id).toLowerCase();
+        const isStreamer = name.includes('shield') || name.includes('kodi') || name.includes('apple_tv') || name.includes('appletv') || name.includes('fire_tv') || name.includes('firetv') || name.includes('chromecast') || name.includes('roku') || name.includes('plex');
+        return s?.attributes?.device_class === 'tv' && !isStreamer;
+      });
       if (tvMatch) tvId = tvMatch;
     }
 
-    // Resolve Audio entity (media_player that is not a TV)
-    let audioId = null;
-    if (room.media_entity && room.media_entity !== tvId && this._hass.states[room.media_entity]) {
-      audioId = room.media_entity;
-    } else if (cached.media) {
-      const audioMatch = cached.media.find(id => id !== tvId && this._hass.states[id]?.attributes?.device_class !== 'tv');
+    // 2. Resolve Videoplayer (Streaming Box, Shield, Kodi, Apple TV, Fire TV, Chromecast)
+    let videoId = (room.video_entity && this._hass.states[room.video_entity]) ? room.video_entity : null;
+    if (!videoId) {
+      const videoMatch = roomMedia.find(id => {
+        if (id === tvId) return false;
+        const s = this._hass.states[id];
+        const name = ((s?.attributes?.friendly_name || '') + ' ' + id).toLowerCase();
+        const isStreamer = name.includes('shield') || name.includes('kodi') || name.includes('apple_tv') || name.includes('appletv') || name.includes('fire_tv') || name.includes('firetv') || name.includes('chromecast') || name.includes('androidtv') || name.includes('android_tv') || name.includes('plex') || name.includes('roku');
+        const isVideoContent = ['video', 'movie', 'tvshow', 'episode'].includes(s?.attributes?.media_content_type);
+        return isStreamer || isVideoContent;
+      });
+      if (videoMatch) videoId = videoMatch;
+    }
+
+    // 3. Resolve Audioplayer (Receiver, Smart Speaker, Echo, Sonos, HiFi)
+    let audioId = (room.audio_entity && this._hass.states[room.audio_entity])
+      ? room.audio_entity
+      : (room.media_entity && room.media_entity !== tvId && room.media_entity !== videoId && this._hass.states[room.media_entity] ? room.media_entity : null);
+    if (!audioId) {
+      const audioMatch = roomMedia.find(id => {
+        if (id === tvId || id === videoId) return false;
+        const s = this._hass.states[id];
+        const name = ((s?.attributes?.friendly_name || '') + ' ' + id).toLowerCase();
+        const isSpeaker = s?.attributes?.device_class === 'speaker' || s?.attributes?.device_class === 'receiver';
+        const isAudioName = name.includes('denon') || name.includes('echo') || name.includes('sonos') || name.includes('avr') || name.includes('speaker') || name.includes('audio') || name.includes('soundbar') || name.includes('everywhere');
+        return isSpeaker || isAudioName;
+      });
       if (audioMatch) audioId = audioMatch;
     }
 
@@ -2346,6 +2818,70 @@ class VisionGlassDashboard extends HTMLElement {
                       <button class="btn-micro" id="btnTvMute_${room.id}" title="${this._t('mute')}" style="padding:4px 8px;font-size:11px;">
                         ${this._icon('volume-mute', { size: 14 })}
                       </button>
+                    </div>
+                  </div>
+                ` : ''}
+              </div>
+            `;
+          })() : ''}
+
+          ${videoId ? (() => {
+            const vObj = this._hass.states[videoId];
+            const isVideoOn = vObj && vObj.state !== 'off' && vObj.state !== 'standby' && vObj.state !== 'unavailable';
+            const isPlaying = vObj && vObj.state === 'playing';
+            const vName = (vObj && vObj.attributes && vObj.attributes.friendly_name) || this._t('video_player');
+            const vApp = (vObj && vObj.attributes && (vObj.attributes.app_name || vObj.attributes.source)) || '';
+            const vTitle = (vObj && vObj.attributes && (vObj.attributes.media_title || vObj.attributes.series_title)) || '';
+            const statusText = vTitle ? (vApp ? `${vTitle} (${vApp})` : vTitle) : (vApp || (isVideoOn ? (isPlaying ? this._t('play') : this._t('pause')) : this._t('tv_off')));
+
+            return `
+              <div class="control-row" style="grid-column:1/-1;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.28);flex-direction:column;align-items:stretch;gap:12px;padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:rgba(139,92,246,0.2);display:flex;align-items:center;justify-content:center;color:#a78bfa;flex-shrink:0;">
+                      ${this._icon('multimedia', { size: 20 })}
+                    </div>
+                    <div style="min-width:0;flex:1;">
+                      <div style="font-weight:700;font-size:14px;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${vName}</div>
+                      <div style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${this._t('streaming')} • ${statusText}</div>
+                    </div>
+                  </div>
+                  <button class="toggle-pill ${isVideoOn ? 'active-blue' : ''}" id="btnVideoPower_${room.id}" style="${isVideoOn ? 'background:#8b5cf6;color:white;' : ''}">
+                    ${this._icon('power', { size: 14, style: 'margin-right:4px;' })} ${isVideoOn ? this._t('on') : this._t('off')}
+                  </button>
+                </div>
+
+                ${isVideoOn ? `
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding-top:10px;border-top:1px solid var(--border-subtle);">
+                    <!-- Transport Playback Controls -->
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <button class="btn-micro" id="btnVideoPrev_${room.id}" title="${this._t('previous')}" style="width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;">
+                        ${this._icon('skip-back', { size: 14 })}
+                      </button>
+                      <button class="btn-micro ${isPlaying ? 'active' : ''}" id="btnVideoPlayPause_${room.id}" title="${isPlaying ? this._t('pause') : this._t('play')}" style="width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;${isPlaying ? 'background:#8b5cf6;color:white;' : ''}">
+                        ${this._icon(isPlaying ? 'pause' : 'play', { size: 16 })}
+                      </button>
+                      <button class="btn-micro" id="btnVideoStop_${room.id}" title="${this._t('stop')}" style="width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;">
+                        ${this._icon('stop', { size: 14 })}
+                      </button>
+                      <button class="btn-micro" id="btnVideoNext_${room.id}" title="${this._t('next')}" style="width:34px;height:34px;padding:0;display:flex;align-items:center;justify-content:center;">
+                        ${this._icon('skip-forward', { size: 14 })}
+                      </button>
+                    </div>
+
+                    <!-- VisionOS Styled D-Pad Remote Navigation -->
+                    <div class="dpad-grid" id="dpad_${room.id}" style="margin-left:auto;">
+                      <button class="btn-dpad" data-dpad="back" title="${this._t('back')}">${this._icon('rotate-ccw', { size: 14 })}</button>
+                      <button class="btn-dpad" data-dpad="up" title="${this._t('dpad_up')}">${this._icon('arrow-up', { size: 15 })}</button>
+                      <button class="btn-dpad" data-dpad="home" title="${this._t('home')}">${this._icon('home', { size: 14 })}</button>
+
+                      <button class="btn-dpad" data-dpad="left" title="${this._t('dpad_left')}">${this._icon('arrow-left', { size: 15 })}</button>
+                      <button class="btn-dpad btn-dpad-ok" data-dpad="select" title="${this._t('dpad_select')}">OK</button>
+                      <button class="btn-dpad" data-dpad="right" title="${this._t('dpad_right')}">${this._icon('arrow-right', { size: 15 })}</button>
+
+                      <button class="btn-dpad" data-dpad="menu" title="${this._t('menu')}">${this._icon('menu', { size: 14 })}</button>
+                      <button class="btn-dpad" data-dpad="down" title="${this._t('dpad_down')}">${this._icon('arrow-down', { size: 15 })}</button>
+                      <button class="btn-dpad" data-dpad="info" title="Info">${this._icon('eye', { size: 14 })}</button>
                     </div>
                   </div>
                 ` : ''}
@@ -2528,6 +3064,34 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
+    // Video Player & Streaming Remote Events (Strictly for videoId: Shield, Kodi, Apple TV, Fire TV)
+    if (videoId) {
+      const vPower = body.querySelector('#btnVideoPower_' + room.id);
+      if (vPower) vPower.onclick = () => this._callService('media_player', 'toggle', { entity_id: videoId });
+
+      const vPlay = body.querySelector('#btnVideoPlayPause_' + room.id);
+      if (vPlay) vPlay.onclick = () => this._callService('media_player', 'media_play_pause', { entity_id: videoId });
+
+      const vStop = body.querySelector('#btnVideoStop_' + room.id);
+      if (vStop) vStop.onclick = () => this._callService('media_player', 'media_stop', { entity_id: videoId });
+
+      const vPrev = body.querySelector('#btnVideoPrev_' + room.id);
+      if (vPrev) vPrev.onclick = () => this._callService('media_player', 'media_previous_track', { entity_id: videoId });
+
+      const vNext = body.querySelector('#btnVideoNext_' + room.id);
+      if (vNext) vNext.onclick = () => this._callService('media_player', 'media_next_track', { entity_id: videoId });
+
+      const dpadBox = body.querySelector('#dpad_' + room.id);
+      if (dpadBox) {
+        dpadBox.querySelectorAll('.btn-dpad').forEach(btn => {
+          btn.onclick = () => {
+            const cmd = btn.getAttribute('data-dpad');
+            this._sendRemoteCommand(videoId, cmd);
+          };
+        });
+      }
+    }
+
     // Mini Media Player Events (Strictly for audioId)
     if (audioId) {
       const playBtn = body.querySelector('#btnMediaPlayPause_' + room.id);
@@ -2569,8 +3133,7 @@ class VisionGlassDashboard extends HTMLElement {
 
     // 1. Update Date & Header
     const now = new Date();
-    const isEn = this._getLang() === 'en';
-    const locale = isEn ? 'en-US' : 'de-DE';
+    const locale = this._getLocale();
     const dateTitleEl = this.shadowRoot.getElementById('dateTitle');
     if (dateTitleEl) {
       const options = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
@@ -2578,7 +3141,32 @@ class VisionGlassDashboard extends HTMLElement {
     }
     const subHeaderEl = this.shadowRoot.getElementById('subHeader');
     if (subHeaderEl) {
-      subHeaderEl.textContent = `${this._t('welcome')} Andreas Pilz • ${this._t('smart_home_center')}`;
+      const userName = (this._hass && this._hass.user && this._hass.user.name) || '';
+      const greeting = userName ? `${this._t('welcome')}, ${userName}` : this._t('welcome');
+      subHeaderEl.textContent = `${greeting} • ${this._t('smart_home_center')}`;
+    }
+    this._updateEditModeBanner();
+
+    // Auto-sync HA Area names and pictures dynamically if changed in HA
+    if (this._hass && this._hass.areas && this._config.rooms) {
+      this._config.rooms.forEach((r, idx) => {
+        const area = this._hass.areas[r.id];
+        if (area) {
+          if (area.name && r.name !== area.name) {
+            r.name = area.name;
+            const nameEl = this.shadowRoot.querySelector(`#roomCard_${idx} .room-name`);
+            if (nameEl) nameEl.innerHTML = `${r.name} &rsaquo;`;
+          }
+          if (area.picture !== undefined && r.picture !== area.picture) {
+            r.picture = area.picture;
+            const bgEl = this.shadowRoot.querySelector(`#roomCard_${idx} .room-bg-image`);
+            if (bgEl) {
+              if (r.picture) bgEl.style.backgroundImage = `url('${r.picture}')`;
+              else bgEl.remove();
+            }
+          }
+        }
+      });
     }
 
     // 2. Update Weather
@@ -2873,8 +3461,9 @@ class VisionGlassDashboard extends HTMLElement {
 
     // Media
     const mediaBtn = card.querySelector('.action-media');
-    if (mediaBtn && room.media_entity && this._hass.states[room.media_entity]) {
-      const isPlay = this._hass.states[room.media_entity].state === 'playing';
+    const mId = room.media_entity || room.audio_entity || room.video_entity;
+    if (mediaBtn && mId && this._hass.states[mId]) {
+      const isPlay = this._hass.states[mId].state === 'playing';
       mediaBtn.classList.toggle('active', isPlay);
     }
 
@@ -2992,6 +3581,11 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   _openModal(type) {
+    if (type === 'settings') {
+      window.history.pushState(null, '', '/vision-glass/settings');
+      window.dispatchEvent(new CustomEvent('location-changed'));
+      return;
+    }
     this._activeModal = type;
     const modalEl = this.shadowRoot.getElementById('modalContainer');
     if (modalEl) {
@@ -4121,13 +4715,10 @@ class VisionGlassDashboard extends HTMLElement {
           this._renderModalContent('stats');
         };
       });
-    } else if (type === 'settings') {
-      title.innerHTML = `${this._icon('settings', { size: 22, style: 'margin-right:8px;' })} ${this._t('settings')}`;
-      this._renderSettingsContent(body, true);
     }
   }
 
-  _renderSettingsContent(container, isModal = false) {
+  _renderSettingsContent(container) {
     if (!container || !this._config) return;
 
     if (!this._settingsActiveTab) this._settingsActiveTab = 'rooms';
@@ -4138,6 +4729,8 @@ class VisionGlassDashboard extends HTMLElement {
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
 
     const bgStyle = this._config.background_style || 'aurora';
+    const bgMode = this._config.background_mode || 'auto';
+    const colorScheme = this._config.color_scheme || 'auto';
     const themeMode = this._config.theme_mode || 'auto';
     const animSpeed = this._config.ambient_speed || 'normal';
 
@@ -4146,22 +4739,20 @@ class VisionGlassDashboard extends HTMLElement {
         ${allEntities.map(e => `<option value="${e}"></option>`).join('')}
       </datalist>
 
-      ${!isModal ? `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:42px;height:42px;border-radius:12px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
-              ${this._icon('settings', { size: 24 })}
-            </div>
-            <div>
-              <div style="font-size:20px;font-weight:700;">${this._t('settings')} – Vision Glass</div>
-              <div style="font-size:12px;color:var(--text-secondary);">${this._t('configure_dashboard')}</div>
-            </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:42px;height:42px;border-radius:12px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+            ${this._icon('settings', { size: 24 })}
           </div>
-          <a href="/vision-glass/home" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
-            &larr; Zum Dashboard
-          </a>
+          <div>
+            <div style="font-size:20px;font-weight:700;">${this._t('settings')} – Vision Glass</div>
+            <div style="font-size:12px;color:var(--text-secondary);">${this._t('configure_dashboard')}</div>
+          </div>
         </div>
-      ` : ''}
+        <a href="/vision-glass/home" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+          &larr; Zum Dashboard
+        </a>
+      </div>
 
       <!-- Settings Navigation Tabs -->
       <div class="nav-tabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border-subtle);padding-bottom:10px;margin-bottom:16px;overflow-x:auto;">
@@ -4175,7 +4766,10 @@ class VisionGlassDashboard extends HTMLElement {
       <div id="stabContentRooms" style="${activeTab === 'rooms' ? '' : 'display:none;'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
-          <button class="btn btn-sm btn-primary" id="btnSettingsAddRoom">+ ${this._t('add_room')}</button>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-sm btn-primary" id="btnSyncAreas">🔄 ${this._t('sync_areas_btn')}</button>
+            <button class="btn btn-sm" id="btnSettingsAddRoom">+ ${this._t('add_room')}</button>
+          </div>
         </div>
 
         <div style="display:flex;flex-direction:column;gap:12px;">
@@ -4192,19 +4786,22 @@ class VisionGlassDashboard extends HTMLElement {
                 </div>
               </div>
 
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
-                <div class="row">
-                  <label>${this._t('room_name')}</label>
-                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="name" value="${r.name || ''}" placeholder="z.B. Wohnzimmer">
+              <!-- Read-only Area Badge from Home Assistant -->
+              <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);padding:10px 14px;border-radius:10px;margin-bottom:8px;">
+                ${r.picture ? `<img src="${r.picture}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;border:1px solid var(--border-glass);" />` : `<div style="width:46px;height:46px;border-radius:8px;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:22px;">🏠</div>`}
+                <div style="flex:1;">
+                  <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${r.name || r.id}</div>
+                  <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;margin-top:2px;">
+                    <span>HA-Bereich ID:</span>
+                    <code style="background:rgba(0,0,0,0.2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);">${r.id}</code>
+                  </div>
                 </div>
-                <div class="row">
-                  <label>Raum ID</label>
-                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="id" value="${r.id || ''}" placeholder="z.B. wohnzimmer">
+                <div style="font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.06);padding:4px 8px;border-radius:6px;text-align:right;">
+                  🔒 ${this._t('managed_by_ha_areas')}
                 </div>
-                <div class="row" style="grid-column:1/-1;">
-                  <label>${this._t('picture_url')}</label>
-                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="picture" value="${r.picture || ''}" placeholder="/api/image/serve/... oder URL">
-                </div>
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;line-height:1.4;">
+                ${this._t('ha_area_notice')}
               </div>
 
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;">
@@ -4245,11 +4842,15 @@ class VisionGlassDashboard extends HTMLElement {
                   <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="switch_entity" value="${r.switch_entity || ''}" placeholder="switch.smartplug...">
                 </div>
                 <div class="row">
-                  <label>📺 Fernseher (media_player.* [tv])</label>
+                  <label>📺 ${this._t('tv_display')}</label>
                   <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="tv_entity" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2">
                 </div>
                 <div class="row">
-                  <label>🎵 Musik / Audio (media_player.*)</label>
+                  <label>🎮 ${this._t('video_player')}</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="video_entity" value="${r.video_entity || ''}" placeholder="media_player.shield_android_tv">
+                </div>
+                <div class="row">
+                  <label>🎵 ${this._t('audio_player')}</label>
                   <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="media_entity" value="${r.media_entity || ''}" placeholder="media_player.echo_show">
                 </div>
               </div>
@@ -4370,6 +4971,47 @@ class VisionGlassDashboard extends HTMLElement {
               </select>
               <span style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${this._t('ambient_desc')}</span>
             </div>
+
+            <div class="row">
+              <label>${this._t('bg_mode')}</label>
+              <select id="cfgBgMode" style="padding:8px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+                <option value="auto" ${bgMode === 'auto' ? 'selected' : ''}>${this._t('bg_mode_auto')}</option>
+                <option value="dark" ${bgMode === 'dark' ? 'selected' : ''}>${this._t('bg_mode_dark')}</option>
+                <option value="light" ${bgMode === 'light' ? 'selected' : ''}>${this._t('bg_mode_light')}</option>
+              </select>
+            </div>
+
+            <div class="row">
+              <label>${this._t('color_scheme')}</label>
+              <select id="cfgColorScheme" style="padding:8px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+                <option value="auto" ${colorScheme === 'auto' ? 'selected' : ''}>${this._t('scheme_auto')}</option>
+                <option value="neon_cyan" ${colorScheme === 'neon_cyan' ? 'selected' : ''}>${this._t('scheme_neon')}</option>
+                <option value="warm_amber" ${colorScheme === 'warm_amber' ? 'selected' : ''}>${this._t('scheme_sunset')}</option>
+                <option value="emerald_mint" ${colorScheme === 'emerald_mint' ? 'selected' : ''}>${this._t('scheme_emerald')}</option>
+                <option value="monochrome_frosted" ${colorScheme === 'monochrome_frosted' ? 'selected' : ''}>${this._t('scheme_monochrome')}</option>
+                <option value="high_contrast_light" ${colorScheme === 'high_contrast_light' ? 'selected' : ''}>${this._t('scheme_high_contrast')}</option>
+                <option value="custom" ${colorScheme === 'custom' ? 'selected' : ''}>${this._t('scheme_custom')}</option>
+              </select>
+            </div>
+
+            <div id="rowCustomColors" style="${colorScheme === 'custom' ? 'grid-column:1/-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px;' : 'display:none;'}">
+              <div class="row">
+                <label>${this._t('color_text_primary')}</label>
+                <input type="text" id="cfgColorTextPrimary" value="${this._config.color_text_primary || ''}" placeholder="#f8fafc">
+              </div>
+              <div class="row">
+                <label>${this._t('color_text_secondary')}</label>
+                <input type="text" id="cfgColorTextSecondary" value="${this._config.color_text_secondary || ''}" placeholder="#94a3b8">
+              </div>
+              <div class="row">
+                <label>${this._t('color_modal_bg')}</label>
+                <input type="text" id="cfgColorModalBg" value="${this._config.color_modal_bg || ''}" placeholder="rgba(18, 25, 38, 0.92)">
+              </div>
+              <div class="row">
+                <label>${this._t('color_pill_bg')}</label>
+                <input type="text" id="cfgColorPillBg" value="${this._config.color_pill_bg || ''}" placeholder="rgba(255, 255, 255, 0.08)">
+              </div>
+            </div>
           </div>
         </div>
 
@@ -4378,8 +5020,11 @@ class VisionGlassDashboard extends HTMLElement {
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
             <div class="row">
-              <label>Dashboard Titel</label>
-              <input type="text" id="cfgTitle" value="${this._config.title || ''}" placeholder="z.B. Wohnung Andreas">
+              <label>${this._t('dashboard_title_label')}</label>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);padding:8px 12px;background:var(--bg-surface);border-radius:8px;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
+                <span>${this._t('smart_home_center')}</span>
+                <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">🌐 ${this._t('auto_localized')} (${this._getLang().toUpperCase()})</span>
+              </div>
             </div>
             <div class="row">
               <label>Wetter-Entität</label>
@@ -4424,6 +5069,14 @@ class VisionGlassDashboard extends HTMLElement {
       bgSel.onchange = () => {
         const rowCust = container.querySelector('#rowCustomBgUrl');
         if (rowCust) rowCust.style.display = bgSel.value === 'custom' ? 'flex' : 'none';
+      };
+    }
+
+    const schemeSel = container.querySelector('#cfgColorScheme');
+    if (schemeSel) {
+      schemeSel.onchange = () => {
+        const rowCustScheme = container.querySelector('#rowCustomColors');
+        if (rowCustScheme) rowCustScheme.style.display = schemeSel.value === 'custom' ? 'grid' : 'none';
       };
     }
 
@@ -4500,16 +5153,54 @@ class VisionGlassDashboard extends HTMLElement {
       };
     });
 
-    // Room add
+    // Sync Areas
+    const btnSync = container.querySelector('#btnSyncAreas');
+    if (btnSync) {
+      btnSync.onclick = async () => {
+        btnSync.disabled = true;
+        btnSync.textContent = '⏳ Synchronisiere...';
+        const res = await this._syncAreas();
+        btnSync.disabled = false;
+        btnSync.textContent = '🔄 ' + this._t('sync_areas_btn');
+        this._renderSettingsContent(container);
+        const toast = container.querySelector('#settingsToast');
+        if (toast) {
+          toast.textContent = `✓ ${this._t('sync_areas_success')} (${res ? res.total : 0} Bereiche)`;
+          toast.style.display = 'block';
+          setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+        }
+      };
+    }
+
+    // Room add from unmapped HA areas
     const btnAdd = container.querySelector('#btnSettingsAddRoom');
     if (btnAdd) {
-      btnAdd.onclick = () => {
+      btnAdd.onclick = async () => {
+        let areas = [];
+        if (this._hass && this._hass.callWS) {
+          try {
+            areas = await this._hass.callWS({ type: 'config/area_registry/list' });
+          } catch (e) {
+            if (this._hass.areas) areas = Object.values(this._hass.areas);
+          }
+        } else if (this._hass && this._hass.areas) {
+          areas = Object.values(this._hass.areas);
+        }
+        const unmapped = areas.filter(a => !this._config.rooms.some(r => r.id === a.area_id));
+        if (unmapped.length === 0) {
+          alert('Alle Home Assistant Bereiche sind bereits auf dem Dashboard vorhanden.');
+          return;
+        }
+        const nextArea = unmapped[0];
         if (!this._config.rooms) this._config.rooms = [];
         this._config.rooms.push({
-          id: 'neuer_raum_' + Date.now().toString().slice(-4),
-          name: 'Neuer Raum'
+          id: nextArea.area_id,
+          name: nextArea.name,
+          picture: nextArea.picture || null,
+          overlay_categories: []
         });
-        this._renderSettingsContent(container, isModal);
+        await this._saveDashboardConfig(this._config);
+        this._renderSettingsContent(container);
       };
     }
 
@@ -4590,8 +5281,25 @@ class VisionGlassDashboard extends HTMLElement {
         const aSpeed = container.querySelector('#cfgAmbientSpeed');
         if (aSpeed) this._config.ambient_speed = aSpeed.value;
 
-        const cTitle = container.querySelector('#cfgTitle');
-        if (cTitle) this._config.title = cTitle.value.trim();
+        const bMode = container.querySelector('#cfgBgMode');
+        if (bMode) this._config.background_mode = bMode.value;
+
+        const cScheme = container.querySelector('#cfgColorScheme');
+        if (cScheme) this._config.color_scheme = cScheme.value;
+
+        const cPri = container.querySelector('#cfgColorTextPrimary');
+        if (cPri) this._config.color_text_primary = cPri.value.trim();
+
+        const cSec = container.querySelector('#cfgColorTextSecondary');
+        if (cSec) this._config.color_text_secondary = cSec.value.trim();
+
+        const cModalBg = container.querySelector('#cfgColorModalBg');
+        if (cModalBg) this._config.color_modal_bg = cModalBg.value.trim();
+
+        const cPillBg = container.querySelector('#cfgColorPillBg');
+        if (cPillBg) this._config.color_pill_bg = cPillBg.value.trim();
+
+        delete this._config.title;
 
         const cWeather = container.querySelector('#cfgWeather');
         if (cWeather) this._config.weather_entity = cWeather.value.trim();
@@ -5102,13 +5810,13 @@ class VisionGlassDashboard extends HTMLElement {
           letter-spacing: 0.8px;
           padding: 3px 8px;
           border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.12);
+          background: var(--bg-pill, rgba(255, 255, 255, 0.12));
           border: 1px solid var(--border-subtle);
           color: var(--accent);
         }
 
         .theme-light .sidebar-pill {
-          background: rgba(2, 132, 199, 0.10);
+          background: var(--bg-pill, rgba(2, 132, 199, 0.10));
           border-color: rgba(2, 132, 199, 0.25);
           color: #0284c7;
         }
@@ -5219,13 +5927,13 @@ class VisionGlassDashboard extends HTMLElement {
           font-weight: 600;
           padding: 2px 6px;
           border-radius: 9999px;
-          background: rgba(255, 255, 255, 0.1);
+          background: var(--bg-pill, rgba(255, 255, 255, 0.1));
           border: 1px solid var(--border-subtle);
           color: var(--text-secondary);
         }
 
         .theme-light .sidebar-mini-pill {
-          background: #ffffff;
+          background: var(--bg-pill, #ffffff);
           border-color: rgba(203, 213, 225, 0.8);
           color: #334155;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -5258,13 +5966,13 @@ class VisionGlassDashboard extends HTMLElement {
           font-weight: 500;
           padding: 5px 9px;
           border-radius: 10px;
-          background: rgba(255, 255, 255, 0.05);
+          background: var(--bg-pill, rgba(255, 255, 255, 0.05));
           border: 1px solid var(--border-subtle);
           transition: background 0.2s;
         }
 
         .theme-light .agenda-item {
-          background: rgba(248, 250, 252, 0.95);
+          background: var(--bg-pill, rgba(248, 250, 252, 0.95));
           border-color: rgba(226, 232, 240, 1);
           color: #0f172a;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
@@ -5489,7 +6197,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .env-pill {
-          background: rgba(255, 255, 255, 0.12);
+          background: var(--bg-pill, rgba(255, 255, 255, 0.12));
           backdrop-filter: blur(8px);
           -webkit-backdrop-filter: blur(8px);
           border: 1px solid var(--border-subtle);
@@ -5504,7 +6212,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-light .env-pill {
-          background: rgba(241, 245, 249, 0.9);
+          background: var(--bg-pill, rgba(241, 245, 249, 0.9));
           border-color: rgba(226, 232, 240, 0.95);
           color: #1e293b;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
@@ -5767,7 +6475,7 @@ class VisionGlassDashboard extends HTMLElement {
 
         .modal-card {
           position: relative;
-          background: var(--bg-card);
+          background: var(--bg-modal, var(--bg-card));
           backdrop-filter: blur(38px) saturate(210%);
           -webkit-backdrop-filter: blur(38px) saturate(210%);
           border: 1px solid var(--border-glass);
@@ -5799,7 +6507,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-light .modal-card {
-          background: rgba(255, 255, 255, 0.88);
+          background: var(--bg-modal, rgba(255, 255, 255, 0.88));
           border: 1.5px solid rgba(255, 255, 255, 0.95);
           box-shadow:
             inset 0 2px 1.5px 0 #ffffff,
@@ -6063,6 +6771,66 @@ class VisionGlassDashboard extends HTMLElement {
         .toggle-pill.active {
           background: var(--accent);
           color: #fff;
+        }
+
+        /* VisionOS Styled D-Pad Remote Navigation Grid */
+        .dpad-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 40px);
+          grid-template-rows: repeat(3, 38px);
+          gap: 6px;
+          justify-content: center;
+          align-items: center;
+          padding: 8px;
+          background: rgba(0, 0, 0, 0.16);
+          border-radius: 18px;
+          border: 1px solid var(--border-subtle);
+        }
+        .theme-light .dpad-grid {
+          background: rgba(0, 0, 0, 0.04);
+        }
+        .btn-dpad {
+          width: 40px;
+          height: 38px;
+          padding: 0;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border-radius: 10px;
+          background: var(--bg-pill, rgba(255, 255, 255, 0.08));
+          border: 1px solid var(--border-subtle);
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all 0.15s ease;
+          font-weight: 700;
+          font-size: 12px;
+        }
+        .btn-dpad:hover {
+          background: var(--accent);
+          color: #ffffff;
+          border-color: var(--accent);
+          transform: scale(1.06);
+        }
+        .btn-dpad:active {
+          transform: scale(0.94);
+        }
+        .btn-dpad.btn-dpad-ok {
+          background: rgba(56, 189, 248, 0.18);
+          border-color: rgba(56, 189, 248, 0.35);
+          color: var(--accent);
+          font-weight: 800;
+          letter-spacing: 0.5px;
+        }
+        .theme-light .btn-dpad {
+          background: var(--bg-pill, #ffffff);
+          border: 1px solid #cbd5e1;
+          color: #0f172a;
+          box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+        }
+        .theme-light .btn-dpad:hover {
+          background: var(--accent);
+          color: #ffffff;
+          border-color: var(--accent);
         }
 
         /* ================================================================
@@ -6401,26 +7169,24 @@ class VisionGlassDashboard extends HTMLElement {
         </div>
 
         <!-- Lovelace Edit Mode Banner -->
-        ${(() => {
-          const isEdit = (this._hass && this._hass.editMode) || (typeof window !== 'undefined' && window.location.search.includes('edit=1'));
-          if (!isEdit) return '';
-          return `
-            <div style="background:linear-gradient(135deg,rgba(2,132,199,0.9),rgba(79,70,229,0.9));border-radius:14px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:white;box-shadow:0 8px 24px rgba(0,0,0,0.3);position:relative;z-index:20;">
-              <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;">
-                ${this._icon('settings', { size: 16, color: '#fff' })} ${this._t('edit_dashboard')}
-              </div>
-              <button class="btn-micro" id="btnEditBannerSettings" style="background:white;color:#0284c7;font-weight:700;border:none;padding:5px 14px;border-radius:8px;cursor:pointer;">
-                ${this._t('settings')}
-              </button>
+        <div id="editModeBanner" class="edit-mode-banner" style="display:${this._checkIsEditMode() ? 'flex' : 'none'};background:linear-gradient(135deg,rgba(2,132,199,0.95),rgba(79,70,229,0.95));backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.25);border-radius:14px;padding:12px 18px;margin-bottom:14px;justify-content:space-between;align-items:center;color:white;box-shadow:0 8px 24px rgba(0,0,0,0.3);position:relative;z-index:30;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="font-size:24px;line-height:1;">⚙️</div>
+            <div>
+              <div style="font-weight:700;font-size:14px;letter-spacing:0.2px;">${this._t('edit_banner_title')}</div>
+              <div style="font-size:12px;opacity:0.92;margin-top:2px;">${this._t('edit_banner_subtitle')}</div>
             </div>
-          `;
-        })()}
+          </div>
+          <button id="btnEditBannerSettings" style="background:#ffffff;color:#0284c7;font-weight:700;font-size:13px;border:none;padding:8px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:all 0.2s;">
+            ${this._t('open_settings_page')} &rarr;
+          </button>
+        </div>
 
         <!-- Top Bar Navigation & Status Chips -->
         <div class="top-bar">
           <div>
-            <div class="date-title" id="dateTitle">Mittwoch, 11. November</div>
-            <div class="name-day" id="subHeader">Willkommen Andreas Pilz • Smart Home Zentrale</div>
+            <div class="date-title" id="dateTitle">...</div>
+            <div class="name-day" id="subHeader">${this._t('welcome')}${(this._hass && this._hass.user && this._hass.user.name) ? ', ' + this._hass.user.name : ''} • ${this._t('smart_home_center')}</div>
           </div>
 
           <div class="chips-container">
@@ -6533,17 +7299,17 @@ class VisionGlassDashboard extends HTMLElement {
                   <!-- Bottom Row: Actions & Heating Quick Stepper -->
                   <div class="room-bottom-row">
                     <div class="room-actions">
-                      ${room.light_entity ? `<div class="action-circle action-light" title="Licht umschalten" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
-                      ${room.climate_entity ? `<div class="action-circle action-climate" title="Heizung öffnen" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
-                      ${room.media_entity ? `<div class="action-circle action-media" title="Medien abspielen/pausieren" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
-                      ${room.lock_entity ? `<div class="action-circle action-lock" title="Schloss verriegeln/entriegeln" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
+                      ${room.light_entity ? `<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
+                      ${room.climate_entity ? `<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
+                      ${(room.media_entity || room.audio_entity || room.video_entity) ? `<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
+                      ${room.lock_entity ? `<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
                     </div>
 
                     ${room.climate_entity ? `
-                      <div class="quick-climate-stepper" title="Zieltemperatur anpassen">
-                        <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="Temperatur um 0.5°C senken" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 11 })}</button>
+                      <div class="quick-climate-stepper" title="${this._t('adjust_temp')}">
+                        <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="${this._t('temp_down')}" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 11 })}</button>
                         <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
-                        <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="Temperatur um 0.5°C erhöhen" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 11 })}</button>
+                        <button class="quick-step-btn" data-action="temp-plus" data-idx="${idx}" title="${this._t('temp_up')}" style="display:flex;align-items:center;justify-content:center;">${this._icon('plus', { size: 11 })}</button>
                       </div>
                     ` : ''}
                   </div>
@@ -6617,12 +7383,16 @@ class VisionGlassDashboard extends HTMLElement {
     this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
     this.shadowRoot.getElementById('dockBattery').addEventListener('click', () => this._openModal('battery'));
     this.shadowRoot.getElementById('dockWeather').addEventListener('click', () => this._openModal('weather'));
+    const navigateToSettings = () => {
+      window.history.pushState(null, '', '/vision-glass/settings');
+      window.dispatchEvent(new CustomEvent('location-changed'));
+    };
     const dSet = this.shadowRoot.getElementById('dockSettings');
-    if (dSet) dSet.addEventListener('click', () => this._openModal('settings'));
+    if (dSet) dSet.addEventListener('click', navigateToSettings);
     const cSet = this.shadowRoot.getElementById('chipSettings');
-    if (cSet) cSet.addEventListener('click', () => this._openModal('settings'));
+    if (cSet) cSet.addEventListener('click', navigateToSettings);
     const bSet = this.shadowRoot.getElementById('btnEditBannerSettings');
-    if (bSet) bSet.addEventListener('click', () => this._openModal('settings'));
+    if (bSet) bSet.addEventListener('click', navigateToSettings);
 
     // Modal Close
     this.shadowRoot.getElementById('modalCloseBtn').addEventListener('click', () => this._closeModal());
@@ -6655,8 +7425,9 @@ class VisionGlassDashboard extends HTMLElement {
           this._callService('light', 'toggle', { entity_id: room.light_entity });
         } else if (action === 'climate') {
           this._openModal('climate');
-        } else if (action === 'media' && room.media_entity) {
-          this._callService('media_player', 'media_play_pause', { entity_id: room.media_entity });
+        } else if (action === 'media') {
+          const mEnt = room.media_entity || room.audio_entity || room.video_entity;
+          if (mEnt) this._callService('media_player', 'media_play_pause', { entity_id: mEnt });
         } else if (action === 'lock' && room.lock_entity) {
           const lState = this._hass && this._hass.states[room.lock_entity];
           const isLocked = lState && lState.state === 'locked';
@@ -6938,6 +7709,21 @@ class VisionGlassDashboardEditor extends HTMLElement {
       </datalist>
 
       <div class="editor-container">
+        <!-- Dedicated Settings Banner -->
+        <div style="background:linear-gradient(135deg,rgba(2,132,199,0.95),rgba(79,70,229,0.95));border-radius:12px;padding:14px 18px;display:flex;justify-content:space-between;align-items:center;color:white;box-shadow:0 8px 24px rgba(0,0,0,0.25);margin-bottom:12px;">
+          <div>
+            <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;">
+              ⚙️ Vision Glass Zentrale Konfiguration
+            </div>
+            <div style="font-size:12px;opacity:0.92;margin-top:4px;">
+              Alle Einstellungen für Räume, Bento-Kacheln, Overlays, Farben und Navigation werden auf der dedizierten Einstellungsseite verwaltet.
+            </div>
+          </div>
+          <button id="btnEditorOpenSettings" style="background:white;color:#0284c7;font-weight:700;border:none;padding:8px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;font-size:13px;box-shadow:0 2px 6px rgba(0,0,0,0.15);">
+            Zur Einstellungsseite öffnen &rarr;
+          </button>
+        </div>
+
         <!-- Quick Action Header -->
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
           <div style="font-size:15px;font-weight:700;">Vision Glass Dashboard v2.0</div>
@@ -6975,14 +7761,12 @@ class VisionGlassDashboardEditor extends HTMLElement {
                     <button class="btn btn-sm btn-room-del" data-idx="${rIdx}" style="color:#ef4444;">✕</button>
                   </div>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                  <div class="row">
-                    <label>Raumname</label>
-                    <input type="text" class="room-name-input" data-idx="${rIdx}" value="${r.name || ''}">
-                  </div>
-                  <div class="row">
-                    <label>Raum ID</label>
-                    <input type="text" class="room-id-input" data-idx="${rIdx}" value="${r.id || ''}">
+                <!-- Read-only HA Area Badge -->
+                <div style="display:flex;align-items:center;gap:12px;background:rgba(0,0,0,0.04);padding:8px 12px;border-radius:8px;margin-bottom:8px;">
+                  ${r.picture ? `<img src="${r.picture}" style="width:38px;height:38px;border-radius:6px;object-fit:cover;" />` : `<div style="width:38px;height:38px;border-radius:6px;background:rgba(0,0,0,0.08);display:flex;align-items:center;justify-content:center;font-size:18px;">🏠</div>`}
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:14px;">${r.name || r.id}</div>
+                    <div style="font-size:11px;color:var(--secondary-text-color,#64748b);">HA-Bereich: <code>${r.id}</code> (🔒 In HA-Bereichen verwaltet)</div>
                   </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
@@ -7005,9 +7789,19 @@ class VisionGlassDashboardEditor extends HTMLElement {
                     <input type="text" list="all_entities" class="room-win-input" data-idx="${rIdx}" value="${r.window_entity || ''}" placeholder="binary_sensor.fenster">
                   </div>
                 </div>
-                <div class="row">
-                  <label>Hintergrundbild URL</label>
-                  <input type="text" class="room-pic-input" data-idx="${rIdx}" value="${r.picture || ''}" placeholder="/local/rooms/wohnzimmer.jpg">
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+                  <div class="row">
+                    <label>Fernseher (TV)</label>
+                    <input type="text" list="all_entities" class="room-tv-input" data-idx="${rIdx}" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2">
+                  </div>
+                  <div class="row">
+                    <label>Videoplayer (Shield, Kodi)</label>
+                    <input type="text" list="all_entities" class="room-video-input" data-idx="${rIdx}" value="${r.video_entity || ''}" placeholder="media_player.shield_android_tv">
+                  </div>
+                  <div class="row">
+                    <label>Audioplayer (HiFi, Echo)</label>
+                    <input type="text" list="all_entities" class="room-media-input" data-idx="${rIdx}" value="${r.media_entity || ''}" placeholder="media_player.echo_show">
+                  </div>
                 </div>
               </div>
             `).join('')}
@@ -7137,7 +7931,10 @@ class VisionGlassDashboardEditor extends HTMLElement {
           <div class="card-box">
             <div class="row">
               <label>Dashboard Titel</label>
-              <input type="text" id="cfgTitle" value="${this._config.title || ''}" placeholder="Wohnung Andreas">
+              <div style="font-size:13px;font-weight:600;padding:8px 12px;background:var(--card-background-color,#f8fafc);border-radius:8px;border:1px solid var(--divider-color,#cbd5e1);display:flex;align-items:center;justify-content:space-between;">
+                <span>Smart Home Zentrale</span>
+                <span style="font-size:11px;color:var(--secondary-text-color,#64748b);">🌐 Automatisch lokalisiert</span>
+              </div>
             </div>
             <div class="row">
               <label>Wetter-Entität</label>
@@ -7150,6 +7947,26 @@ class VisionGlassDashboardEditor extends HTMLElement {
             <div class="row">
               <label>Alle Lichter Gruppe</label>
               <input type="text" list="all_entities" id="cfgAllLights" value="${this._config.all_lights_entity || ''}" placeholder="light.licht_wohnung">
+            </div>
+            <div class="row">
+              <label>Hintergrund-Farbschema-Zuordnung</label>
+              <select id="cfgEditorBgMode">
+                <option value="auto" ${(this._config.background_mode || 'auto') === 'auto' ? 'selected' : ''}>Automatisch (nach Preset & Sonne)</option>
+                <option value="dark" ${this._config.background_mode === 'dark' ? 'selected' : ''}>Dunkles Farbschema (Helle Schrift & Glas)</option>
+                <option value="light" ${this._config.background_mode === 'light' ? 'selected' : ''}>Helles Farbschema (Dunkle Schrift & Glas)</option>
+              </select>
+            </div>
+            <div class="row">
+              <label>Farbschema für Schriften, Modal & Pillen</label>
+              <select id="cfgEditorColorScheme">
+                <option value="auto" ${(this._config.color_scheme || 'auto') === 'auto' ? 'selected' : ''}>Standard (Passend zum Hintergrund)</option>
+                <option value="neon_cyan" ${this._config.color_scheme === 'neon_cyan' ? 'selected' : ''}>Cosmic Neon (Cyan & Sapphire)</option>
+                <option value="warm_amber" ${this._config.color_scheme === 'warm_amber' ? 'selected' : ''}>Sunset Warm (Bernstein & Terracotta)</option>
+                <option value="emerald_mint" ${this._config.color_scheme === 'emerald_mint' ? 'selected' : ''}>Emerald Mint (Smaragd & Mint)</option>
+                <option value="monochrome_frosted" ${this._config.color_scheme === 'monochrome_frosted' ? 'selected' : ''}>Monochrome Glass (Neutral)</option>
+                <option value="high_contrast_light" ${this._config.color_scheme === 'high_contrast_light' ? 'selected' : ''}>High Contrast Light (Tageslicht)</option>
+                <option value="custom" ${this._config.color_scheme === 'custom' ? 'selected' : ''}>Benutzerdefiniert (Eigene Farben)</option>
+              </select>
             </div>
             <div class="row-horiz" style="margin-top:12px;">
               <label style="cursor:pointer;font-size:13px;text-transform:none;">
@@ -7255,21 +8072,18 @@ class VisionGlassDashboardEditor extends HTMLElement {
       });
     }
 
+    // Dedicated Settings redirect
+    const btnEdSet = this.shadowRoot.getElementById('btnEditorOpenSettings');
+    if (btnEdSet) {
+      btnEdSet.addEventListener('click', () => {
+        window.history.pushState(null, '', '/vision-glass/settings');
+        window.dispatchEvent(new CustomEvent('location-changed'));
+        const dlg = this.closest('ha-dialog, mwc-dialog');
+        if (dlg && dlg.close) dlg.close();
+      });
+    }
+
     // Room input fields
-    this.shadowRoot.querySelectorAll('.room-name-input').forEach(i => {
-      i.addEventListener('change', (e) => {
-        const idx = parseInt(e.target.getAttribute('data-idx'));
-        this._config.rooms[idx].name = e.target.value;
-        this._fireConfigChanged();
-      });
-    });
-    this.shadowRoot.querySelectorAll('.room-id-input').forEach(i => {
-      i.addEventListener('change', (e) => {
-        const idx = parseInt(e.target.getAttribute('data-idx'));
-        this._config.rooms[idx].id = e.target.value;
-        this._fireConfigChanged();
-      });
-    });
     this.shadowRoot.querySelectorAll('.room-light-input').forEach(i => {
       i.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'));
@@ -7298,10 +8112,24 @@ class VisionGlassDashboardEditor extends HTMLElement {
         this._fireConfigChanged();
       });
     });
-    this.shadowRoot.querySelectorAll('.room-pic-input').forEach(i => {
+    this.shadowRoot.querySelectorAll('.room-tv-input').forEach(i => {
       i.addEventListener('change', (e) => {
         const idx = parseInt(e.target.getAttribute('data-idx'));
-        this._config.rooms[idx].picture = e.target.value;
+        this._config.rooms[idx].tv_entity = e.target.value;
+        this._fireConfigChanged();
+      });
+    });
+    this.shadowRoot.querySelectorAll('.room-video-input').forEach(i => {
+      i.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-idx'));
+        this._config.rooms[idx].video_entity = e.target.value;
+        this._fireConfigChanged();
+      });
+    });
+    this.shadowRoot.querySelectorAll('.room-media-input').forEach(i => {
+      i.addEventListener('change', (e) => {
+        const idx = parseInt(e.target.getAttribute('data-idx'));
+        this._config.rooms[idx].media_entity = e.target.value;
         this._fireConfigChanged();
       });
     });
@@ -7573,14 +8401,17 @@ class VisionGlassDashboardEditor extends HTMLElement {
     });
 
     // Tab 4: General inputs
-    const cfgT = this.shadowRoot.getElementById('cfgTitle');
-    if (cfgT) cfgT.addEventListener('change', (e) => { this._config.title = e.target.value; this._fireConfigChanged(); });
+    delete this._config.title;
     const cfgW = this.shadowRoot.getElementById('cfgWeather');
     if (cfgW) cfgW.addEventListener('change', (e) => { this._config.weather_entity = e.target.value; this._fireConfigChanged(); });
     const cfgL = this.shadowRoot.getElementById('cfgLock');
     if (cfgL) cfgL.addEventListener('change', (e) => { this._config.lock_entity = e.target.value; this._fireConfigChanged(); });
     const cfgA = this.shadowRoot.getElementById('cfgAllLights');
     if (cfgA) cfgA.addEventListener('change', (e) => { this._config.all_lights_entity = e.target.value; this._fireConfigChanged(); });
+    const cfgBM = this.shadowRoot.getElementById('cfgEditorBgMode');
+    if (cfgBM) cfgBM.addEventListener('change', (e) => { this._config.background_mode = e.target.value; this._fireConfigChanged(); });
+    const cfgCS = this.shadowRoot.getElementById('cfgEditorColorScheme');
+    if (cfgCS) cfgCS.addEventListener('change', (e) => { this._config.color_scheme = e.target.value; this._fireConfigChanged(); });
     const chkDN = this.shadowRoot.getElementById('chkDayNight');
     if (chkDN) chkDN.addEventListener('change', (e) => { this._config.auto_day_night = e.target.checked; this._fireConfigChanged(); });
   }
