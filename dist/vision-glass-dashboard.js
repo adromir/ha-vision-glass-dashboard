@@ -1591,11 +1591,31 @@ class VisionGlassDashboard extends HTMLElement {
     return this._isEditMode || false;
   }
 
+  _getHuiRoot() {
+    try {
+      const ha = document.querySelector('home-assistant');
+      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
+      const lovelace = main?.shadowRoot?.querySelector('ha-panel-lovelace');
+      return lovelace?.shadowRoot?.querySelector('hui-root') || lovelace || null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   _checkIsEditMode() {
     if (this._isEditMode) return true;
-    if (typeof window !== 'undefined' && window.location.search && window.location.search.includes('edit=1')) return true;
-    const parent = this.closest ? this.closest('hui-view, hui-panel-view, [edit-mode]') : null;
-    if (parent && (parent.hasAttribute('edit-mode') || parent.classList.contains('edit-mode'))) return true;
+    if (typeof window !== 'undefined' && window.location.search && (window.location.search.includes('edit=1') || window.location.search.includes('editMode=true'))) return true;
+    try {
+      const huiRoot = this._getHuiRoot();
+      if (huiRoot && (huiRoot.hasAttribute('edit-mode') || huiRoot.classList.contains('edit-mode') || huiRoot.editMode)) return true;
+    } catch (e) {}
+    try {
+      let node = this;
+      while (node) {
+        if (node.hasAttribute && (node.hasAttribute('edit-mode') || node.classList?.contains('edit-mode'))) return true;
+        node = node.parentNode || node.host;
+      }
+    } catch (e) {}
     return false;
   }
 
@@ -1610,18 +1630,23 @@ class VisionGlassDashboard extends HTMLElement {
     this._startClock();
     this._ensureSettingsViewExists();
     try {
-      const viewParent = this.closest ? this.closest('hui-view, hui-panel-view, ha-panel-lovelace') : null;
-      if (viewParent && window.MutationObserver) {
+      const huiRoot = this._getHuiRoot();
+      if (huiRoot && window.MutationObserver) {
         this._editModeObserver = new MutationObserver(() => {
           this._updateEditModeBanner();
         });
-        this._editModeObserver.observe(viewParent, { attributes: true, attributeFilter: ['edit-mode', 'class'] });
+        this._editModeObserver.observe(huiRoot, { attributes: true, attributeFilter: ['edit-mode', 'class'] });
       }
     } catch (e) {}
+    // Also periodically check edit mode state every 2 seconds
+    this._editModeInterval = setInterval(() => {
+      this._updateEditModeBanner();
+    }, 2000);
   }
 
   disconnectedCallback() {
     if (this._timer) clearInterval(this._timer);
+    if (this._editModeInterval) clearInterval(this._editModeInterval);
     if (this._editModeObserver) {
       this._editModeObserver.disconnect();
       this._editModeObserver = null;
