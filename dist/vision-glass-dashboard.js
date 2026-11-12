@@ -4718,6 +4718,303 @@ class VisionGlassDashboard extends HTMLElement {
     }
   }
 
+  _isEntityInRoom(eId, roomId, roomName) {
+    if (!eId) return false;
+    if (!roomId && !roomName) return true;
+    const rId = (roomId || '').toLowerCase();
+    const rName = (roomName || '').toLowerCase();
+    const eLower = eId.toLowerCase();
+
+    // 1. HA entity registry area
+    if (this._hass?.entities?.[eId]?.area_id) {
+      if (this._hass.entities[eId].area_id.toLowerCase() === rId) return true;
+    }
+    // 2. HA device registry area
+    const devId = this._hass?.entities?.[eId]?.device_id;
+    if (devId && this._hass?.devices?.[devId]?.area_id) {
+      if (this._hass.devices[devId].area_id.toLowerCase() === rId) return true;
+    }
+    // 3. String match in entity_id or friendly_name
+    const stateObj = this._hass?.states?.[eId];
+    const fname = (stateObj?.attributes?.friendly_name || '').toLowerCase();
+    if (rId && eLower.includes(rId)) return true;
+    if (rName && (eLower.includes(rName) || fname.includes(rName))) return true;
+
+    // 4. Room synonyms / aliases
+    const aliases = {
+      'wohnzimmer': ['livingroom', 'living_room', 'living', 'wohnen'],
+      'arbeitszimmer': ['studyroom', 'study_room', 'office', 'büro', 'buro', 'arbeiten'],
+      'schlafzimmer': ['bedroom', 'bed_room', 'schlafen'],
+      'badezimmer': ['bathroom', 'bath_room', 'bad'],
+      'kuche': ['kueche', 'kitchen', 'küche', 'kochen'],
+      'flur': ['hallway', 'corridor', 'entrance', 'diele', 'gang']
+    };
+    for (const [key, list] of Object.entries(aliases)) {
+      if (rId.includes(key) || list.some(a => rId.includes(a)) || rName.includes(key)) {
+        const tokens = [key, ...list];
+        if (tokens.some(tok => eLower.includes(tok) || fname.includes(tok))) return true;
+      }
+    }
+    return false;
+  }
+
+  _showEntityPicker({ currentValue = '', roomId = null, roomName = null, defaultDomain = 'all', onSelect }) {
+    let pickerOverlay = this.shadowRoot.getElementById('entityPickerOverlay');
+    if (pickerOverlay) pickerOverlay.remove();
+
+    pickerOverlay = document.createElement('div');
+    pickerOverlay.id = 'entityPickerOverlay';
+    pickerOverlay.style.cssText = `
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0, 0, 0, 0.72);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 999999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    `;
+
+    const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
+    let selectedDomain = defaultDomain || 'all';
+    let filterByRoom = !!roomId;
+    let searchQuery = '';
+
+    const domains = [
+      { id: 'all', label: 'Alle' },
+      { id: 'light', label: '💡 Licht' },
+      { id: 'climate', label: '🌡️ Klima' },
+      { id: 'sensor', label: '📊 Sensoren' },
+      { id: 'binary_sensor', label: '🚶 Binär' },
+      { id: 'switch', label: '🔌 Schalter' },
+      { id: 'media_player', label: '📺 Media' },
+      { id: 'lock', label: '🔒 Schloss' },
+      { id: 'input_number', label: '🎯 Helfer' }
+    ];
+
+    pickerOverlay.innerHTML = `
+      <div class="entity-picker-card" style="
+        background: var(--bg-card, rgba(15, 23, 42, 0.95));
+        border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.2));
+        border-radius: 18px;
+        width: 100%;
+        max-width: 580px;
+        max-height: 85vh;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65);
+        overflow: hidden;
+        color: var(--text-primary, #ffffff);
+        font-family: inherit;
+      ">
+        <!-- Header -->
+        <div style="padding: 16px 20px 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03);">
+          <div>
+            <div style="font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <span>🔍</span> Entität auswählen
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary, #94a3b8); margin-top: 2px;">
+              ${roomName ? `Zugeordneter Raum: <strong style="color:var(--accent,#38bdf8);">${roomName}</strong> (${roomId})` : 'Home Assistant Entitäten'}
+            </div>
+          </div>
+          <button id="btnPickerClose" style="background: transparent; border: none; font-size: 26px; color: var(--text-secondary, #94a3b8); cursor: pointer; padding: 0 6px; line-height: 1; border-radius: 6px;">&times;</button>
+        </div>
+
+        <!-- Filter & Search Section -->
+        <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; flex-direction: column; gap: 10px;">
+          ${roomId ? `
+            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 13px; font-weight: 600; background: rgba(56, 189, 248, 0.12); padding: 8px 12px; border-radius: 9px; border: 1px solid rgba(56, 189, 248, 0.3); color: var(--accent, #38bdf8); user-select: none;">
+              <input type="checkbox" id="chkPickerRoomFilter" ${filterByRoom ? 'checked' : ''} style="cursor: pointer; width: 16px; height: 16px; accent-color: var(--accent, #38bdf8);">
+              <span>Nur Entitäten aus "${roomName || roomId}" anzeigen</span>
+            </label>
+          ` : ''}
+
+          <input type="text" id="pickerSearchInp" placeholder="Suchen nach Name oder entity_id..." style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-glass, rgba(255,255,255,0.2)); background: rgba(255,255,255,0.07); color: var(--text-primary, #ffffff); font-size: 14px; outline: none; box-sizing: border-box;">
+
+          <!-- Domain Pills -->
+          <div id="pickerDomainPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+            ${domains.map(d => `
+              <button type="button" class="domain-pill" data-domain="${d.id}" style="
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                cursor: pointer;
+                white-space: nowrap;
+                transition: all 0.15s;
+                border: 1px solid ${selectedDomain === d.id ? 'var(--accent, #38bdf8)' : 'rgba(255,255,255,0.15)'};
+                background: ${selectedDomain === d.id ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.05)'};
+                color: ${selectedDomain === d.id ? '#ffffff' : 'var(--text-secondary, #94a3b8)'};
+              ">${d.label}</button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Entity Results List -->
+        <div id="pickerEntityList" style="flex: 1; overflow-y: auto; padding: 10px 16px; display: flex; flex-direction: column; gap: 6px; min-height: 200px; max-height: 380px;">
+        </div>
+
+        <!-- Footer -->
+        <div style="padding: 12px 20px; border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.18);">
+          <button type="button" id="btnPickerClear" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
+            ✕ Entität leeren
+          </button>
+          <div id="pickerCountText" style="font-size: 12px; color: var(--text-secondary, #94a3b8);">0 Entitäten</div>
+        </div>
+      </div>
+    `;
+
+    this.shadowRoot.appendChild(pickerOverlay);
+
+    const searchInp = pickerOverlay.querySelector('#pickerSearchInp');
+    const chkRoom = pickerOverlay.querySelector('#chkPickerRoomFilter');
+    const listEl = pickerOverlay.querySelector('#pickerEntityList');
+    const countEl = pickerOverlay.querySelector('#pickerCountText');
+    const pillsContainer = pickerOverlay.querySelector('#pickerDomainPills');
+
+    const renderList = () => {
+      const q = searchQuery.toLowerCase().trim();
+      let filtered = allEntities.filter(eId => {
+        // Domain check
+        if (selectedDomain !== 'all') {
+          if (!eId.startsWith(selectedDomain + '.')) return false;
+        }
+        // Room check
+        if (filterByRoom && roomId) {
+          if (!this._isEntityInRoom(eId, roomId, roomName)) return false;
+        }
+        // Search text check
+        if (q) {
+          const stateObj = this._hass?.states?.[eId];
+          const fname = (stateObj?.attributes?.friendly_name || '').toLowerCase();
+          if (!eId.toLowerCase().includes(q) && !fname.includes(q)) return false;
+        }
+        return true;
+      });
+
+      countEl.textContent = `${filtered.length} Entitäten gefunden`;
+
+      if (filtered.length === 0) {
+        listEl.innerHTML = `
+          <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary, #94a3b8); font-size: 13px;">
+            <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+            Keine Entitäten gefunden${filterByRoom ? ' für diesen Raum' : ''}.<br>
+            ${filterByRoom ? '<button type="button" id="btnDisableRoomFilter" style="margin-top:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);color:var(--accent,#38bdf8);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;">Raumfilter aufheben (alle Entitäten)</button>' : ''}
+          </div>
+        `;
+        const btnDisable = listEl.querySelector('#btnDisableRoomFilter');
+        if (btnDisable && chkRoom) {
+          btnDisable.onclick = () => {
+            chkRoom.checked = false;
+            filterByRoom = false;
+            renderList();
+          };
+        }
+        return;
+      }
+
+      // Show top 80 matches
+      const displayItems = filtered.slice(0, 80);
+      listEl.innerHTML = displayItems.map(eId => {
+        const s = this._hass.states[eId];
+        const fname = s?.attributes?.friendly_name || eId;
+        const stateVal = s?.state || '';
+        const unit = s?.attributes?.unit_of_measurement || '';
+        const isSelected = currentValue === eId;
+        const inRoom = roomId ? this._isEntityInRoom(eId, roomId, roomName) : false;
+
+        return `
+          <div class="entity-picker-item" data-eid="${eId}" style="
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 9px 12px;
+            border-radius: 10px;
+            background: ${isSelected ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)'};
+            border: 1px solid ${isSelected ? 'var(--accent, #38bdf8)' : 'rgba(255, 255, 255, 0.08)'};
+            cursor: pointer;
+            transition: all 0.12s;
+          ">
+            <div style="flex: 1; min-width: 0;">
+              <div style="font-weight: 600; font-size: 13px; color: var(--text-primary, #ffffff); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                ${fname}
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary, #94a3b8); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px;">
+                ${eId}
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              ${inRoom ? `<span style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: var(--accent, #38bdf8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">📍 ${roomName || roomId}</span>` : ''}
+              <span style="font-size: 11px; color: var(--text-secondary, #94a3b8); background: rgba(255, 255, 255, 0.07); padding: 2px 7px; border-radius: 6px; white-space: nowrap;">
+                ${stateVal} ${unit}
+              </span>
+              ${isSelected ? `<span style="color: var(--accent, #38bdf8); font-size: 13px;">✓</span>` : ''}
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      listEl.querySelectorAll('.entity-picker-item').forEach(el => {
+        el.onmouseenter = () => { el.style.background = 'rgba(56, 189, 248, 0.15)'; };
+        el.onmouseleave = () => {
+          const eid = el.getAttribute('data-eid');
+          el.style.background = (currentValue === eid) ? 'rgba(56, 189, 248, 0.2)' : 'rgba(255, 255, 255, 0.04)';
+        };
+        el.onclick = () => {
+          const eid = el.getAttribute('data-eid');
+          pickerOverlay.remove();
+          if (onSelect) onSelect(eid);
+        };
+      });
+    };
+
+    // Events
+    if (chkRoom) {
+      chkRoom.onchange = () => {
+        filterByRoom = chkRoom.checked;
+        renderList();
+      };
+    }
+
+    searchInp.oninput = () => {
+      searchQuery = searchInp.value;
+      renderList();
+    };
+
+    pillsContainer.querySelectorAll('.domain-pill').forEach(btn => {
+      btn.onclick = () => {
+        selectedDomain = btn.getAttribute('data-domain');
+        pillsContainer.querySelectorAll('.domain-pill').forEach(b => {
+          const isAct = b.getAttribute('data-domain') === selectedDomain;
+          b.style.border = isAct ? '1px solid var(--accent, #38bdf8)' : '1px solid rgba(255,255,255,0.15)';
+          b.style.background = isAct ? 'rgba(56, 189, 248, 0.25)' : 'rgba(255,255,255,0.05)';
+          b.style.color = isAct ? '#ffffff' : 'var(--text-secondary, #94a3b8)';
+        });
+        renderList();
+      };
+    });
+
+    pickerOverlay.querySelector('#btnPickerClear').onclick = () => {
+      pickerOverlay.remove();
+      if (onSelect) onSelect('');
+    };
+
+    pickerOverlay.querySelector('#btnPickerClose').onclick = () => {
+      pickerOverlay.remove();
+    };
+
+    pickerOverlay.onclick = (e) => {
+      if (e.target === pickerOverlay) pickerOverlay.remove();
+    };
+
+    renderList();
+    setTimeout(() => searchInp.focus(), 50);
+  }
+
   _renderSettingsContent(container) {
     if (!container || !this._config) return;
 
@@ -4804,54 +5101,90 @@ class VisionGlassDashboard extends HTMLElement {
                 ${this._t('ha_area_notice')}
               </div>
 
-              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;">
                 <div class="row">
                   <label>💡 Beleuchtung (light.*)</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="light_entity" value="${r.light_entity || ''}" placeholder="light.livingroom">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="light_entity" value="${r.light_entity || ''}" placeholder="light.livingroom" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="light_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🌡️ Thermostat (climate.*)</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="climate_entity" value="${r.climate_entity || ''}" placeholder="climate.better_thermostat_...">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="climate_entity" value="${r.climate_entity || ''}" placeholder="climate.better_thermostat_..." style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="climate_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🎯 Zieltemp. Helfer (input_number.*)</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="target_temp_entity" value="${r.target_temp_entity || ''}" placeholder="input_number.*_komfort_temperatur">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="target_temp_entity" value="${r.target_temp_entity || ''}" placeholder="input_number.*_komfort_temperatur" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="target_temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🌡️ Ist-Temperatur Sensor</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="temp_entity" value="${r.temp_entity || ''}" placeholder="sensor.*_temperatur">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="temp_entity" value="${r.temp_entity || ''}" placeholder="sensor.*_temperatur" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>💧 Luftfeuchtigkeit Sensor</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="humidity_entity" value="${r.humidity_entity || ''}" placeholder="sensor.*_humidity">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="humidity_entity" value="${r.humidity_entity || ''}" placeholder="sensor.*_humidity" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="humidity_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>💡 Helligkeit / Lux Sensor</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="illuminance_entity" value="${r.illuminance_entity || ''}" placeholder="sensor.*_illuminance">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="illuminance_entity" value="${r.illuminance_entity || ''}" placeholder="sensor.*_illuminance" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="illuminance_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🚶 Präsenz / Bewegung</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="presence_entity" value="${r.presence_entity || ''}" placeholder="binary_sensor.*_occupied">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="presence_entity" value="${r.presence_entity || ''}" placeholder="binary_sensor.*_occupied" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="presence_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🪟 Fensterkontakt</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="window_entity" value="${r.window_entity || ''}" placeholder="binary_sensor.fenster...">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="window_entity" value="${r.window_entity || ''}" placeholder="binary_sensor.fenster..." style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="window_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🔌 Steckdose / Schalter (switch.*)</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="switch_entity" value="${r.switch_entity || ''}" placeholder="switch.smartplug...">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="switch_entity" value="${r.switch_entity || ''}" placeholder="switch.smartplug..." style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="switch_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>📺 ${this._t('tv_display')}</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="tv_entity" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="tv_entity" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="tv_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🎮 ${this._t('video_player')}</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="video_entity" value="${r.video_entity || ''}" placeholder="media_player.shield_android_tv">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="video_entity" value="${r.video_entity || ''}" placeholder="media_player.shield_android_tv" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="video_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
                 <div class="row">
                   <label>🎵 ${this._t('audio_player')}</label>
-                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="media_entity" value="${r.media_entity || ''}" placeholder="media_player.echo_show">
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="media_entity" value="${r.media_entity || ''}" placeholder="media_player.echo_show" style="flex:1;">
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="media_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -5028,15 +5361,24 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
             <div class="row">
               <label>Wetter-Entität</label>
-              <input type="text" list="dl_all_entities" id="cfgWeather" value="${this._config.weather_entity || ''}" placeholder="weather.hannover_hannover">
+              <div style="display:flex;gap:4px;align-items:center;">
+                <input type="text" list="dl_all_entities" id="cfgWeather" value="${this._config.weather_entity || ''}" placeholder="weather.hannover_hannover" style="flex:1;">
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgWeather" data-domain="weather" title="Wetter-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+              </div>
             </div>
             <div class="row">
               <label>Wohnungsschloss-Entität</label>
-              <input type="text" list="dl_all_entities" id="cfgLock" value="${this._config.lock_entity || ''}" placeholder="lock.wohnungsschloss">
+              <div style="display:flex;gap:4px;align-items:center;">
+                <input type="text" list="dl_all_entities" id="cfgLock" value="${this._config.lock_entity || ''}" placeholder="lock.wohnungsschloss" style="flex:1;">
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgLock" data-domain="lock" title="Schloss-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+              </div>
             </div>
             <div class="row">
               <label>Alle-Lichter-Entität (Hauptschalter)</label>
-              <input type="text" list="dl_all_entities" id="cfgAllLights" value="${this._config.all_lights_entity || ''}" placeholder="light.licht_wohnung">
+              <div style="display:flex;gap:4px;align-items:center;">
+                <input type="text" list="dl_all_entities" id="cfgAllLights" value="${this._config.all_lights_entity || ''}" placeholder="light.licht_wohnung" style="flex:1;">
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgAllLights" data-domain="light" title="Licht-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+              </div>
             </div>
           </div>
         </div>
@@ -5235,6 +5577,62 @@ class VisionGlassDashboard extends HTMLElement {
         if (this._config.dock?.items && this._config.dock.items[idx]) {
           this._config.dock.items[idx].enabled = chk.checked;
         }
+      };
+    });
+
+    // Entity Picker for Room Properties
+    container.querySelectorAll('.btn-pick-entity').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const prop = btn.getAttribute('data-prop');
+        const room = this._config.rooms && this._config.rooms[rIdx];
+        if (!room) return;
+        const targetInp = container.querySelector(`.in-room-prop[data-ridx="${rIdx}"][data-prop="${prop}"]`);
+        const curVal = targetInp ? targetInp.value : (room[prop] || '');
+        
+        let defDomain = 'all';
+        if (prop === 'light_entity') defDomain = 'light';
+        else if (prop === 'climate_entity') defDomain = 'climate';
+        else if (prop === 'switch_entity') defDomain = 'switch';
+        else if (prop === 'tv_entity' || prop === 'video_entity' || prop === 'media_entity') defDomain = 'media_player';
+        else if (prop === 'temp_entity' || prop === 'humidity_entity' || prop === 'illuminance_entity') defDomain = 'sensor';
+        else if (prop === 'presence_entity' || prop === 'window_entity') defDomain = 'binary_sensor';
+        else if (prop === 'target_temp_entity') defDomain = 'input_number';
+        
+        this._showEntityPicker({
+          currentValue: curVal,
+          roomId: room.id,
+          roomName: room.name,
+          defaultDomain: defDomain,
+          onSelect: (selectedId) => {
+            if (targetInp) targetInp.value = selectedId;
+            if (this._config.rooms && this._config.rooms[rIdx]) {
+              this._config.rooms[rIdx][prop] = selectedId;
+            }
+          }
+        });
+      };
+    });
+
+    // Global Entity Pickers (Weather, Lock, AllLights)
+    container.querySelectorAll('.btn-pick-global').forEach(btn => {
+      btn.onclick = () => {
+        const targetId = btn.getAttribute('data-target');
+        const domain = btn.getAttribute('data-domain') || 'all';
+        const targetInp = container.querySelector('#' + targetId);
+        const curVal = targetInp ? targetInp.value : '';
+        this._showEntityPicker({
+          currentValue: curVal,
+          roomId: null,
+          roomName: null,
+          defaultDomain: domain,
+          onSelect: (selectedId) => {
+            if (targetInp) targetInp.value = selectedId;
+            if (targetId === 'cfgWeather') this._config.weather_entity = selectedId;
+            else if (targetId === 'cfgLock') this._config.lock_entity = selectedId;
+            else if (targetId === 'cfgAllLights') this._config.all_lights_entity = selectedId;
+          }
+        });
       };
     });
 
