@@ -1309,3 +1309,4 @@ if (!code.includes('class VisionGlassDashboardEditor')) {
 
 fs.writeFileSync(filePath, code, 'utf8');
 console.log(`Successfully written upgraded vision-glass-dashboard.js (${code.length} bytes)`);
+

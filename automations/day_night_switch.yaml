@@ -33,3 +33,4 @@ action:
           - action: frontend.set_theme
             data:
               name: "Vision Glass Dark"
+
