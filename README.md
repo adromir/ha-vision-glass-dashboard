@@ -1,4 +1,4 @@
-# 🪟 Vision Glass Dashboard for Home Assistant (v2.0)
+# 🪟 Vision Glass Dashboard for Home Assistant (v2.1)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=plugin)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/default)
@@ -8,27 +8,36 @@
 
 A groundbreaking, turnkey **Spatial Glassmorphism Smart Home Dashboard** for Home Assistant inspired by Apple VisionOS and macOS Sequoia design languages.
 
-Delivers a complete, tactile command center with live weather, room cards, interactive popups, day/night transitions, a floating glass dock, and now in **v2.0**: **Turnkey Auto-Provisioning**, a full **Visual Card Editor**, **Custom Overlay Categories**, and a **Context-Aware Dynamic Dock with Custom Tabs**!
+Delivers a complete, tactile command center with live weather, room cards, interactive popups, day/night transitions, a floating glass dock, and now in **v2.1**: **Full Multilingual Localization (including Bahasa Indonesia)**, **Dedicated Configuration Page & Center**, **Tactile TV Remote & Media Player Tiles**, and **Soft Animated Ambient Lights (wabernde Lichter)**!
 
 ---
 
-## ✨ What's New in v2.0
+## ✨ What's New in v2.1
 
-- 🚀 **Turnkey One-Time Auto-Provisioning**:
-  - Automatically scans your Home Assistant areas and entities upon initial setup and generates Bento room cards matching your real home.
-  - Automatically locks the configuration with `_initialized: true` so your custom edits are **never overwritten**.
-- 🛠️ **Full Visual GUI Card Editor (`vision-glass-dashboard-editor`)**:
-  - Configure rooms, cards, categories, and dock items directly in the Home Assistant Lovelace UI editor without touching YAML!
-  - **Reorder Bento Room Cards & Entities**: Move rooms and assigned entities up and down with `[▲]` and `[▼]` reorder buttons.
-- 📂 **Custom Room Overlay Categories**:
-  - Define completely custom category blocks inside room detail popups (e.g. *"Main Lighting"*, *"Accent LEDs"*, *"Climate & Heating"*, *"Multimedia"*, *"Smart Plugs"*, *"Sensors"*).
-  - Assign and reorder entities inside custom categories.
-- ⚓ **Context-Aware Dynamic Dock & Custom Sections**:
-  - Automatically hides dead buttons (e.g. Alarmo button is hidden if Alarmo is not installed; climate button is hidden if no thermostats exist).
-  - **Add Custom Dock Tabs**: Create your own dock buttons with custom icons (`ci:*` or `mdi:*`) that open custom modal overlays, navigate to dashboard URLs, or trigger Home Assistant scripts/services!
-- 🎨 **Bundled Themes & Day/Night Automation**:
-  - Built-in zero-dependency Vision Glass Light & Dark styling with automatic daylight tracking (`sun.sun`).
-  - Bundles [`themes/vision_glass.yaml`](themes/vision_glass.yaml) and [`automations/day_night_switch.yaml`](automations/day_night_switch.yaml) for optional 1-click system-wide theme synchronization across the entire Home Assistant interface.
+- 🌐 **100% Multilingual Localization & Zero Hardcoded Strings**:
+  - Full native translations in **German (`de`)**, **English (`en`)**, and **Bahasa Indonesia (`id`)**!
+  - 100% automated profile language resolution: seamlessly follows your Home Assistant user profile locale without any clutter or manual dropdowns in the UI.
+  - Dynamically formats dates, times, days, and greetings according to your account's locale.
+- ⚙️ **Dedicated Configuration Center & Settings View**:
+  - Accessible directly in the dashboard via the **⚙️ Settings Gear button** in the top header, in the bottom floating dock, and as a dedicated Lovelace view (`path: settings`).
+  - Seamlessly configure **Theme Modes** (Auto Day/Night via `sun.sun`, Always Light, Always Dark), **Background Style Presets**, **Ambient Animation Speed**, **Bento Room Cards (Reorder `[▲]` / `[▼]`, Add, Edit, Delete)**, **Room Overlays (Categories)**, and **Dock Buttons**.
+  - Persists directly into Home Assistant storage via the native Lovelace WebSocket API with instant UI refresh and confirmation toast!
+- 📺 **Tactile TV Remote Tile & 🎵 Media Player Tile**:
+  - **Mini TV Remote Tile**: Dedicated TV tile for television media players (`device_class: tv`), featuring power toggle, input source selector (HDMI, Apps, TV), volume up/down, and mute controls.
+  - **Strict Switch Isolation**: Smart plugs and power outlets are strictly isolated to socket control rows with on/off toggles, ensuring smartplugs are never conflated with TV remotes.
+  - **Mini Media Player Tile**: Beautiful audio player tile for music systems with album art, track title, artist, volume stepper, play/pause, and track skip buttons.
+- 🌌 **6 Selectable Background Presets & Tactile Physics**:
+  - **Aurora (Wabernde Lichter)**: Soft, diffuse fluid caustics smoothly drifting behind the frosted glass panels.
+  - **Spatial Vision Mesh**: Frosted geometric grid refraction with subtle depth.
+  - **Deep Space**: Cosmic midnight starfield with nebula glow.
+  - **Sunset Glow**: Warm twilight amber, violet, and peach gradients.
+  - **Minimal Frosted Glass**: Clean, neutral frosted glass.
+  - **Custom Image URL**: Supports any custom image URL or local path (`/local/...`).
+  - **Tactile 3D Hover & Sheen**: Bento room cards and sidebar feature smooth 3D elevation, luminous border glow highlight, and a 45-degree specular sheen sweep (`:hover::after`).
+- 🛠️ **Seamless Lovelace Edit Mode Integration & Card Editor Fix**:
+  - Fixed Lovelace card editor (`vision-glass-dashboard-editor`) so clicking the edit pencil on panel views opens the visual configurator cleanly without errors.
+  - Surfaces a direct configuration banner when in panel edit mode.
+
 
 ---
 

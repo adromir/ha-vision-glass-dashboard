@@ -6,8 +6,17 @@
  */
 
 class VisionGlassDashboard extends HTMLElement {
-  static async getConfigElement() {
+  static getConfigElement() {
     return document.createElement('vision-glass-dashboard-editor');
+  }
+
+  static getStubConfig(hass, entities, entitiesFallback) {
+    return {
+      type: 'custom:vision-glass-dashboard',
+      title: 'Vision Glass Dashboard',
+      theme_mode: 'auto',
+      ambient_background: true
+    };
   }
   constructor() {
     super();
@@ -104,6 +113,7 @@ class VisionGlassDashboard extends HTMLElement {
         unknown: 'Unbekannt',
         agenda_garbage: 'TERMINE & MÜLLABFUHR',
         sunset: 'Sonnenuntergang',
+        sunrise: 'Sonnenaufgang',
         radar_precip: 'Niederschlagsradar',
         hourly_forecast: 'Stündliche Vorhersage (24h)',
         daily_trend: '7-Tage Wettertrend',
@@ -174,7 +184,68 @@ class VisionGlassDashboard extends HTMLElement {
         switched_on: 'Eingeschaltet',
         switched_off: 'Ausgeschaltet',
         active: 'Aktiv',
-        unavailable: 'Nicht verf.'
+        unavailable: 'Nicht verf.',
+        loading: 'Wird geladen...',
+        no_upcoming_events: 'Keine anstehenden Termine',
+        settings: 'Einstellungen',
+        configure_dashboard: 'Dashboard konfigurieren',
+        edit_dashboard: 'Dashboard bearbeiten',
+        theme_mode: 'Theme-Modus',
+        theme_auto: 'Automatisch Tag/Nacht (sun.sun)',
+        theme_light: 'Immer Hell (Vision Glass Light)',
+        theme_dark: 'Immer Dunkel (Vision Glass Dark)',
+        theme_desc: 'Legt fest, ob das Erscheinungsbild automatisch mit dem Sonnenstand wechselt oder fix bleibt.',
+        ambient_background: 'Animierter Hintergrund (Wabernde Lichter)',
+        ambient_desc: 'Sanfte, schwebende Lichtreflexe im Hintergrund für eine lebendige Glas-Atmosphäre.',
+        ambient_intensity: 'Animations-Geschwindigkeit',
+        speed_relaxed: 'Dezent & Entspannt (Langsam)',
+        speed_normal: 'Standard (Ausgewogen)',
+        speed_vivid: 'Lebendig (Dynamisch)',
+        background_style: 'Hintergrund-Design',
+        bg_aurora: 'Wabernde Lichter / Fluid Aurora (Standard)',
+        bg_mesh: 'Spatial Vision Mesh (Kristallines Gitter)',
+        bg_deep_space: 'Deep Space / Sternenfeld (Kosmisches Nachtblau)',
+        bg_sunset: 'Sunset Glow / Warmer Abend (Amber & Violett)',
+        bg_minimal: 'Minimal Frosted Glass (Neutral & Ruhig)',
+        bg_custom: 'Eigenes Hintergrundbild (URL)',
+        bg_image_url: 'Hintergrundbild URL',
+        saved_success: '✓ Einstellungen erfolgreich in Home Assistant gespeichert!',
+        media_player: 'Medienplayer & Audio',
+        tv_remote: 'Fernseher & TV-Fernbedienung',
+        tv_on: 'Fernseher ist eingeschaltet',
+        tv_off: 'Fernseher ist ausgeschaltet',
+        power: 'Power',
+        volume: 'Lautstärke',
+        volume_up: 'Lauter',
+        volume_down: 'Leiser',
+        mute: 'Stummschalten',
+        source: 'Eingangsquelle',
+        no_media_playing: 'Keine Wiedergabe aktiv',
+        previous: 'Vorheriger Titel',
+        next: 'Nächster Titel',
+        play: 'Abspielen',
+        pause: 'Pausieren',
+        rooms_and_cards: 'Räume & Bento-Kacheln',
+        reorder_rooms: 'Reihenfolge & Sichtbarkeit',
+        add_room: 'Raum hinzufügen',
+        delete_room: 'Raum entfernen',
+        room_name: 'Raumname',
+        picture_url: 'Hintergrundbild URL',
+        dock_navigation: 'Bottom-Leiste & Navigation',
+        auto_hide_empty: 'Leere Kategorien automatisch ausblenden',
+        save_changes: 'Einstellungen speichern',
+        saving: 'Speichern läuft...',
+        saved_success: 'Einstellungen erfolgreich gespeichert!',
+        reset_factory: 'Auf Werkseinstellungen zurücksetzen',
+        rescan_areas: 'Räume & Geräte neu scannen (Ersteinrichtung)',
+        rescan_confirm: 'Möchtest du alle Bereiche und Entitäten neu scannen? Manuelle Anpassungen werden dabei aktualisiert.',
+        close: 'Schließen',
+        cancel: 'Abbrechen',
+        move_up: 'Nach oben',
+        move_down: 'Nach unten',
+        general: 'Allgemein',
+        dock: 'Bottom-Leiste',
+        provisioning: 'Ersteinrichtung'
       },
       en: {
         welcome: 'Welcome',
@@ -246,6 +317,7 @@ class VisionGlassDashboard extends HTMLElement {
         unknown: 'Unknown',
         agenda_garbage: 'AGENDA & RECYCLING',
         sunset: 'Sunset',
+        sunrise: 'Sunrise',
         radar_precip: 'Precipitation Radar',
         hourly_forecast: 'Hourly Forecast (24h)',
         daily_trend: '7-Day Weather Trend',
@@ -316,7 +388,272 @@ class VisionGlassDashboard extends HTMLElement {
         switched_on: 'Turned on',
         switched_off: 'Turned off',
         active: 'Active',
-        unavailable: 'Unavail.'
+        unavailable: 'Unavail.',
+        loading: 'Loading...',
+        no_upcoming_events: 'No upcoming events',
+        settings: 'Settings',
+        configure_dashboard: 'Configure Dashboard',
+        edit_dashboard: 'Edit Dashboard',
+        theme_mode: 'Theme Mode',
+        theme_auto: 'Automatic Day/Night (sun.sun)',
+        theme_light: 'Always Light (Vision Glass Light)',
+        theme_dark: 'Always Dark (Vision Glass Dark)',
+        theme_desc: 'Determines whether the appearance switches automatically with the sun or stays fixed.',
+        ambient_background: 'Animated Background (Waving Lights)',
+        ambient_desc: 'Soft, floating light reflections in the background for a vibrant glass atmosphere.',
+        ambient_intensity: 'Animation Speed',
+        speed_relaxed: 'Relaxed & Subtle (Slow)',
+        speed_normal: 'Standard (Balanced)',
+        speed_vivid: 'Vivid (Dynamic)',
+        background_style: 'Background Style',
+        bg_aurora: 'Fluid Aurora / Floating Lights (Default)',
+        bg_mesh: 'Spatial Vision Mesh (Frosted Grid)',
+        bg_deep_space: 'Deep Space / Starfield (Cosmic Navy)',
+        bg_sunset: 'Sunset Glow / Twilight (Amber & Violet)',
+        bg_minimal: 'Minimal Frosted Glass (Neutral Glass)',
+        bg_custom: 'Custom Wallpaper (URL)',
+        bg_image_url: 'Wallpaper Image URL',
+        saved_success: '✓ Settings successfully saved in Home Assistant!',
+        media_player: 'Media Player & Audio',
+        tv_remote: 'Television & TV Remote',
+        tv_on: 'TV is turned on',
+        tv_off: 'TV is turned off',
+        power: 'Power',
+        volume: 'Volume',
+        volume_up: 'Volume Up',
+        volume_down: 'Volume Down',
+        mute: 'Mute',
+        source: 'Input Source',
+        no_media_playing: 'No media currently playing',
+        previous: 'Previous Track',
+        next: 'Next Track',
+        play: 'Play',
+        pause: 'Pause',
+        rooms_and_cards: 'Rooms & Bento Cards',
+        reorder_rooms: 'Room Order & Visibility',
+        add_room: 'Add Room',
+        delete_room: 'Remove Room',
+        room_name: 'Room Name',
+        picture_url: 'Background Image URL',
+        dock_navigation: 'Bottom Bar & Navigation',
+        auto_hide_empty: 'Automatically hide empty categories',
+        save_changes: 'Save Settings',
+        saving: 'Saving...',
+        saved_success: 'Settings saved successfully!',
+        reset_factory: 'Reset to Factory Defaults',
+        rescan_areas: 'Re-scan Rooms & Devices (Initial Setup)',
+        rescan_confirm: 'Do you want to re-scan all areas and entities? Your manual adjustments will be refreshed.',
+        close: 'Close',
+        cancel: 'Cancel',
+        move_up: 'Move up',
+        move_down: 'Move down',
+        general: 'General',
+        dock: 'Bottom Bar',
+        provisioning: 'Setup'
+      },
+      id: {
+        welcome: 'Selamat datang',
+        smart_home_center: 'Pusat Smart Home',
+        today: 'Hari Ini',
+        tomorrow: 'Besok',
+        now: 'Sekarang',
+        deactivated: 'Dinonaktifkan',
+        disarmed: 'Dinonaktifkan',
+        armed_home: 'Aktif (Di Rumah)',
+        armed_away: 'Aktif (Pergi)',
+        armed_night: 'Aktif (Malam)',
+        arming: 'Mengaktifkan...',
+        alarm_triggered: 'ALARM BERBUNYI!',
+        door_open: 'Pintu terbuka',
+        door_closed_unlocked: 'Pintu tertutup & tidak terkunci',
+        door_closed_locked: 'Pintu tertutup & terkunci',
+        lock_door: 'Kunci',
+        unlock_door: 'Buka Kunci',
+        lights_on: 'lampu menyala',
+        lights_off: 'Semua lampu mati',
+        lights_loading: 'Memuat lampu...',
+        climate_loading: 'Memuat suhu...',
+        lock_loading: 'Memuat kunci...',
+        alarmo_loading: 'Memuat alarmo...',
+        weather_loading: 'Memuat cuaca...',
+        climate: 'Iklim & Suhu',
+        lock: 'Kunci',
+        alarmo: 'Alarmo',
+        weather: 'Cuaca',
+        lighting: 'Pencahayaan',
+        stats: 'Statistik & Riwayat',
+        security: 'Keamanan & Kunci Pintu',
+        switches: 'Perangkat & Colokan',
+        battery: 'Status Baterai & Perawatan',
+        residents: 'Penghuni & Kehadiran',
+        all: 'Semua',
+        critical: 'Kritis (<20%)',
+        low: 'Rendah (20-40%)',
+        good: 'Bagus (>40%)',
+        on: 'NYALA',
+        off: 'MATI',
+        heat: 'MEMANASKAN',
+        target: 'Target',
+        comfort: 'Kenyamanan',
+        eco: 'Eco',
+        temp: 'Suhu',
+        humidity: 'Kelembapan',
+        lux: 'Lux',
+        occupied: 'Terisi',
+        idle: 'Siap',
+        person_present: 'Ada orang',
+        no_motion: 'Tidak ada gerakan',
+        window_open: 'Jendela terbuka',
+        window_closed: 'Jendela tertutup',
+        windows_open_count: 'terbuka',
+        windows_all_closed: 'Jendela tertutup',
+        door_locked_short: 'Terkunci',
+        door_unlocked_short: 'Terbuka',
+        overview_devices: 'Ikhtisar Ruangan & Perangkat',
+        other_devices: 'Perangkat & Saklar Lainnya di Ruangan Ini',
+        measurements_sensors: 'Pengukuran & Sensor',
+        multimedia_hub: 'Pusat Multimedia',
+        multimedia_desc: 'Mengontrol TV, Receiver AVR, Subwoofer & Shield bersamaan',
+        pin_code: 'Kode PIN',
+        no_entry: 'Tidak ada input',
+        home: 'Di Rumah',
+        away: 'Pergi',
+        unknown: 'Tidak Diketahui',
+        agenda_garbage: 'AGENDA & DAUR ULANG',
+        sunset: 'Matahari Terbenam',
+        sunrise: 'Matahari Terbit',
+        radar_precip: 'Radar Curah Hujan',
+        hourly_forecast: 'Prakiraan Per Jam (24j)',
+        daily_trend: 'Tren Cuaca 7 Hari',
+        all_lights_turn_off: 'Matikan semua lampu',
+        all_lights_turn_on: 'Nyalakan semua lampu',
+        all_lights_apartment: 'Seluruh Rumah (Semua Lampu)',
+        battery_level: 'Baterai',
+        device_details: 'Buka detail di Home Assistant',
+        heating_active: 'Pemanas: NYALA',
+        heating_idle: 'Pemanas: MATI / Siap',
+        light_active: 'Lampu: NYALA',
+        light_idle: 'Lampu: MATI',
+        temperature_curve: 'Riwayat Suhu',
+        illuminance_curve: 'Riwayat Pencahayaan',
+        occupancy_heating: 'Kehadiran & Pemanas',
+        battery_curves: 'Kurva Baterai',
+        select_room: 'Pilih ruangan',
+        pressure: 'Tekanan Udara',
+        wind: 'Angin',
+        visibility: 'Jarak Pandang',
+        humidity_label: 'Kelembapan Udara',
+        entrance_status: 'Status Pintu Masuk',
+        window_door_contacts: 'Sensor Pintu & Jendela',
+        battery_status_maintenance: 'Status Baterai & Perawatan Perangkat',
+        lighting_control: 'Kontrol Pencahayaan',
+        climate_control: 'Iklim, Pemanas & Kurva Suhu',
+        switches_control: 'Perangkat, Saklar & Colokan',
+        stats_title: 'Statistik & Riwayat 24 Jam',
+        weather_modal_title: 'Cuaca, Prakiraan & Radar Hujan',
+        no_data_available: 'Tidak ada data tersedia.',
+        adjust_target_temp: 'Sesuaikan suhu target',
+        increase_temp: 'Naikkan suhu 0.5°C',
+        decrease_temp: 'Turunkan suhu 0.5°C',
+        open_weather_modal: 'Buka ikhtisar cuaca & prakiraan',
+        fullscreen: 'Layar Penuh',
+        wohnzimmer: 'Ruang Tamu',
+        arbeitszimmer: 'Ruang Kerja',
+        badezimmer: 'Kamar Mandi',
+        kuche: 'Dapur',
+        schlafzimmer: 'Kamar Tidur',
+        flur: 'Lorong',
+        wohnung: 'Rumah',
+        kellerraum: 'Gudang Bawah Tanah',
+        umwelt: 'Lingkungan',
+        room_temperatures: 'Suhu Ruangan',
+        illuminance_lux: 'Pencahayaan (Lux)',
+        hourly_forecast_title: 'Prakiraan Per Jam (24 Jam Ke Depan)',
+        live_precipitation_radar: 'Radar Curah Hujan Langsung',
+        rain_radar: 'Radar Hujan',
+        open_full_stats: 'Buka Statistik Lengkap',
+        detailed_stats_sub: 'Analisis jangka panjang & zoom di dashboard:',
+        thermostat_status: 'Status Termostat',
+        heating_power: 'Daya Pemanas',
+        heating_active_desc: 'Pemanasan aktif',
+        heating_ready_desc: 'Siap / Eco',
+        battery_curves_title: 'Kurva Baterai (Pelepasan 24j)',
+        battery_curves_sub: 'Kurva riwayat perangkat baterai penting',
+        temp_curve_heating: 'Riwayat Suhu & Pemanas',
+        illum_curve_lighting: 'Riwayat Pencahayaan & Lampu',
+        all_sensors_24h: 'Semua sensor selama 24j • Arsiran dan linimasa menunjukkan fase pemanasan',
+        lux_curve_24h: 'Kurva lux 24j • Arsiran dan linimasa menunjukkan saat lampu menyala',
+        live_occupancy_overview: 'Ikhtisar langsung helper kehadiran dan aktivitas pemanas Better Thermostat.',
+        switches_sockets: 'Perangkat & Colokan',
+        socket: 'Colokan',
+        media: 'Media',
+        playing: 'PUTAR',
+        paused: 'JEDA',
+        switched_on: 'Dinyalakan',
+        switched_off: 'Dimatikan',
+        active: 'Aktif',
+        unavailable: 'Tdk Tersedia',
+        loading: 'Memuat...',
+        no_upcoming_events: 'Tidak ada agenda mendatang',
+        settings: 'Pengaturan',
+        configure_dashboard: 'Konfigurasi Dashboard',
+        edit_dashboard: 'Edit Dashboard',
+        theme_mode: 'Mode Tema',
+        theme_auto: 'Otomatis Siang/Malam (sun.sun)',
+        theme_light: 'Selalu Terang (Vision Glass Light)',
+        theme_dark: 'Selalu Gelap (Vision Glass Dark)',
+        theme_desc: 'Menentukan apakah tampilan berganti otomatis mengikuti matahari atau tetap.',
+        ambient_background: 'Latar Belakang Bergerak (Cahaya Waber)',
+        ambient_desc: 'Efek cahaya lembut mengambang di latar belakang untuk atmosfer kaca dinamis.',
+        ambient_intensity: 'Kecepatan Animasi',
+        speed_relaxed: 'Halus & Santai (Lambat)',
+        speed_normal: 'Standar (Seimbang)',
+        speed_vivid: 'Dinamis (Cepat)',
+        background_style: 'Gaya Latar Belakang',
+        bg_aurora: 'Fluid Aurora / Cahaya Melayang (Standar)',
+        bg_mesh: 'Spatial Vision Mesh (Kisi Kaca)',
+        bg_deep_space: 'Deep Space / Bintang Kosmik (Biru Tua)',
+        bg_sunset: 'Sunset Glow / Senja Hangat (Amber & Ungu)',
+        bg_minimal: 'Minimal Frosted Glass (Kaca Bening)',
+        bg_custom: 'Gambar Kustom (URL)',
+        bg_image_url: 'URL Gambar Latar Belakang',
+        saved_success: '✓ Pengaturan berhasil disimpan di Home Assistant!',
+        media_player: 'Pemutar Media & Audio',
+        tv_remote: 'Televisi & Remote TV',
+        tv_on: 'TV sedang menyala',
+        tv_off: 'TV dimatikan',
+        power: 'Daya',
+        volume: 'Volume',
+        volume_up: 'Perbesar Volume',
+        volume_down: 'Kecilkan Volume',
+        mute: 'Bisu',
+        source: 'Sumber Masukan',
+        no_media_playing: 'Tidak ada media yang diputar',
+        previous: 'Lagu Sebelumnya',
+        next: 'Lagu Berikutnya',
+        play: 'Putar',
+        pause: 'Jeda',
+        rooms_and_cards: 'Ruangan & Bento',
+        reorder_rooms: 'Urutan Ruangan & Tampilan',
+        add_room: 'Tambah Ruangan',
+        delete_room: 'Hapus Ruangan',
+        room_name: 'Nama Ruangan',
+        picture_url: 'URL Gambar Latar Belakang',
+        dock_navigation: 'Bilah Bawah & Navigasi',
+        auto_hide_empty: 'Sembunyikan kategori kosong secara otomatis',
+        save_changes: 'Simpan Pengaturan',
+        saving: 'Menyimpan...',
+        saved_success: 'Pengaturan berhasil disimpan!',
+        reset_factory: 'Atur Ulang ke Default',
+        rescan_areas: 'Pindai Ulang Ruangan & Perangkat (Pengaturan Awal)',
+        rescan_confirm: 'Apakah Anda ingin memindai ulang seluruh ruangan dan perangkat? Penyesuaian manual Anda akan diperbarui.',
+        close: 'Tutup',
+        cancel: 'Batal',
+        move_up: 'Pindah ke atas',
+        move_down: 'Pindah ke bawah',
+        general: 'Umum',
+        dock: 'Bilah Bawah',
+        provisioning: 'Pengaturan Awal'
       }
     };
   }
@@ -397,6 +734,19 @@ class VisionGlassDashboard extends HTMLElement {
   "activity": "<polyline points=\"22 12 18 12 15 21 9 3 6 12 2 12\"/>",
   "washing-machine": "<rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"3\"/><circle cx=\"12\" cy=\"13\" r=\"5\"/><circle cx=\"12\" cy=\"13\" r=\"2.5\" fill=\"currentColor\" opacity=\"0.4\"/><circle cx=\"7\" cy=\"6\" r=\"1\" fill=\"currentColor\"/><circle cx=\"10\" cy=\"6\" r=\"1\" fill=\"currentColor\"/>",
   "speaker": "<rect x=\"4\" y=\"2\" width=\"16\" height=\"20\" rx=\"2\"/><circle cx=\"12\" cy=\"14\" r=\"4\"/><circle cx=\"12\" cy=\"6\" r=\"1.5\" fill=\"currentColor\"/>",
+  "settings": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z\"/>",
+  "play": "<polygon points=\"5 3 19 12 5 21 5 3\" fill=\"currentColor\"/>",
+  "pause": "<rect x=\"6\" y=\"4\" width=\"4\" height=\"16\"/><rect x=\"14\" y=\"4\" width=\"4\" height=\"16\"/>",
+  "skip-back": "<polygon points=\"19 20 9 12 19 4 19 20\"/><line x1=\"5\" y1=\"19\" x2=\"5\" y2=\"5\"/>",
+  "skip-forward": "<polygon points=\"5 4 15 12 5 20 5 4\"/><line x1=\"19\" y1=\"5\" x2=\"19\" y2=\"19\"/>",
+  "volume-up": "<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"/><path d=\"M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07\"/>",
+  "volume-down": "<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"/><path d=\"M15.54 8.46a5 5 0 0 1 0 7.07\"/>",
+  "volume-mute": "<polygon points=\"11 5 6 9 2 9 2 15 6 15 11 19 11 5\"/><line x1=\"23\" y1=\"9\" x2=\"17\" y2=\"15\"/><line x1=\"17\" y1=\"9\" x2=\"23\" y2=\"15\"/>",
+  "arrow-up": "<line x1=\"12\" y1=\"19\" x2=\"12\" y2=\"5\"/><polyline points=\"5 12 12 5 19 12\"/>",
+  "arrow-down": "<line x1=\"12\" y1=\"5\" x2=\"12\" y2=\"19\"/><polyline points=\"19 12 12 19 5 12\"/>",
+  "arrow-left": "<line x1=\"19\" y1=\"12\" x2=\"5\" y2=\"12\"/><polyline points=\"12 19 5 12 12 5\"/>",
+  "arrow-right": "<line x1=\"5\" y1=\"12\" x2=\"19\" y2=\"12\"/><polyline points=\"12 5 19 12 12 19\"/>",
+  "sparkles": "<path d=\"m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z\"/>",
   "power": "<path d=\"M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10\"/>"
 };
   }
@@ -688,6 +1038,109 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   
+
+  async _saveDashboardConfig(newCardConfig) {
+    console.info('[VisionGlass] Saving updated configuration...', newCardConfig);
+    const toast = this.shadowRoot.getElementById('settingsToast');
+    const saveBtn = this.shadowRoot.getElementById('btnSaveSettingsModal') || this.shadowRoot.getElementById('btnSaveSettingsView');
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = this._t('saving');
+    }
+
+    try {
+      this._config = JSON.parse(JSON.stringify(newCardConfig));
+      this._fireConfigChanged(this._config);
+
+      // Persist directly to Home Assistant storage via Lovelace WebSocket
+      if (this._hass && this._hass.callWS) {
+        try {
+          const currentDash = await this._hass.callWS({ type: 'lovelace/config', url_path: 'vision-glass', force_reload: true });
+          if (currentDash && currentDash.views) {
+            let found = false;
+            for (const view of currentDash.views) {
+              if (view.cards) {
+                for (let i = 0; i < view.cards.length; i++) {
+                  if (view.cards[i].type === 'custom:vision-glass-dashboard' && view.cards[i].mode !== 'settings') {
+                    const saveConfig = JSON.parse(JSON.stringify(this._config));
+                    delete saveConfig.mode;
+                    view.cards[i] = saveConfig;
+                    found = true;
+                    break;
+                  }
+                }
+              }
+              if (found) break;
+            }
+            if (found) {
+              await this._hass.callWS({ type: 'lovelace/config/save', url_path: 'vision-glass', config: currentDash });
+              console.info('[VisionGlass] Successfully saved dashboard configuration to Lovelace storage!');
+            }
+          }
+        } catch (wsErr) {
+          console.warn('[VisionGlass] WebSocket save notice (relying on config-changed):', wsErr);
+        }
+      }
+
+      // Sync frontend theme if requested
+      if (this._config.theme_mode === 'light') {
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Light' });
+      } else if (this._config.theme_mode === 'dark') {
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Dark' });
+      } else if (this._config.theme_mode === 'auto') {
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass' });
+      }
+
+      if (toast) {
+        toast.style.display = 'block';
+        toast.textContent = this._t('saved_success');
+        setTimeout(() => { if (toast) toast.style.display = 'none'; }, 3500);
+      }
+
+      this._render();
+      this._applyThemeClass();
+    } catch (err) {
+      console.error('[VisionGlass] Save failed:', err);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = this._t('save_changes');
+      }
+    }
+  }
+
+  render() {
+    this._render();
+  }
+
+  async _loadDashboardConfigForStandaloneSettings() {
+    if (this._standaloneConfigLoaded) return;
+    if (this._hass && this._hass.callWS) {
+      try {
+        const currentDash = await this._hass.callWS({ type: 'lovelace/config', url_path: 'vision-glass', force_reload: true });
+        if (currentDash && currentDash.views) {
+          for (const view of currentDash.views) {
+            if (view.cards) {
+              const mainCard = view.cards.find(c => c.type === 'custom:vision-glass-dashboard' && c.mode !== 'settings');
+              if (mainCard) {
+                this._standaloneConfigLoaded = true;
+                const mode = this._config.mode;
+                this._config = JSON.parse(JSON.stringify(mainCard));
+                this._config.mode = mode;
+                const cont = this.shadowRoot.getElementById('settingsPageContainer');
+                if (cont) this._renderSettingsContent(cont, false);
+                this._applyThemeClass();
+                break;
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[VisionGlass] Could not load standalone dashboard config:', err);
+      }
+    }
+  }
+
   _fireConfigChanged(newConfig) {
     const event = new CustomEvent('config-changed', {
       bubbles: true,
@@ -803,15 +1256,11 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   setConfig(config) {
+    if (!config) throw new Error('Invalid configuration');
     const stub = VisionGlassDashboard.getStubConfig();
     this._config = {
-      title: config.title || stub.title,
-      auto_day_night: config.auto_day_night !== false,
-      weather_entity: config.weather_entity || stub.weather_entity,
-      lock_entity: config.lock_entity || stub.lock_entity,
-      all_lights_entity: config.all_lights_entity || stub.all_lights_entity,
-      washing_machine_switch: config.washing_machine_switch || stub.washing_machine_switch,
-      washing_machine_power: config.washing_machine_power || stub.washing_machine_power,
+      ...stub,
+      ...config,
       rooms: (config.rooms && config.rooms.length > 0) ? config.rooms.map(r => {
         const sr = stub.rooms.find(s => s.id === r.id) || {};
         return {
@@ -820,7 +1269,8 @@ class VisionGlassDashboard extends HTMLElement {
           humidity_entity: r.humidity_entity || sr.humidity_entity,
           illuminance_entity: r.illuminance_entity || sr.illuminance_entity
         };
-      }) : stub.rooms
+      }) : stub.rooms,
+      dock: config.dock || stub.dock || { auto_detect: true, items: [] }
     };
     this._render();
     this._initialRenderDone = true;
@@ -828,6 +1278,12 @@ class VisionGlassDashboard extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (this._config && (this._config.mode === 'settings' || this._config.view === 'settings')) {
+      if (!this._standaloneConfigLoaded) {
+        this._loadDashboardConfigForStandaloneSettings();
+      }
+      return;
+    }
     if (!this._initialRenderDone) return;
     if (this._updateRaf) return;
     this._updateRaf = requestAnimationFrame(() => {
@@ -838,8 +1294,9 @@ class VisionGlassDashboard extends HTMLElement {
 
   _getLang() {
     if (this._hass) {
-      const hl = this._hass.language || (this._hass.locale && this._hass.locale.language) || '';
-      if (hl.toLowerCase().startsWith('en')) return 'en';
+      const hl = (this._hass.language || (this._hass.locale && this._hass.locale.language) || '').toLowerCase();
+      if (hl.startsWith('id') || hl.startsWith('in')) return 'id';
+      if (hl.startsWith('en')) return 'en';
     }
     return 'de';
   }
@@ -874,13 +1331,22 @@ class VisionGlassDashboard extends HTMLElement {
       const clockEl = this.shadowRoot.getElementById('liveClock');
       if (clockEl) {
         const now = new Date();
-        const locale = this._getLang() === 'en' ? 'en-US' : 'de-DE';
+        const locale = this._getLocale();
         clockEl.textContent = now.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
       }
     }, 1000);
   }
 
+  _getLocale() {
+    const lang = this._getLang();
+    if (lang === 'en') return 'en-US';
+    if (lang === 'id') return 'id-ID';
+    return 'de-DE';
+  }
+
   _isDaytime() {
+    if (this._config && this._config.theme_mode === 'light') return true;
+    if (this._config && this._config.theme_mode === 'dark') return false;
     if (this._hass && this._hass.states['sun.sun']) {
       return this._hass.states['sun.sun'].state === 'above_horizon';
     }
@@ -899,6 +1365,25 @@ class VisionGlassDashboard extends HTMLElement {
       root.classList.remove('theme-light');
       root.classList.add('theme-dark');
     }
+
+    // Apply Background Style Preset
+    const bgStyle = (this._config && this._config.background_style) || 'aurora';
+    ['bg-aurora', 'bg-mesh', 'bg-deep_space', 'bg-sunset', 'bg-minimal', 'bg-custom'].forEach(cls => root.classList.remove(cls));
+    root.classList.add(`bg-${bgStyle}`);
+
+    // If custom image, apply inline background style
+    if (bgStyle === 'custom' && this._config && this._config.background_image_url) {
+      root.style.backgroundImage = `url("${this._config.background_image_url}")`;
+      root.style.backgroundSize = 'cover';
+      root.style.backgroundPosition = 'center';
+    } else {
+      root.style.backgroundImage = '';
+    }
+
+    // Apply Animation Speed Class
+    const animSpeed = (this._config && this._config.ambient_speed) || 'normal';
+    ['anim-relaxed', 'anim-normal', 'anim-vivid'].forEach(cls => root.classList.remove(cls));
+    root.classList.add(`anim-${animSpeed}`);
   }
 
   _callService(domain, service, data) {
@@ -1667,8 +2152,9 @@ class VisionGlassDashboard extends HTMLElement {
     if (!this._roomEntitiesCache[roomSlug]) {
       const matchSwitches = [];
       const matchSensors = [];
+      const matchMedia = [];
       Object.keys(this._hass.states).forEach(eId => {
-        if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
+        if (eId === room.light_entity || eId === room.climate_entity || eId === room.presence_entity || eId === room.window_entity || eId === room.switch_entity || eId === room.media_entity || eId === room.temp_entity || eId === room.tv_entity || eId === 'switch.livingroom_multimedia' || (room.multimedia_switch && eId === room.multimedia_switch)) return;
 
         const eIdLower = eId.toLowerCase();
         const fnLower = ((this._hass.states[eId].attributes && this._hass.states[eId].attributes.friendly_name) || '').toLowerCase();
@@ -1676,14 +2162,16 @@ class VisionGlassDashboard extends HTMLElement {
         const matches = eIdLower.includes(roomSlug) || fnLower.includes(roomSlug) || fnLower.includes(room.name.toLowerCase()) || aliases.some(a => eIdLower.includes(a));
 
         if (matches) {
-          if (eId.startsWith('switch.') || eId.startsWith('light.')) {
+          if (eId.startsWith('media_player.')) {
+            matchMedia.push(eId);
+          } else if (eId.startsWith('switch.') || eId.startsWith('light.')) {
             matchSwitches.push(eId);
           } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
             matchSensors.push(eId);
           }
         }
       });
-      this._roomEntitiesCache[roomSlug] = { switches: matchSwitches, sensors: matchSensors };
+      this._roomEntitiesCache[roomSlug] = { switches: matchSwitches, sensors: matchSensors, media: matchMedia };
     }
 
     const cached = this._roomEntitiesCache[roomSlug];
@@ -1693,6 +2181,26 @@ class VisionGlassDashboard extends HTMLElement {
     cached.sensors.forEach(id => {
       if (this._hass.states[id]) otherSensors.push({ id, state: this._hass.states[id] });
     });
+
+    // Resolve TV entity (Strictly media_player with device_class === 'tv' or explicit tv_entity)
+    let tvId = null;
+    if (room.tv_entity && this._hass.states[room.tv_entity]) {
+      tvId = room.tv_entity;
+    } else if (room.media_entity && this._hass.states[room.media_entity]?.attributes?.device_class === 'tv') {
+      tvId = room.media_entity;
+    } else if (cached.media) {
+      const tvMatch = cached.media.find(id => this._hass.states[id]?.attributes?.device_class === 'tv');
+      if (tvMatch) tvId = tvMatch;
+    }
+
+    // Resolve Audio entity (media_player that is not a TV)
+    let audioId = null;
+    if (room.media_entity && room.media_entity !== tvId && this._hass.states[room.media_entity]) {
+      audioId = room.media_entity;
+    } else if (cached.media) {
+      const audioMatch = cached.media.find(id => id !== tvId && this._hass.states[id]?.attributes?.device_class !== 'tv');
+      if (audioMatch) audioId = audioMatch;
+    }
 
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;">
@@ -1799,17 +2307,96 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
           ` : ''}
 
-          ${room.media_entity ? `
-            <div class="control-row">
-              <div>
-                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;">${this._icon('music', { size: 16, cls: 'icon-media' })} ${(mediaObj && mediaObj.attributes.friendly_name) || this._t('media')}</div>
-                <div style="font-size:12px;color:var(--text-secondary);">${mediaObj ? (mediaObj.state === 'playing' ? this._t('playing') : this._t('off')) : this._t('off')}</div>
+          ${tvId ? (() => {
+            const tvObj = this._hass.states[tvId];
+            const isTvOn = tvObj && tvObj.state !== 'off' && tvObj.state !== 'standby' && tvObj.state !== 'unavailable';
+            const tvSources = (tvObj && tvObj.attributes && tvObj.attributes.source_list) || [];
+            const curSource = (tvObj && tvObj.attributes && tvObj.attributes.source) || '';
+            const tvName = (tvObj && tvObj.attributes && tvObj.attributes.friendly_name) || this._t('tv_remote');
+            return `
+              <div class="control-row" style="grid-column:1/-1;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.28);flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    ${this._icon('tv', { size: 20, cls: 'icon-media' })}
+                    <div>
+                      <div style="font-weight:700;font-size:14px;color:var(--text-primary);">${tvName}</div>
+                      <div style="font-size:11px;color:var(--text-secondary);">${isTvOn ? this._t('tv_on') : this._t('tv_off')}</div>
+                    </div>
+                  </div>
+                  <button class="toggle-pill ${isTvOn ? 'active-blue' : ''}" id="btnTvPower_${room.id}" style="${isTvOn ? 'background:#10b981;color:white;' : ''}">
+                    ${this._icon('power', { size: 14, style: 'margin-right:4px;' })} ${isTvOn ? this._t('on') : this._t('off')}
+                  </button>
+                </div>
+
+                ${isTvOn ? `
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding-top:8px;border-top:1px solid var(--border-subtle);">
+                    ${tvSources.length > 0 ? `
+                      <div style="display:flex;align-items:center;gap:6px;">
+                        <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600;">${this._t('source')}:</span>
+                        <select id="selTvSource_${room.id}" style="padding:4px 8px;border-radius:8px;font-size:12px;background:rgba(255,255,255,0.08);border:1px solid var(--border-subtle);color:var(--text-primary);">
+                          ${tvSources.map(s => `<option value="${s}" ${s === curSource ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                      </div>
+                    ` : '<div></div>'}
+
+                    <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+                      <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600;">${this._t('volume')}:</span>
+                      <button class="btn-step" id="btnTvVolDown_${room.id}">-</button>
+                      <button class="btn-step" id="btnTvVolUp_${room.id}">+</button>
+                      <button class="btn-micro" id="btnTvMute_${room.id}" title="${this._t('mute')}" style="padding:4px 8px;font-size:11px;">
+                        ${this._icon('volume-mute', { size: 14 })}
+                      </button>
+                    </div>
+                  </div>
+                ` : ''}
               </div>
-              <button class="btn-micro ${mediaObj && mediaObj.state === 'playing' ? 'active' : ''}" id="roomModalMediaToggle">
-                ${mediaObj && mediaObj.state === 'playing' ? this._t('paused') : this._t('playing')}
-              </button>
-            </div>
-          ` : ''}
+            `;
+          })() : ''}
+
+          ${audioId ? (() => {
+            const aObj = this._hass.states[audioId];
+            const isPlaying = aObj && aObj.state === 'playing';
+            const artUrl = aObj && aObj.attributes && (aObj.attributes.entity_picture_local || aObj.attributes.entity_picture);
+            const track = (aObj && aObj.attributes && (aObj.attributes.media_title || aObj.attributes.app_name)) || (aObj ? aObj.attributes.friendly_name : this._t('media'));
+            const artist = (aObj && aObj.attributes && aObj.attributes.media_artist) || (aObj ? aObj.state : this._t('off'));
+            return `
+              <div class="control-row" style="grid-column:1/-1;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.28);flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;">
+                  <div style="display:flex;align-items:center;gap:10px;min-width:0;flex:1;">
+                    ${artUrl ? `
+                      <img src="${artUrl}" style="width:44px;height:44px;border-radius:10px;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,0.3);" alt="Cover" />
+                    ` : `
+                      <div style="width:44px;height:44px;border-radius:10px;background:rgba(99,102,241,0.2);display:flex;align-items:center;justify-content:center;color:#818cf8;flex-shrink:0;">
+                        ${this._icon('music', { size: 22 })}
+                      </div>
+                    `}
+                    <div style="min-width:0;flex:1;">
+                      <div style="font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-primary);">${track}</div>
+                      <div style="font-size:12px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${artist}</div>
+                    </div>
+                  </div>
+
+                  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                    <button class="btn-micro" id="btnMediaPrev_${room.id}" title="${this._t('previous')}" style="width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;">
+                      ${this._icon('skip-back', { size: 14 })}
+                    </button>
+                    <button class="btn-micro ${isPlaying ? 'active' : ''}" id="btnMediaPlayPause_${room.id}" title="${isPlaying ? this._t('pause') : this._t('play')}" style="width:38px;height:38px;padding:0;display:flex;align-items:center;justify-content:center;${isPlaying ? 'background:var(--accent);color:white;' : ''}">
+                      ${this._icon(isPlaying ? 'pause' : 'play', { size: 16 })}
+                    </button>
+                    <button class="btn-micro" id="btnMediaNext_${room.id}" title="${this._t('next')}" style="width:32px;height:32px;padding:0;display:flex;align-items:center;justify-content:center;">
+                      ${this._icon('skip-forward', { size: 14 })}
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display:flex;justify-content:flex-end;align-items:center;gap:8px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+                  <span style="font-size:11px;color:var(--text-secondary);text-transform:uppercase;font-weight:600;">${this._t('volume')}:</span>
+                  <button class="btn-step" id="btnMediaVolDown_${room.id}">-</button>
+                  <button class="btn-step" id="btnMediaVolUp_${room.id}">+</button>
+                </div>
+              </div>
+            `;
+          })() : ''}
         </div>
 
         ${otherSwitches.length > 0 ? `
@@ -1916,10 +2503,43 @@ class VisionGlassDashboard extends HTMLElement {
         this._callService('switch', 'toggle', { entity_id: room.switch_entity });
       };
     }
-    if (room.media_entity && body.querySelector('#roomModalMediaToggle')) {
-      body.querySelector('#roomModalMediaToggle').onclick = () => {
-        this._callService('media_player', 'media_play_pause', { entity_id: room.media_entity });
-      };
+
+    // TV Remote Events (Strictly for tvId, NEVER touches switch_entity)
+    if (tvId) {
+      const pwrBtn = body.querySelector('#btnTvPower_' + room.id);
+      if (pwrBtn) {
+        pwrBtn.onclick = () => {
+          this._callService('media_player', 'toggle', { entity_id: tvId });
+        };
+      }
+      const srcSel = body.querySelector('#selTvSource_' + room.id);
+      if (srcSel) {
+        srcSel.onchange = (e) => this._callService('media_player', 'select_source', { entity_id: tvId, source: e.target.value });
+      }
+      const vDown = body.querySelector('#btnTvVolDown_' + room.id);
+      if (vDown) vDown.onclick = () => this._callService('media_player', 'volume_down', { entity_id: tvId });
+      const vUp = body.querySelector('#btnTvVolUp_' + room.id);
+      if (vUp) vUp.onclick = () => this._callService('media_player', 'volume_up', { entity_id: tvId });
+      const vMute = body.querySelector('#btnTvMute_' + room.id);
+      if (vMute) {
+        const tvState = this._hass.states[tvId];
+        const isMuted = tvState && tvState.attributes && tvState.attributes.is_volume_muted;
+        vMute.onclick = () => this._callService('media_player', 'volume_mute', { entity_id: tvId, is_volume_muted: !isMuted });
+      }
+    }
+
+    // Mini Media Player Events (Strictly for audioId)
+    if (audioId) {
+      const playBtn = body.querySelector('#btnMediaPlayPause_' + room.id);
+      if (playBtn) playBtn.onclick = () => this._callService('media_player', 'media_play_pause', { entity_id: audioId });
+      const prevBtn = body.querySelector('#btnMediaPrev_' + room.id);
+      if (prevBtn) prevBtn.onclick = () => this._callService('media_player', 'media_previous_track', { entity_id: audioId });
+      const nextBtn = body.querySelector('#btnMediaNext_' + room.id);
+      if (nextBtn) nextBtn.onclick = () => this._callService('media_player', 'media_next_track', { entity_id: audioId });
+      const avDown = body.querySelector('#btnMediaVolDown_' + room.id);
+      if (avDown) avDown.onclick = () => this._callService('media_player', 'volume_down', { entity_id: audioId });
+      const avUp = body.querySelector('#btnMediaVolUp_' + room.id);
+      if (avUp) avUp.onclick = () => this._callService('media_player', 'volume_up', { entity_id: audioId });
     }
     body.querySelectorAll('[data-dyn-toggle]').forEach(b => {
       b.onclick = () => {
@@ -2294,7 +2914,7 @@ class VisionGlassDashboard extends HTMLElement {
         const d = new Date(s.attributes.start_time);
         items.push({
           date: d,
-          text: `${this._icon(c.iconName, { size: 14, style: 'margin-right:5px;' })} ${c.label} (${d.toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'numeric' })})`,
+          text: `${this._icon(c.iconName, { size: 14, style: 'margin-right:5px;' })} ${c.label} (${d.toLocaleDateString(this._getLocale(), { weekday: 'short', day: 'numeric', month: 'numeric' })})`,
           color: c.color
         });
       }
@@ -2307,7 +2927,7 @@ class VisionGlassDashboard extends HTMLElement {
         const dSet = new Date(sunState.attributes.next_setting);
         items.push({
           date: dSet,
-          text: `${this._icon('sunset', { size: 14, cls: 'icon-light', style: 'margin-right:5px;' })} Sonnenuntergang ${dSet.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`,
+          text: `${this._icon('sunset', { size: 14, cls: 'icon-light', style: 'margin-right:5px;' })} ${this._t('sunset')} ${dSet.toLocaleTimeString(this._getLocale(), { hour: '2-digit', minute: '2-digit' })}`,
           color: 'dot-amber'
         });
       }
@@ -2318,7 +2938,7 @@ class VisionGlassDashboard extends HTMLElement {
 
     if (items.length > 0) {
       agendaEl.innerHTML = `
-        <div class="agenda-title" style="display:flex;align-items:center;gap:6px;">${this._icon('calendar', { size: 14, cls: 'icon-calendar' })} Termine & Müllabfuhr</div>
+        <div class="agenda-title" style="display:flex;align-items:center;gap:6px;">${this._icon('calendar', { size: 14, cls: 'icon-calendar' })} ${this._t('agenda_garbage')}</div>
         ${items.slice(0, 4).map(it => `
           <div class="agenda-item">
             <span class="chip-dot ${it.color}"></span>
@@ -3501,10 +4121,505 @@ class VisionGlassDashboard extends HTMLElement {
           this._renderModalContent('stats');
         };
       });
+    } else if (type === 'settings') {
+      title.innerHTML = `${this._icon('settings', { size: 22, style: 'margin-right:8px;' })} ${this._t('settings')}`;
+      this._renderSettingsContent(body, true);
+    }
+  }
+
+  _renderSettingsContent(container, isModal = false) {
+    if (!container || !this._config) return;
+
+    if (!this._settingsActiveTab) this._settingsActiveTab = 'rooms';
+    const activeTab = this._settingsActiveTab;
+
+    const rooms = this._config.rooms || [];
+    const dock = this._config.dock || { auto_detect: true, items: [] };
+    const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
+
+    const bgStyle = this._config.background_style || 'aurora';
+    const themeMode = this._config.theme_mode || 'auto';
+    const animSpeed = this._config.ambient_speed || 'normal';
+
+    container.innerHTML = `
+      <datalist id="dl_all_entities">
+        ${allEntities.map(e => `<option value="${e}"></option>`).join('')}
+      </datalist>
+
+      ${!isModal ? `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div style="width:42px;height:42px;border-radius:12px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+              ${this._icon('settings', { size: 24 })}
+            </div>
+            <div>
+              <div style="font-size:20px;font-weight:700;">${this._t('settings')} – Vision Glass</div>
+              <div style="font-size:12px;color:var(--text-secondary);">${this._t('configure_dashboard')}</div>
+            </div>
+          </div>
+          <a href="/vision-glass/home" class="btn btn-sm" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;">
+            &larr; Zum Dashboard
+          </a>
+        </div>
+      ` : ''}
+
+      <!-- Settings Navigation Tabs -->
+      <div class="nav-tabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border-subtle);padding-bottom:10px;margin-bottom:16px;overflow-x:auto;">
+        <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms">🏠 ${this._t('rooms_and_cards')} (${rooms.length})</button>
+        <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays">📂 Raum-Overlays</button>
+        <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock">⚓ ${this._t('dock_navigation')}</button>
+        <button class="nav-tab ${activeTab === 'general' ? 'active' : ''}" data-stab="general">⚙️ Design & Allgemein</button>
+      </div>
+
+      <!-- TAB 1: RÄUME & BENTO-KARTEN -->
+      <div id="stabContentRooms" style="${activeTab === 'rooms' ? '' : 'display:none;'}">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+          <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
+          <button class="btn btn-sm btn-primary" id="btnSettingsAddRoom">+ ${this._t('add_room')}</button>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          ${rooms.map((r, rIdx) => `
+            <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px;">
+                  <span style="color:var(--accent);">${rIdx + 1}.</span> ${r.name || r.id}
+                </div>
+                <div style="display:flex;gap:4px;">
+                  <button class="btn btn-sm btn-set-room-up" data-ridx="${rIdx}" ${rIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
+                  <button class="btn btn-sm btn-set-room-down" data-ridx="${rIdx}" ${rIdx === rooms.length - 1 ? 'disabled' : ''} title="Nach unten">▼</button>
+                  <button class="btn btn-sm btn-set-room-del" data-ridx="${rIdx}" style="color:#ef4444;" title="${this._t('delete_room')}">✕</button>
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;">
+                <div class="row">
+                  <label>${this._t('room_name')}</label>
+                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="name" value="${r.name || ''}" placeholder="z.B. Wohnzimmer">
+                </div>
+                <div class="row">
+                  <label>Raum ID</label>
+                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="id" value="${r.id || ''}" placeholder="z.B. wohnzimmer">
+                </div>
+                <div class="row" style="grid-column:1/-1;">
+                  <label>${this._t('picture_url')}</label>
+                  <input type="text" class="in-room-prop" data-ridx="${rIdx}" data-prop="picture" value="${r.picture || ''}" placeholder="/api/image/serve/... oder URL">
+                </div>
+              </div>
+
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;">
+                <div class="row">
+                  <label>💡 Beleuchtung (light.*)</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="light_entity" value="${r.light_entity || ''}" placeholder="light.livingroom">
+                </div>
+                <div class="row">
+                  <label>🌡️ Thermostat (climate.*)</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="climate_entity" value="${r.climate_entity || ''}" placeholder="climate.better_thermostat_...">
+                </div>
+                <div class="row">
+                  <label>🎯 Zieltemp. Helfer (input_number.*)</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="target_temp_entity" value="${r.target_temp_entity || ''}" placeholder="input_number.*_komfort_temperatur">
+                </div>
+                <div class="row">
+                  <label>🌡️ Ist-Temperatur Sensor</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="temp_entity" value="${r.temp_entity || ''}" placeholder="sensor.*_temperatur">
+                </div>
+                <div class="row">
+                  <label>💧 Luftfeuchtigkeit Sensor</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="humidity_entity" value="${r.humidity_entity || ''}" placeholder="sensor.*_humidity">
+                </div>
+                <div class="row">
+                  <label>💡 Helligkeit / Lux Sensor</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="illuminance_entity" value="${r.illuminance_entity || ''}" placeholder="sensor.*_illuminance">
+                </div>
+                <div class="row">
+                  <label>🚶 Präsenz / Bewegung</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="presence_entity" value="${r.presence_entity || ''}" placeholder="binary_sensor.*_occupied">
+                </div>
+                <div class="row">
+                  <label>🪟 Fensterkontakt</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="window_entity" value="${r.window_entity || ''}" placeholder="binary_sensor.fenster...">
+                </div>
+                <div class="row">
+                  <label>🔌 Steckdose / Schalter (switch.*)</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="switch_entity" value="${r.switch_entity || ''}" placeholder="switch.smartplug...">
+                </div>
+                <div class="row">
+                  <label>📺 Fernseher (media_player.* [tv])</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="tv_entity" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2">
+                </div>
+                <div class="row">
+                  <label>🎵 Musik / Audio (media_player.*)</label>
+                  <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="media_entity" value="${r.media_entity || ''}" placeholder="media_player.echo_show">
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- TAB 2: RAUM-OVERLAYS (KATEGORIEN) -->
+      <div id="stabContentOverlays" style="${activeTab === 'overlays' ? '' : 'display:none;'}">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+          Konfiguriere individuelle Kategorien und Entitäten-Listen für die Raum-Detail-Overlays beim Anklicken einer Bento-Kachel.
+        </div>
+        <div style="display:flex;gap:10px;margin-bottom:14px;align-items:center;">
+          <label style="font-size:12px;font-weight:600;">Raum auswählen:</label>
+          <select id="selSettingsOverlayRoom" style="max-width:240px;padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+            ${rooms.map((r, i) => `<option value="${i}" ${i === (this._settingsOverlayRoomIdx || 0) ? 'selected' : ''}>${r.name || r.id}</option>`).join('')}
+          </select>
+        </div>
+        <div id="settingsOverlayCategoriesContainer">
+          ${(() => {
+            const rIdx = this._settingsOverlayRoomIdx || 0;
+            const r = rooms[rIdx];
+            if (!r) return '<div>Kein Raum ausgewählt</div>';
+            const cats = r.overlay_categories || [];
+            return `
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                ${cats.map((cat, cIdx) => `
+                  <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:12px;padding:12px 14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                      <strong style="font-size:13px;">${cat.name || cat.id}</strong>
+                      <button class="btn btn-sm btn-del-cat" data-cidx="${cIdx}" style="color:#ef4444;">✕</button>
+                    </div>
+                    <div class="row">
+                      <label>Kategorie-Name</label>
+                      <input type="text" class="in-cat-name" data-cidx="${cIdx}" value="${cat.name || ''}">
+                    </div>
+                    <div class="row">
+                      <label>Zugeordnete Entitäten (kommagetrennt)</label>
+                      <input type="text" class="in-cat-ents" data-cidx="${cIdx}" value="${(cat.entities || []).join(', ')}">
+                    </div>
+                  </div>
+                `).join('')}
+                <button class="btn btn-sm btn-primary" id="btnAddOverlayCategory" style="align-self:flex-start;">+ Kategorie hinzufügen</button>
+              </div>
+            `;
+          })()}
+        </div>
+      </div>
+
+      <!-- TAB 3: BOTTOM-DOCK -->
+      <div id="stabContentDock" style="${activeTab === 'dock' ? '' : 'display:none;'}">
+        <div style="display:flex;align-items:center;gap:10px;background:var(--bg-card);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;margin-bottom:14px;">
+          <input type="checkbox" id="chkSettingsDockAutoDetect" ${dock.auto_detect !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+          <div>
+            <div style="font-weight:600;font-size:14px;">${this._t('auto_hide_empty')}</div>
+            <div style="font-size:12px;color:var(--text-secondary);">Blendet Schaltflächen (wie Alarmo, Heizung, Batterien) automatisch aus, wenn im System keine passenden Geräte existieren.</div>
+          </div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${(dock.items || []).map((item, dIdx) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px;padding:10px 14px;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:16px;height:16px;">
+                <span style="font-weight:600;font-size:13px;">${item.title || item.id}</span>
+                <span style="font-size:11px;color:var(--text-secondary);font-family:monospace;">(${item.id})</span>
+              </div>
+              <div style="display:flex;gap:4px;">
+                <button class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
+                <button class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <!-- TAB 4: DESIGN & ALLGEMEIN -->
+      <div id="stabContentGeneral" style="${activeTab === 'general' ? '' : 'display:none;'}">
+        <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🎨 Erscheinungsbild & Theme</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+            <div class="row">
+              <label>${this._t('theme_mode')}</label>
+              <select id="cfgThemeMode" style="padding:8px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+                <option value="auto" ${themeMode === 'auto' ? 'selected' : ''}>${this._t('theme_auto')}</option>
+                <option value="light" ${themeMode === 'light' ? 'selected' : ''}>${this._t('theme_light')}</option>
+                <option value="dark" ${themeMode === 'dark' ? 'selected' : ''}>${this._t('theme_dark')}</option>
+              </select>
+              <span style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${this._t('theme_desc')}</span>
+            </div>
+
+            <div class="row">
+              <label>${this._t('background_style')}</label>
+              <select id="cfgBgStyle" style="padding:8px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+                <option value="aurora" ${bgStyle === 'aurora' ? 'selected' : ''}>${this._t('bg_aurora')}</option>
+                <option value="mesh" ${bgStyle === 'mesh' ? 'selected' : ''}>${this._t('bg_mesh')}</option>
+                <option value="deep_space" ${bgStyle === 'deep_space' ? 'selected' : ''}>${this._t('bg_deep_space')}</option>
+                <option value="sunset" ${bgStyle === 'sunset' ? 'selected' : ''}>${this._t('bg_sunset')}</option>
+                <option value="minimal" ${bgStyle === 'minimal' ? 'selected' : ''}>${this._t('bg_minimal')}</option>
+                <option value="custom" ${bgStyle === 'custom' ? 'selected' : ''}>${this._t('bg_custom')}</option>
+              </select>
+              <span style="font-size:11px;color:var(--text-secondary);margin-top:2px;">Wähle zwischen wabernden Lichtern, kristallinem Mesh, Sternenfeld oder Wallpaper.</span>
+            </div>
+
+            <div class="row" id="rowCustomBgUrl" style="${bgStyle === 'custom' ? '' : 'display:none;'}">
+              <label>${this._t('bg_image_url')}</label>
+              <input type="text" id="cfgBgUrl" value="${this._config.background_image_url || ''}" placeholder="https://... oder /local/wallpaper.jpg">
+            </div>
+
+            <div class="row">
+              <label>${this._t('ambient_intensity')}</label>
+              <select id="cfgAmbientSpeed" style="padding:8px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);">
+                <option value="relaxed" ${animSpeed === 'relaxed' ? 'selected' : ''}>${this._t('speed_relaxed')}</option>
+                <option value="normal" ${animSpeed === 'normal' ? 'selected' : ''}>${this._t('speed_normal')}</option>
+                <option value="vivid" ${animSpeed === 'vivid' ? 'selected' : ''}>${this._t('speed_vivid')}</option>
+              </select>
+              <span style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${this._t('ambient_desc')}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🏠 Globale Entitäten</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
+            <div class="row">
+              <label>Dashboard Titel</label>
+              <input type="text" id="cfgTitle" value="${this._config.title || ''}" placeholder="z.B. Wohnung Andreas">
+            </div>
+            <div class="row">
+              <label>Wetter-Entität</label>
+              <input type="text" list="dl_all_entities" id="cfgWeather" value="${this._config.weather_entity || ''}" placeholder="weather.hannover_hannover">
+            </div>
+            <div class="row">
+              <label>Wohnungsschloss-Entität</label>
+              <input type="text" list="dl_all_entities" id="cfgLock" value="${this._config.lock_entity || ''}" placeholder="lock.wohnungsschloss">
+            </div>
+            <div class="row">
+              <label>Alle-Lichter-Entität (Hauptschalter)</label>
+              <input type="text" list="dl_all_entities" id="cfgAllLights" value="${this._config.all_lights_entity || ''}" placeholder="light.licht_wohnung">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Actions -->
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--border-subtle);flex-wrap:wrap;gap:12px;">
+        <div id="settingsToast" style="display:none;font-size:13px;font-weight:600;color:#10b981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);padding:6px 12px;border-radius:8px;">
+          ${this._t('saved_success')}
+        </div>
+        <div style="display:flex;gap:10px;margin-left:auto;">
+          ${isModal ? `<button class="btn" id="btnCancelSettings">${this._t('cancel')}</button>` : ''}
+          <button class="btn btn-primary" id="btnSaveDashboardSettings" style="background:var(--accent);color:white;font-weight:700;padding:8px 20px;border-radius:10px;border:none;cursor:pointer;">
+            💾 ${this._t('save_changes')}
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Hook up Event Listeners
+    container.querySelectorAll('[data-stab]').forEach(tabBtn => {
+      tabBtn.onclick = () => {
+        this._settingsActiveTab = tabBtn.getAttribute('data-stab');
+        this._renderSettingsContent(container, isModal);
+      };
+    });
+
+    const bgSel = container.querySelector('#cfgBgStyle');
+    if (bgSel) {
+      bgSel.onchange = () => {
+        const rowCust = container.querySelector('#rowCustomBgUrl');
+        if (rowCust) rowCust.style.display = bgSel.value === 'custom' ? 'flex' : 'none';
+      };
+    }
+
+    const selOvlRoom = container.querySelector('#selSettingsOverlayRoom');
+    if (selOvlRoom) {
+      selOvlRoom.onchange = (e) => {
+        this._settingsOverlayRoomIdx = parseInt(e.target.value);
+        this._renderSettingsContent(container, isModal);
+      };
+    }
+
+    const btnAddCat = container.querySelector('#btnAddOverlayCategory');
+    if (btnAddCat) {
+      btnAddCat.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        if (this._config.rooms && this._config.rooms[rIdx]) {
+          if (!this._config.rooms[rIdx].overlay_categories) this._config.rooms[rIdx].overlay_categories = [];
+          this._config.rooms[rIdx].overlay_categories.push({ id: 'neue_kategorie', name: 'Neue Kategorie', entities: [] });
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    }
+
+    container.querySelectorAll('.btn-del-cat').forEach(b => {
+      b.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(b.getAttribute('data-cidx'));
+        if (this._config.rooms && this._config.rooms[rIdx]?.overlay_categories) {
+          this._config.rooms[rIdx].overlay_categories.splice(cIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    const btnCancel = container.querySelector('#btnCancelSettings');
+    if (btnCancel) {
+      btnCancel.onclick = () => this._closeModal();
+    }
+
+    // Room up
+    container.querySelectorAll('.btn-set-room-up').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-ridx'));
+        if (idx > 0 && this._config.rooms) {
+          const temp = this._config.rooms[idx];
+          this._config.rooms[idx] = this._config.rooms[idx - 1];
+          this._config.rooms[idx - 1] = temp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    // Room down
+    container.querySelectorAll('.btn-set-room-down').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-ridx'));
+        if (this._config.rooms && idx < this._config.rooms.length - 1) {
+          const temp = this._config.rooms[idx];
+          this._config.rooms[idx] = this._config.rooms[idx + 1];
+          this._config.rooms[idx + 1] = temp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    // Room delete
+    container.querySelectorAll('.btn-set-room-del').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-ridx'));
+        if (this._config.rooms && confirm(`${this._t('delete_room')} "${this._config.rooms[idx]?.name || ''}"?`)) {
+          this._config.rooms.splice(idx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    // Room add
+    const btnAdd = container.querySelector('#btnSettingsAddRoom');
+    if (btnAdd) {
+      btnAdd.onclick = () => {
+        if (!this._config.rooms) this._config.rooms = [];
+        this._config.rooms.push({
+          id: 'neuer_raum_' + Date.now().toString().slice(-4),
+          name: 'Neuer Raum'
+        });
+        this._renderSettingsContent(container, isModal);
+      };
+    }
+
+    // Dock up / down / toggle
+    container.querySelectorAll('.btn-set-dock-up').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-didx'));
+        if (idx > 0 && this._config.dock?.items) {
+          const temp = this._config.dock.items[idx];
+          this._config.dock.items[idx] = this._config.dock.items[idx - 1];
+          this._config.dock.items[idx - 1] = temp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-set-dock-down').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-didx'));
+        if (this._config.dock?.items && idx < this._config.dock.items.length - 1) {
+          const temp = this._config.dock.items[idx];
+          this._config.dock.items[idx] = this._config.dock.items[idx + 1];
+          this._config.dock.items[idx + 1] = temp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.chk-dock-enable').forEach(chk => {
+      chk.onchange = () => {
+        const idx = parseInt(chk.getAttribute('data-didx'));
+        if (this._config.dock?.items && this._config.dock.items[idx]) {
+          this._config.dock.items[idx].enabled = chk.checked;
+        }
+      };
+    });
+
+    // Save button
+    const btnSave = container.querySelector('#btnSaveDashboardSettings');
+    if (btnSave) {
+      btnSave.onclick = async () => {
+        // Collect room inputs
+        container.querySelectorAll('.in-room-prop').forEach(inp => {
+          const rIdx = parseInt(inp.getAttribute('data-ridx'));
+          const prop = inp.getAttribute('data-prop');
+          if (this._config.rooms && this._config.rooms[rIdx]) {
+            this._config.rooms[rIdx][prop] = inp.value.trim();
+          }
+        });
+
+        // Collect overlay category inputs
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        if (this._config.rooms && this._config.rooms[rIdx]?.overlay_categories) {
+          container.querySelectorAll('.in-cat-name').forEach(inp => {
+            const cIdx = parseInt(inp.getAttribute('data-cidx'));
+            if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
+              this._config.rooms[rIdx].overlay_categories[cIdx].name = inp.value.trim();
+            }
+          });
+          container.querySelectorAll('.in-cat-ents').forEach(inp => {
+            const cIdx = parseInt(inp.getAttribute('data-cidx'));
+            if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
+              this._config.rooms[rIdx].overlay_categories[cIdx].entities = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+            }
+          });
+        }
+
+        // Collect general inputs
+        const tMode = container.querySelector('#cfgThemeMode');
+        if (tMode) this._config.theme_mode = tMode.value;
+
+        const bStyle = container.querySelector('#cfgBgStyle');
+        if (bStyle) this._config.background_style = bStyle.value;
+
+        const bUrl = container.querySelector('#cfgBgUrl');
+        if (bUrl) this._config.background_image_url = bUrl.value.trim();
+
+        const aSpeed = container.querySelector('#cfgAmbientSpeed');
+        if (aSpeed) this._config.ambient_speed = aSpeed.value;
+
+        const cTitle = container.querySelector('#cfgTitle');
+        if (cTitle) this._config.title = cTitle.value.trim();
+
+        const cWeather = container.querySelector('#cfgWeather');
+        if (cWeather) this._config.weather_entity = cWeather.value.trim();
+
+        const cLock = container.querySelector('#cfgLock');
+        if (cLock) this._config.lock_entity = cLock.value.trim();
+
+        const cLights = container.querySelector('#cfgAllLights');
+        if (cLights) this._config.all_lights_entity = cLights.value.trim();
+
+        const cAutoDock = container.querySelector('#chkSettingsDockAutoDetect');
+        if (cAutoDock && this._config.dock) this._config.dock.auto_detect = cAutoDock.checked;
+
+        // Persist via WebSocket to Lovelace
+        await this._saveDashboardConfig(this._config);
+
+        // Toast feedback
+        const toast = container.querySelector('#settingsToast');
+        if (toast) {
+          toast.style.display = 'block';
+          setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+        }
+      };
     }
   }
 
   _render() {
+    const isSettings = this._config && (this._config.mode === 'settings' || this._config.view === 'settings');
     this.shadowRoot.innerHTML = `
       <style>
         :host {
@@ -3572,6 +4687,94 @@ class VisionGlassDashboard extends HTMLElement {
           overflow: hidden;
           color: var(--text-primary);
           transition: background 0.5s ease, color 0.3s ease;
+        }
+
+        /* --- BACKGROUND STYLE PRESETS --- */
+        .dashboard-root.bg-aurora .liquid-backdrop {
+          display: block;
+        }
+        .dashboard-root.bg-mesh .liquid-backdrop,
+        .dashboard-root.bg-deep_space .liquid-backdrop,
+        .dashboard-root.bg-sunset .liquid-backdrop,
+        .dashboard-root.bg-minimal .liquid-backdrop,
+        .dashboard-root.bg-custom .liquid-backdrop {
+          display: none;
+        }
+
+        /* Preset 2: Spatial Mesh */
+        .dashboard-root.theme-dark.bg-mesh {
+          background-color: #0b1120;
+          background-image:
+            radial-gradient(rgba(56, 189, 248, 0.20) 1px, transparent 1px),
+            radial-gradient(rgba(99, 102, 241, 0.15) 1px, transparent 1px),
+            linear-gradient(135deg, #070d18 0%, #0f172a 50%, #1e1b4b 100%);
+          background-size: 32px 32px, 32px 32px, 100% 100%;
+          background-position: 0 0, 16px 16px, 0 0;
+        }
+        .dashboard-root.theme-light.bg-mesh {
+          background-color: #f1f5f9;
+          background-image:
+            radial-gradient(rgba(2, 132, 199, 0.18) 1.2px, transparent 1.2px),
+            radial-gradient(rgba(99, 102, 241, 0.12) 1.2px, transparent 1.2px),
+            linear-gradient(135deg, #e2e8f0 0%, #f8fafc 50%, #ede9fe 100%);
+          background-size: 32px 32px, 32px 32px, 100% 100%;
+          background-position: 0 0, 16px 16px, 0 0;
+        }
+
+        /* Preset 3: Deep Space Starfield */
+        .dashboard-root.theme-dark.bg-deep_space,
+        .dashboard-root.theme-light.bg-deep_space {
+          background-color: #030712;
+          background-image:
+            radial-gradient(1px 1px at 20px 30px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(1.5px 1.5px at 100px 150px, rgba(255,255,255,0.9), rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 240px 80px, #38bdf8, rgba(0,0,0,0)),
+            radial-gradient(2px 2px at 320px 220px, #818cf8, rgba(0,0,0,0)),
+            radial-gradient(1px 1px at 450px 120px, #ffffff, rgba(0,0,0,0)),
+            radial-gradient(circle at 50% 15%, #1e1b4b 0%, #0f172a 45%, #020617 100%);
+          background-size: 550px 550px, 450px 450px, 600px 600px, 500px 500px, 400px 400px, 100% 100%;
+        }
+
+        /* Preset 4: Sunset Glow */
+        .dashboard-root.theme-dark.bg-sunset {
+          background:
+            radial-gradient(circle at 12% 18%, rgba(245, 158, 11, 0.22) 0%, transparent 45%),
+            radial-gradient(circle at 88% 78%, rgba(236, 72, 153, 0.24) 0%, transparent 50%),
+            radial-gradient(circle at 75% 20%, rgba(139, 92, 246, 0.20) 0%, transparent 45%),
+            linear-gradient(135deg, #180d24 0%, #201335 45%, #0f172a 100%);
+        }
+        .dashboard-root.theme-light.bg-sunset {
+          background:
+            radial-gradient(circle at 15% 15%, rgba(254, 215, 170, 0.85) 0%, transparent 50%),
+            radial-gradient(circle at 85% 85%, rgba(251, 207, 232, 0.70) 0%, transparent 50%),
+            radial-gradient(circle at 70% 20%, rgba(233, 213, 255, 0.65) 0%, transparent 45%),
+            linear-gradient(135deg, #fff7ed 0%, #fef2f2 40%, #fdf4ff 100%);
+        }
+
+        /* Preset 5: Minimal Frosted Glass */
+        .dashboard-root.theme-dark.bg-minimal {
+          background: linear-gradient(135deg, #0b0f17 0%, #111827 50%, #0f172a 100%);
+        }
+        .dashboard-root.theme-light.bg-minimal {
+          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+        }
+
+        /* Preset 6: Custom Image */
+        .dashboard-root.bg-custom {
+          background-size: cover !important;
+          background-position: center !important;
+          background-repeat: no-repeat !important;
+        }
+
+        /* Animation Speeds */
+        .dashboard-root.anim-relaxed .liquid-orb {
+          animation-duration: 52s !important;
+        }
+        .dashboard-root.anim-normal .liquid-orb {
+          animation-duration: 26s !important;
+        }
+        .dashboard-root.anim-vivid .liquid-orb {
+          animation-duration: 12s !important;
         }
 
         /* Animated Liquid Ambient Fluid Backdrop */
@@ -3823,7 +5026,7 @@ class VisionGlassDashboard extends HTMLElement {
           display: flex;
           flex-direction: column;
           gap: 10px;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+          transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .sidebar-card::before {
@@ -3843,13 +5046,19 @@ class VisionGlassDashboard extends HTMLElement {
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 68%);
+          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.26) 50%, rgba(255, 255, 255, 0.06) 54%, transparent 68%);
           background-size: 250% 250%;
           background-position: -120% -120%;
           pointer-events: none;
           z-index: 2;
-          opacity: 0.6;
-          transition: background-position 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+          opacity: 0.5;
+          transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        .sidebar-card:hover {
+          transform: translateY(-3px) scale(1.008);
+          border-color: rgba(56, 189, 248, 0.5);
+          box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 22px rgba(56, 189, 248, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.85);
         }
 
         .sidebar-card:hover::after {
@@ -3861,6 +5070,12 @@ class VisionGlassDashboard extends HTMLElement {
           background: var(--bg-card);
           border: 1.5px solid var(--border-glass);
           box-shadow: var(--glass-refraction), var(--shadow-ambient);
+        }
+
+        .theme-light .sidebar-card:hover {
+          transform: translateY(-3px) scale(1.008);
+          border-color: rgba(2, 132, 199, 0.55);
+          box-shadow: 0 20px 42px rgba(15, 23, 42, 0.16), 0 0 20px rgba(2, 132, 199, 0.2), inset 0 1px 2px rgba(255, 255, 255, 1);
         }
 
         .theme-light .sidebar-card::after {
@@ -4141,7 +5356,7 @@ class VisionGlassDashboard extends HTMLElement {
           justify-content: space-between;
           padding: 10px 14px;
           cursor: pointer;
-          transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s;
+          transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
         .room-card::before {
@@ -4154,6 +5369,7 @@ class VisionGlassDashboard extends HTMLElement {
           background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
           pointer-events: none;
           z-index: 3;
+          transition: opacity 0.3s;
         }
 
         .room-card::after {
@@ -4161,18 +5377,19 @@ class VisionGlassDashboard extends HTMLElement {
           position: absolute;
           inset: 0;
           border-radius: inherit;
-          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.22) 50%, rgba(255, 255, 255, 0.05) 54%, transparent 68%);
+          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.28) 50%, rgba(255, 255, 255, 0.08) 54%, transparent 68%);
           background-size: 250% 250%;
           background-position: -120% -120%;
           pointer-events: none;
           z-index: 2;
-          opacity: 0.6;
-          transition: background-position 0.85s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+          opacity: 0.5;
+          transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
         }
 
         .room-card:hover {
-          transform: translateY(-2px);
-          box-shadow: var(--glass-refraction), 0 20px 42px rgba(0, 0, 0, 0.42);
+          transform: translateY(-5px) scale(1.015);
+          border-color: rgba(56, 189, 248, 0.55);
+          box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48), 0 0 25px rgba(56, 189, 248, 0.28), inset 0 1px 2px rgba(255, 255, 255, 0.85);
         }
 
         .room-card:hover::after {
@@ -4191,7 +5408,7 @@ class VisionGlassDashboard extends HTMLElement {
             transparent 0%,
             transparent 32%,
             rgba(15, 23, 42, 0.03) 42%,
-            rgba(15, 23, 42, 0.14) 50%,
+            rgba(15, 23, 42, 0.16) 50%,
             rgba(15, 23, 42, 0.04) 58%,
             transparent 70%);
           background-size: 250% 250%;
@@ -4199,7 +5416,27 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         .theme-light .room-card:hover {
-          box-shadow: var(--glass-refraction), 0 18px 40px rgba(15, 23, 42, 0.14);
+          transform: translateY(-5px) scale(1.015);
+          border-color: rgba(2, 132, 199, 0.6);
+          box-shadow: 0 20px 42px rgba(15, 23, 42, 0.16), 0 0 22px rgba(2, 132, 199, 0.22), inset 0 1px 2px rgba(255, 255, 255, 1);
+        }
+
+        .room-card .action-circle {
+          transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), background 0.2s, box-shadow 0.2s;
+        }
+
+        .room-card .action-circle:hover {
+          transform: scale(1.18);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+        }
+
+        .room-card .quick-climate-stepper button {
+          transition: transform 0.15s, background 0.15s;
+        }
+
+        .room-card .quick-climate-stepper button:hover {
+          transform: scale(1.14);
+          background: rgba(255, 255, 255, 0.28);
         }
 
         .room-bg-image {
@@ -4210,10 +5447,12 @@ class VisionGlassDashboard extends HTMLElement {
           opacity: 0.22;
           filter: saturate(1.2);
           pointer-events: none;
-          transition: opacity 0.3s;
+          transition: opacity 0.3s, transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s;
         }
         .room-card:hover .room-bg-image {
-          opacity: 0.32;
+          opacity: 0.36;
+          transform: scale(1.04);
+          filter: saturate(1.35) contrast(1.05);
         }
 
         .room-header {
@@ -4986,16 +6225,196 @@ class VisionGlassDashboard extends HTMLElement {
           filter: none !important;
         }
 
+        /* --- DEDICATED SETTINGS VIEW & MODAL STYLING --- */
+        .card-box {
+          background: var(--bg-card);
+          border: 1px solid var(--border-glass);
+          border-radius: 14px;
+          padding: 16px;
+          box-shadow: var(--shadow-ambient);
+          backdrop-filter: blur(24px) saturate(190%);
+          -webkit-backdrop-filter: blur(24px) saturate(190%);
+        }
+        .nav-tabs {
+          display: flex;
+          gap: 6px;
+          border-bottom: 1px solid var(--border-subtle);
+          padding-bottom: 10px;
+          margin-bottom: 16px;
+          overflow-x: auto;
+        }
+        .nav-tab {
+          padding: 8px 14px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid var(--border-subtle);
+          color: var(--text-secondary);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+          white-space: nowrap;
+          backdrop-filter: blur(10px);
+        }
+        .theme-light .nav-tab {
+          background: rgba(255, 255, 255, 0.65);
+          border-color: rgba(226, 232, 240, 0.9);
+          color: var(--text-secondary);
+        }
+        .nav-tab:hover {
+          background: rgba(255, 255, 255, 0.16);
+          color: var(--text-primary);
+        }
+        .theme-light .nav-tab:hover {
+          background: rgba(255, 255, 255, 0.9);
+          color: var(--text-primary);
+        }
+        .nav-tab.active {
+          background: var(--accent);
+          color: #ffffff !important;
+          border-color: var(--accent);
+          box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+        }
+        .form-row, .row {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          margin-bottom: 12px;
+        }
+        .row-horiz {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+        }
+        .form-label, label {
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .form-input, .form-select,
+        .card-box input[type="text"],
+        .card-box select {
+          padding: 9px 12px;
+          border-radius: 9px;
+          border: 1px solid var(--border-glass);
+          background: rgba(255, 255, 255, 0.08);
+          color: var(--text-primary);
+          font-size: 13px;
+          outline: none;
+          width: 100%;
+          box-sizing: border-box;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .theme-light .form-input,
+        .theme-light .form-select,
+        .theme-light .card-box input[type="text"],
+        .theme-light .card-box select {
+          background: rgba(255, 255, 255, 0.85);
+          border-color: rgba(203, 213, 225, 0.9);
+          color: #0f172a;
+        }
+        .form-input:focus, .form-select:focus,
+        .card-box input[type="text"]:focus,
+        .card-box select:focus {
+          border-color: var(--accent);
+          box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+        }
+        .btn {
+          padding: 8px 14px;
+          border-radius: 9px;
+          border: 1px solid var(--border-glass);
+          background: rgba(255, 255, 255, 0.1);
+          color: var(--text-primary);
+          font-size: 13px;
+          font-weight: 600;
+          cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+          user-select: none;
+        }
+        .theme-light .btn {
+          background: rgba(255, 255, 255, 0.85);
+          border-color: rgba(203, 213, 225, 0.9);
+          color: #0f172a;
+        }
+        .btn:hover {
+          background: rgba(255, 255, 255, 0.2);
+          transform: translateY(-1px);
+        }
+        .theme-light .btn:hover {
+          background: rgba(255, 255, 255, 1);
+        }
+        .btn:active {
+          transform: translateY(0);
+        }
+        .btn-primary {
+          background: var(--accent) !important;
+          color: #ffffff !important;
+          border-color: var(--accent) !important;
+          box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35);
+        }
+        .btn-primary:hover {
+          filter: brightness(1.1);
+        }
+        .btn-sm {
+          padding: 5px 10px;
+          font-size: 12px;
+          border-radius: 7px;
+        }
+        .btn-danger {
+          background: rgba(239, 68, 68, 0.18) !important;
+          color: #ef4444 !important;
+          border-color: rgba(239, 68, 68, 0.35) !important;
+        }
+        .btn-danger:hover {
+          background: #ef4444 !important;
+          color: #ffffff !important;
+        }
+
       </style>
 
-      <div class="dashboard-root theme-dark">
-        <!-- Liquid Background Morphing Orbs (Fluide Lichtwellen & Wasserbrechung) -->
+      ${isSettings ? `
+        <div class="dashboard-root theme-dark" style="min-height:calc(100vh - 56px);padding:24px 32px 80px 32px;box-sizing:border-box;">
+          <!-- Liquid Background Morphing Orbs -->
+          <div class="liquid-backdrop" aria-hidden="true">
+            <div class="liquid-orb liquid-orb-1"></div>
+            <div class="liquid-orb liquid-orb-2"></div>
+            <div class="liquid-orb liquid-orb-3"></div>
+            <div class="liquid-orb liquid-orb-4"></div>
+          </div>
+          <div id="settingsPageContainer" style="max-width:960px;margin:0 auto;position:relative;z-index:10;"></div>
+        </div>
+      ` : `
+        <div class="dashboard-root theme-dark">
+          <!-- Liquid Background Morphing Orbs (Fluide Lichtwellen & Wasserbrechung) -->
         <div class="liquid-backdrop" aria-hidden="true">
           <div class="liquid-orb liquid-orb-1"></div>
           <div class="liquid-orb liquid-orb-2"></div>
           <div class="liquid-orb liquid-orb-3"></div>
           <div class="liquid-orb liquid-orb-4"></div>
         </div>
+
+        <!-- Lovelace Edit Mode Banner -->
+        ${(() => {
+          const isEdit = (this._hass && this._hass.editMode) || (typeof window !== 'undefined' && window.location.search.includes('edit=1'));
+          if (!isEdit) return '';
+          return `
+            <div style="background:linear-gradient(135deg,rgba(2,132,199,0.9),rgba(79,70,229,0.9));border-radius:14px;padding:10px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;color:white;box-shadow:0 8px 24px rgba(0,0,0,0.3);position:relative;z-index:20;">
+              <div style="display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px;">
+                ${this._icon('settings', { size: 16, color: '#fff' })} ${this._t('edit_dashboard')}
+              </div>
+              <button class="btn-micro" id="btnEditBannerSettings" style="background:white;color:#0284c7;font-weight:700;border:none;padding:5px 14px;border-radius:8px;cursor:pointer;">
+                ${this._t('settings')}
+              </button>
+            </div>
+          `;
+        })()}
 
         <!-- Top Bar Navigation & Status Chips -->
         <div class="top-bar">
@@ -5012,6 +6431,9 @@ class VisionGlassDashboard extends HTMLElement {
             <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('lock_loading')}</div>
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
+            <button class="chip chip-settings" id="chipSettings" title="${this._t('settings')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
+              ${this._icon('settings', { size: 14, style: 'margin-right:4px;' })} ${this._t('settings')}
+            </button>
           </div>
         </div>
 
@@ -5021,13 +6443,13 @@ class VisionGlassDashboard extends HTMLElement {
           <div class="sidebar-card">
             <!-- Top Location & Greeting -->
             <div class="sidebar-header-badge">
-              <span class="sidebar-pill">${this._icon('map-pin', { size: 13, style: 'margin-right:4px;' })} Misburg-Nord • Hannover</span>
+              <span class="sidebar-pill">${this._icon('map-pin', { size: 13, style: 'margin-right:4px;' })} ${(this._hass && this._hass.config && this._hass.config.location_name) || (this._config && this._config.location_name) || 'Home'}</span>
             </div>
 
             <!-- Live Clock & Date -->
             <div class="sidebar-clock-wrap">
               <div class="clock-display" id="liveClock">--:--:--</div>
-              <div class="sidebar-date-sub" id="sidebarDateSub">Wird geladen...</div>
+              <div class="sidebar-date-sub" id="sidebarDateSub">${this._t('loading')}</div>
             </div>
 
             <!-- Weather Hero Box (Clickable to open weather modal) -->
@@ -5035,7 +6457,7 @@ class VisionGlassDashboard extends HTMLElement {
               <div class="sidebar-weather-top">
                 <div>
                   <div class="weather-temp" id="weatherTemp">--°C</div>
-                  <div class="weather-cond" id="weatherCondition">Laden...</div>
+                  <div class="weather-cond" id="weatherCondition">${this._t('loading')}</div>
                 </div>
                 <div class="weather-icon-glow" id="weatherIcon">${this._icon('weather-partlycloudy', { size: 30, cls: 'icon-weather' })}</div>
               </div>
@@ -5049,7 +6471,7 @@ class VisionGlassDashboard extends HTMLElement {
             <!-- Termine & Müllabfuhr -->
             <div class="agenda-block" id="sidebarAgenda">
               <div class="agenda-title" style="display:flex;align-items:center;gap:6px;">${this._icon('calendar', { size: 14, cls: 'icon-calendar' })} TERMINE & MÜLLABFUHR</div>
-              <div class="agenda-item"><span>Wird geladen...</span></div>
+              <div class="agenda-item"><span>${this._t('loading')}</span></div>
             </div>
 
             <!-- Quick House Glance Bar -->
@@ -5097,7 +6519,7 @@ class VisionGlassDashboard extends HTMLElement {
                   <div class="room-header">
                     <div>
                       <div class="room-name">${room.name} &rsaquo;</div>
-                      <div class="room-sub">Wird geladen...</div>
+                      <div class="room-sub">${this._t('loading')}</div>
                     </div>
                   </div>
 
@@ -5133,31 +6555,42 @@ class VisionGlassDashboard extends HTMLElement {
 
         <!-- Floating Glass Dock -->
         <div class="dock-container">
-          <div class="dock-item" id="dockLighting" title="Beleuchtung">${this._icon('light', { size: 19, cls: 'icon-light' })}</div>
-          <div class="dock-item" id="dockClimate" title="Heizung & Schnellregler">${this._icon('climate', { size: 19, cls: 'icon-climate' })}</div>
-          <div class="dock-item" id="dockStats" title="Statistiken & Verläufe">${this._icon('chart-bar', { size: 19, cls: 'icon-stats' })}</div>
-          <div class="dock-item" id="dockSecurity" title="Sicherheit & Wohnungsschloss">${this._icon('lock-closed', { size: 19, cls: 'icon-security' })}</div>
-          <div class="dock-item" id="dockAlarmo" title="Alarmanlage (Alarmo)">${this._icon('shield', { size: 19, cls: 'icon-alarmo' })}</div>
-          <div class="dock-item" id="dockSwitches" title="Geräte & Steckdosen">${this._icon('plug', { size: 19, cls: 'icon-switch' })}</div>
-          <div class="dock-item" id="dockBattery" title="Batteriestatus & Wartung">${this._icon('battery-full', { size: 19, cls: 'icon-battery' })}</div>
-          <div class="dock-item" id="dockWeather" title="Wetter, Vorhersage & Radar">${this._icon('weather-partlycloudy', { size: 19, cls: 'icon-weather' })}</div>
+          <div class="dock-item" id="dockLighting" title="${this._t('lighting')}">${this._icon('light', { size: 19, cls: 'icon-light' })}</div>
+          <div class="dock-item" id="dockClimate" title="${this._t('climate')}">${this._icon('climate', { size: 19, cls: 'icon-climate' })}</div>
+          <div class="dock-item" id="dockStats" title="${this._t('stats')}">${this._icon('chart-bar', { size: 19, cls: 'icon-stats' })}</div>
+          <div class="dock-item" id="dockSecurity" title="${this._t('security')}">${this._icon('lock-closed', { size: 19, cls: 'icon-security' })}</div>
+          <div class="dock-item" id="dockAlarmo" title="${this._t('alarmo')}">${this._icon('shield', { size: 19, cls: 'icon-alarmo' })}</div>
+          <div class="dock-item" id="dockSwitches" title="${this._t('switches')}">${this._icon('plug', { size: 19, cls: 'icon-switch' })}</div>
+          <div class="dock-item" id="dockBattery" title="${this._t('battery')}">${this._icon('battery-full', { size: 19, cls: 'icon-battery' })}</div>
+          <div class="dock-item" id="dockWeather" title="${this._t('weather')}">${this._icon('weather-partlycloudy', { size: 19, cls: 'icon-weather' })}</div>
+          <div class="dock-item" id="dockSettings" title="${this._t('settings')}" style="color:var(--accent);">${this._icon('settings', { size: 19 })}</div>
         </div>
 
         <!-- Popup Modal Container -->
         <div class="modal-overlay hidden" id="modalContainer">
           <div class="modal-card">
             <div class="modal-header">
-              <div class="modal-title" id="modalTitle">Steuerung</div>
+              <div class="modal-title" id="modalTitle">${this._t('settings')}</div>
               <button class="close-btn" id="modalCloseBtn">&times;</button>
             </div>
             <div class="modal-body" id="modalBody"></div>
           </div>
         </div>
       </div>
+      `}
     `;
 
     // Apply active theme class immediately
     this._applyThemeClass();
+
+    if (isSettings) {
+      const cont = this.shadowRoot.getElementById('settingsPageContainer');
+      if (cont) this._renderSettingsContent(cont, false);
+      if (!this._standaloneConfigLoaded) {
+        this._loadDashboardConfigForStandaloneSettings();
+      }
+      return;
+    }
 
     // Event Listeners
     // Sidebar Weather Card Click -> Open Weather Modal
@@ -5184,6 +6617,12 @@ class VisionGlassDashboard extends HTMLElement {
     this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
     this.shadowRoot.getElementById('dockBattery').addEventListener('click', () => this._openModal('battery'));
     this.shadowRoot.getElementById('dockWeather').addEventListener('click', () => this._openModal('weather'));
+    const dSet = this.shadowRoot.getElementById('dockSettings');
+    if (dSet) dSet.addEventListener('click', () => this._openModal('settings'));
+    const cSet = this.shadowRoot.getElementById('chipSettings');
+    if (cSet) cSet.addEventListener('click', () => this._openModal('settings'));
+    const bSet = this.shadowRoot.getElementById('btnEditBannerSettings');
+    if (bSet) bSet.addEventListener('click', () => this._openModal('settings'));
 
     // Modal Close
     this.shadowRoot.getElementById('modalCloseBtn').addEventListener('click', () => this._closeModal());
@@ -5312,7 +6751,32 @@ class VisionGlassDashboardEditor extends HTMLElement {
 
   set hass(hass) {
     this._hass = hass;
+    if (this._config && (this._config.mode === 'settings' || this._config.view === 'settings') && (!this._config.rooms || this._config.rooms.length === 0)) {
+      this._loadMainCardConfig();
+    }
     this.render();
+  }
+
+  async _loadMainCardConfig() {
+    if (this._loadedMainCard || !this._hass || !this._hass.callWS) return;
+    try {
+      const currentDash = await this._hass.callWS({ type: 'lovelace/config', url_path: 'vision-glass', force_reload: true });
+      if (currentDash && currentDash.views) {
+        for (const view of currentDash.views) {
+          if (view.cards) {
+            const mainCard = view.cards.find(c => c.type === 'custom:vision-glass-dashboard' && c.mode !== 'settings');
+            if (mainCard) {
+              this._loadedMainCard = true;
+              const mode = this._config.mode;
+              this._config = JSON.parse(JSON.stringify(mainCard));
+              this._config.mode = mode;
+              this.render();
+              break;
+            }
+          }
+        }
+      }
+    } catch (e) {}
   }
 
   _fireConfigChanged() {

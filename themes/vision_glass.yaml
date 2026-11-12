@@ -18,6 +18,32 @@ Vision Glass:
       -webkit-backdrop-filter: var(--app-header-backdrop-filter, blur(28px) saturate(190%)) !important;
       border-bottom: 1px solid var(--divider-color, rgba(255, 255, 255, 0.20)) !important;
     }
+    ha-app-layout::before {
+      content: "" !important;
+      position: fixed !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+      opacity: 0.38 !important;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(56, 189, 248, 0.40) 0%, transparent 45%),
+        radial-gradient(circle at 80% 75%, rgba(99, 102, 241, 0.35) 0%, transparent 48%),
+        radial-gradient(circle at 72% 20%, rgba(16, 185, 129, 0.30) 0%, transparent 42%),
+        radial-gradient(circle at 22% 80%, rgba(245, 158, 11, 0.25) 0%, transparent 42%) !important;
+      filter: blur(85px) !important;
+      animation: ambientThemeWaft 30s ease-in-out infinite alternate !important;
+    }
+    @keyframes ambientThemeWaft {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate3d(50px, -35px, 0) scale(1.18) rotate(20deg);
+      }
+      100% {
+        transform: translate3d(-40px, 45px, 0) scale(0.94) rotate(-20deg);
+      }
+    }
   card-mod-sidebar: |
     :host {
       background: var(--sidebar-background-color) !important;
@@ -291,6 +317,32 @@ Vision Glass Light:
       -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.85) !important;
     }
+    ha-app-layout::before {
+      content: "" !important;
+      position: fixed !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+      opacity: 0.32 !important;
+      background:
+        radial-gradient(circle at 18% 22%, rgba(125, 211, 252, 0.45) 0%, transparent 45%),
+        radial-gradient(circle at 82% 78%, rgba(216, 180, 254, 0.40) 0%, transparent 48%),
+        radial-gradient(circle at 75% 25%, rgba(153, 246, 228, 0.35) 0%, transparent 42%),
+        radial-gradient(circle at 25% 75%, rgba(253, 230, 138, 0.30) 0%, transparent 42%) !important;
+      filter: blur(85px) !important;
+      animation: ambientThemeWaftLight 32s ease-in-out infinite alternate !important;
+    }
+    @keyframes ambientThemeWaftLight {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate3d(45px, -30px, 0) scale(1.15) rotate(15deg);
+      }
+      100% {
+        transform: translate3d(-35px, 40px, 0) scale(0.95) rotate(-15deg);
+      }
+    }
   card-mod-sidebar: |
     :host {
       background: rgba(238, 246, 255, 0.85) !important;
@@ -450,6 +502,32 @@ Vision Glass Dark:
       backdrop-filter: blur(28px) saturate(180%) !important;
       -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
       border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    ha-app-layout::before {
+      content: "" !important;
+      position: fixed !important;
+      inset: 0 !important;
+      pointer-events: none !important;
+      z-index: 0 !important;
+      opacity: 0.40 !important;
+      background:
+        radial-gradient(circle at 20% 25%, rgba(14, 165, 233, 0.40) 0%, transparent 45%),
+        radial-gradient(circle at 80% 75%, rgba(99, 102, 241, 0.35) 0%, transparent 48%),
+        radial-gradient(circle at 70% 20%, rgba(16, 185, 129, 0.30) 0%, transparent 42%),
+        radial-gradient(circle at 25% 80%, rgba(245, 158, 11, 0.25) 0%, transparent 42%) !important;
+      filter: blur(90px) !important;
+      animation: ambientThemeWaftDark 28s ease-in-out infinite alternate !important;
+    }
+    @keyframes ambientThemeWaftDark {
+      0% {
+        transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+      }
+      50% {
+        transform: translate3d(50px, -40px, 0) scale(1.20) rotate(22deg);
+      }
+      100% {
+        transform: translate3d(-45px, 45px, 0) scale(0.92) rotate(-22deg);
+      }
     }
   card-mod-sidebar: |
     :host {
