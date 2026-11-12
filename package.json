@@ -1,6 +1,6 @@
 {
   "name": "ha-vision-glass-dashboard",
-  "version": "2.3.0",
+  "version": "2.3.1",
   "description": "Turnkey spatial glassmorphism smart home dashboard for Home Assistant with initial auto-provisioning, visual configurator, custom dock sections, and custom overlay categories",
   "main": "dist/vision-glass-dashboard.js",
   "keywords": [
