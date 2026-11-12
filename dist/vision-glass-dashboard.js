@@ -2579,11 +2579,11 @@ class VisionGlassDashboard extends HTMLElement {
     const otherSensors = [];
 
     // Humidity & Illuminance for Room Overview
-    const humEntity = room.humidity_entity || `sensor.prasenzmelder_${roomSlug}_humidity` || `sensor.ir_${roomSlug}_humidity`;
+    const humEntity = (room.humidity_entity && room.humidity_entity.trim()) ? room.humidity_entity.trim() : null;
     const humObj = humEntity && this._hass.states[humEntity];
     const curHum = humObj && humObj.state && !isNaN(parseFloat(humObj.state)) ? Math.round(parseFloat(humObj.state)) : null;
 
-    const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${roomSlug}_illuminance` || `sensor.bewegungsmelder_${roomSlug}_illuminance`;
+    const luxEntity = (room.illuminance_entity && room.illuminance_entity.trim()) ? room.illuminance_entity.trim() : null;
     const luxObj = luxEntity && this._hass.states[luxEntity];
     const curLux = luxObj && luxObj.state && !isNaN(parseFloat(luxObj.state)) ? Math.round(parseFloat(luxObj.state)) : null;
 
@@ -3396,8 +3396,8 @@ class VisionGlassDashboard extends HTMLElement {
     // 2. Humidity
     const humEl = card.querySelector('.env-humidity');
     if (humEl) {
-      const hEntity = room.humidity_entity || `sensor.prasenzmelder_${room.id}_humidity` || `sensor.ir_${room.id}_humidity`;
-      const hState = this._hass.states[hEntity];
+      const hEntity = (room.humidity_entity && room.humidity_entity.trim()) ? room.humidity_entity.trim() : null;
+      const hState = hEntity && this._hass.states[hEntity];
       if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
         humEl.innerHTML = `${this._icon('droplet', { size: 11, cls: 'icon-humidity', style: 'margin-right:3px;' })} ${Math.round(parseFloat(hState.state))}%`;
         humEl.style.display = 'inline-flex';
@@ -3409,8 +3409,8 @@ class VisionGlassDashboard extends HTMLElement {
     // 3. Illuminance / Lux
     const luxEl = card.querySelector('.env-lux');
     if (luxEl) {
-      const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${room.id}_illuminance` || `sensor.bewegungsmelder_${room.id}_illuminance`;
-      const luxState = this._hass.states[luxEntity];
+      const luxEntity = (room.illuminance_entity && room.illuminance_entity.trim()) ? room.illuminance_entity.trim() : null;
+      const luxState = luxEntity && this._hass.states[luxEntity];
       if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
         luxEl.innerHTML = `${this._icon('lux', { size: 11, cls: 'icon-lux', style: 'margin-right:3px;' })} ${Math.round(parseFloat(luxState.state))} lx`;
         luxEl.style.display = 'inline-flex';
@@ -7264,14 +7264,14 @@ class VisionGlassDashboard extends HTMLElement {
                   initTemp = `${parseFloat(tVal).toFixed(1)}°C`;
                 }
 
-                const hEntity = room.humidity_entity || `sensor.prasenzmelder_${room.id}_humidity` || `sensor.ir_${room.id}_humidity`;
-                const hState = this._hass.states[hEntity];
+                const hEntity = (room.humidity_entity && room.humidity_entity.trim()) ? room.humidity_entity.trim() : null;
+                const hState = hEntity && this._hass.states[hEntity];
                 if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
                   initHum = `${Math.round(parseFloat(hState.state))}%`;
                 }
 
-                const luxEntity = room.illuminance_entity || `sensor.prasenzmelder_${room.id}_illuminance` || `sensor.bewegungsmelder_${room.id}_illuminance`;
-                const luxState = this._hass.states[luxEntity];
+                const luxEntity = (room.illuminance_entity && room.illuminance_entity.trim()) ? room.illuminance_entity.trim() : null;
+                const luxState = luxEntity && this._hass.states[luxEntity];
                 if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
                   initLux = `${Math.round(parseFloat(luxState.state))} lx`;
                 }
@@ -7291,7 +7291,7 @@ class VisionGlassDashboard extends HTMLElement {
 
                   <!-- Room Environmental Readings (Temp, Humidity, Lux) -->
                   <div class="room-env-bar">
-                    <span class="env-pill env-temp">${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${initTemp}</span>
+                    <span class="env-pill env-temp" style="${initTemp !== '--°C' ? 'display:inline-flex;' : 'display:none;'}">${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${initTemp}</span>
                     <span class="env-pill env-humidity" style="${initHum ? 'display:inline-flex;' : 'display:none;'}">${this._icon('droplet', { size: 11, cls: 'icon-humidity', style: 'margin-right:3px;' })} ${initHum || '--%'}</span>
                     <span class="env-pill env-lux" style="${initLux ? 'display:inline-flex;' : 'display:none;'}">${this._icon('lux', { size: 11, cls: 'icon-lux', style: 'margin-right:3px;' })} ${initLux || '-- lx'}</span>
                   </div>
@@ -7299,13 +7299,13 @@ class VisionGlassDashboard extends HTMLElement {
                   <!-- Bottom Row: Actions & Heating Quick Stepper -->
                   <div class="room-bottom-row">
                     <div class="room-actions">
-                      ${room.light_entity ? `<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
-                      ${room.climate_entity ? `<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
-                      ${(room.media_entity || room.audio_entity || room.video_entity) ? `<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
-                      ${room.lock_entity ? `<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
+                      ${(room.light_entity && room.light_entity.trim()) ? `<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
+                      ${(room.climate_entity && room.climate_entity.trim()) ? `<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
+                      ${((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim())) ? `<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
+                      ${(room.lock_entity && room.lock_entity.trim()) ? `<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
                     </div>
 
-                    ${room.climate_entity ? `
+                    ${(room.climate_entity && room.climate_entity.trim()) ? `
                       <div class="quick-climate-stepper" title="${this._t('adjust_temp')}">
                         <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="${this._t('temp_down')}" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 11 })}</button>
                         <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
