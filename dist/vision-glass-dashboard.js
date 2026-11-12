@@ -781,27 +781,6 @@ class VisionGlassDashboard extends HTMLElement {
       root.classList.remove('theme-light');
       root.classList.add('theme-dark');
     }
-    this._syncGlobalHaTheme(isDay);
-  }
-
-  _syncGlobalHaTheme(isDay) {
-    try {
-      const targetTheme = isDay ? 'Vision Glass Light' : 'Vision Glass Dark';
-      const isDark = !isDay;
-      const expected = JSON.stringify({ theme: targetTheme, dark: isDark });
-      if (localStorage.getItem('selectedTheme') !== expected) {
-        localStorage.setItem('selectedTheme', expected);
-      }
-      const ha = document.querySelector('home-assistant');
-      if (ha && ha.hass && ha.hass.selectedTheme) {
-        if (ha.hass.selectedTheme.theme !== targetTheme || ha.hass.selectedTheme.dark !== isDark) {
-          ha.hass.selectedTheme = { theme: targetTheme, dark: isDark };
-          if (typeof ha._applyTheme === 'function') {
-            ha._applyTheme();
-          }
-        }
-      }
-    } catch(e) {}
   }
 
   _callService(domain, service, data) {
@@ -1666,23 +1645,23 @@ class VisionGlassDashboard extends HTMLElement {
               </div>
 
               ${(komfortVal != null || ecoVal != null) ? `
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:2px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:6px 8px;">
-                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
-                      ${this._icon('sun', { size: 12, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal || '--'}°C</strong>
+                <div style="display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:4px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:5px 10px;">
+                    <span style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--text-primary);">
+                      ${this._icon('sun', { size: 13, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal || '--'}°C</strong>
                     </span>
                     <div style="display:flex;gap:4px;">
-                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
-                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">-</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">+</button>
                     </div>
                   </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:6px 8px;">
-                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
-                      ${this._icon('snowflake', { size: 12, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal || '--'}°C</strong>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:5px 10px;">
+                    <span style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--text-primary);">
+                      ${this._icon('snowflake', { size: 13, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal || '--'}°C</strong>
                     </span>
                     <div style="display:flex;gap:4px;">
-                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
-                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">-</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">+</button>
                     </div>
                   </div>
                 </div>
@@ -2430,23 +2409,23 @@ class VisionGlassDashboard extends HTMLElement {
                 </div>
 
                 <!-- Individual Room Helpers: Komfort & Eco -->
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:2px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:6px 8px;">
-                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
-                      ${this._icon('sun', { size: 12, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal}°C</strong>
+                <div style="display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;margin-top:4px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.22);border-radius:10px;padding:5px 10px;">
+                    <span style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--text-primary);">
+                      ${this._icon('sun', { size: 13, cls: 'icon-light' })} ${this._t('comfort')}: <strong style="color:#f59e0b;margin-left:2px;">${komfortVal}°C</strong>
                     </span>
                     <div style="display:flex;gap:4px;">
-                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
-                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">-</button>
+                      <button class="btn-step" data-helper="${komfortHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">+</button>
                     </div>
                   </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:6px 8px;">
-                    <span style="font-size:11px;font-weight:600;display:flex;align-items:center;gap:3px;color:var(--text-primary);">
-                      ${this._icon('snowflake', { size: 12, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal}°C</strong>
+                  <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.22);border-radius:10px;padding:5px 10px;">
+                    <span style="font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;color:var(--text-primary);">
+                      ${this._icon('snowflake', { size: 13, cls: 'icon-climate' })} Eco: <strong style="color:#38bdf8;margin-left:2px;">${ecoVal}°C</strong>
                     </span>
                     <div style="display:flex;gap:4px;">
-                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;">-</button>
-                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;">+</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="-0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">-</button>
+                      <button class="btn-step" data-helper="${ecoHelperId}" data-delta="0.5" style="width:24px;height:24px;font-size:12px;padding:0;line-height:22px;">+</button>
                     </div>
                   </div>
                 </div>
@@ -3145,18 +3124,18 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <!-- Sensor Legend & Details -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${seriesData.map(s => `
-              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
-                <div style="flex:1;">
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
+                <div style="flex:1;min-width:0;">
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
-                    <span style="font-weight:600;font-size:13px;">${s.name}</span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+                    <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
                   </div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.id}">${s.id}</div>
                 </div>
-                <div style="text-align:right;">
-                  <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
+                <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+                  <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
                 </div>
               </div>
             `).join('')}
@@ -3231,18 +3210,18 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <!-- Sensor Legend & Light Status -->
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
             ${seriesData.map(s => `
-              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
-                <div style="flex:1;">
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
+                <div style="flex:1;min-width:0;">
                   <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;"></span>
-                    <span style="font-weight:600;font-size:13px;">${s.name}</span>
+                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+                    <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
                   </div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;">${s.id}</div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.id}">${s.id}</div>
                 </div>
-                <div style="text-align:right;">
-                  <span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal} lx` : '--'}</span>
+                <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+                  <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal} lx` : '--'}</span>
                 </div>
               </div>
             `).join('')}
