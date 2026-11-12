@@ -5228,7 +5228,6 @@ class VisionGlassDashboard extends HTMLElement {
           <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-sm btn-primary" id="btnSyncAreas">🔄 ${this._t('sync_areas_btn')}</button>
-            <button class="btn btn-sm" id="btnSettingsAddRoom">+ ${this._t('add_room')}</button>
           </div>
         </div>
 
@@ -5242,7 +5241,6 @@ class VisionGlassDashboard extends HTMLElement {
                 <div style="display:flex;gap:4px;">
                   <button class="btn btn-sm btn-set-room-up" data-ridx="${rIdx}" ${rIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
                   <button class="btn btn-sm btn-set-room-down" data-ridx="${rIdx}" ${rIdx === rooms.length - 1 ? 'disabled' : ''} title="Nach unten">▼</button>
-                  <button class="btn btn-sm btn-set-room-del" data-ridx="${rIdx}" style="color:#ef4444;" title="${this._t('delete_room')}">✕</button>
                 </div>
               </div>
 
@@ -5746,17 +5744,6 @@ class VisionGlassDashboard extends HTMLElement {
       };
     });
 
-    // Room delete
-    container.querySelectorAll('.btn-set-room-del').forEach(b => {
-      b.onclick = () => {
-        const idx = parseInt(b.getAttribute('data-ridx'));
-        if (this._config.rooms && confirm(`${this._t('delete_room')} "${this._config.rooms[idx]?.name || ''}"?`)) {
-          this._config.rooms.splice(idx, 1);
-          this._renderSettingsContent(container, isModal);
-        }
-      };
-    });
-
     // Sync Areas
     const btnSync = container.querySelector('#btnSyncAreas');
     if (btnSync) {
@@ -5773,38 +5760,6 @@ class VisionGlassDashboard extends HTMLElement {
           toast.style.display = 'block';
           setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
         }
-      };
-    }
-
-    // Room add from unmapped HA areas
-    const btnAdd = container.querySelector('#btnSettingsAddRoom');
-    if (btnAdd) {
-      btnAdd.onclick = async () => {
-        let areas = [];
-        if (this._hass && this._hass.callWS) {
-          try {
-            areas = await this._hass.callWS({ type: 'config/area_registry/list' });
-          } catch (e) {
-            if (this._hass.areas) areas = Object.values(this._hass.areas);
-          }
-        } else if (this._hass && this._hass.areas) {
-          areas = Object.values(this._hass.areas);
-        }
-        const unmapped = areas.filter(a => !this._config.rooms.some(r => r.id === a.area_id));
-        if (unmapped.length === 0) {
-          alert('Alle Home Assistant Bereiche sind bereits auf dem Dashboard vorhanden.');
-          return;
-        }
-        const nextArea = unmapped[0];
-        if (!this._config.rooms) this._config.rooms = [];
-        this._config.rooms.push({
-          id: nextArea.area_id,
-          name: nextArea.name,
-          picture: nextArea.picture || null,
-          overlay_categories: []
-        });
-        await this._saveDashboardConfig(this._config);
-        this._renderSettingsContent(container);
       };
     }
 
@@ -8436,11 +8391,10 @@ class VisionGlassDashboardEditor extends HTMLElement {
         <!-- TAB 1: RÄUME & BENTO KARTEN -->
         ${this._activeTab === 'rooms' ? `
           <div class="banner">
-            Hier konfigurierst du die <strong>Bento-Raumkarten</strong> auf dem Dashboard. Ändere die Reihenfolge mit [▲] [▼] oder füge neue Räume hinzu.
+            Hier siehst du die <strong>Bento-Raumkarten</strong> des Dashboards (automatisch synchronisiert aus Home Assistant Bereichen). Ändere die Reihenfolge frei mit [▲] [▼].
           </div>
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <label>Vorhandene Räume</label>
-            <button class="btn btn-sm btn-primary" id="btnAddRoom">+ Raum hinzufügen</button>
+            <label>Vorhandene Räume (${rooms.length})</label>
           </div>
           <div class="item-list">
             ${rooms.map((r, rIdx) => `
@@ -8450,7 +8404,6 @@ class VisionGlassDashboardEditor extends HTMLElement {
                   <div class="reorder-btns">
                     <button class="btn btn-sm btn-room-up" data-idx="${rIdx}" ${rIdx === 0 ? 'disabled' : ''}>▲</button>
                     <button class="btn btn-sm btn-room-down" data-idx="${rIdx}" ${rIdx === rooms.length - 1 ? 'disabled' : ''}>▼</button>
-                    <button class="btn btn-sm btn-room-del" data-idx="${rIdx}" style="color:#ef4444;">✕</button>
                   </div>
                 </div>
                 <!-- Read-only HA Area Badge -->
@@ -8735,34 +8688,6 @@ class VisionGlassDashboardEditor extends HTMLElement {
         }
       });
     });
-
-    this.shadowRoot.querySelectorAll('.btn-room-del').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const idx = parseInt(btn.getAttribute('data-idx'));
-        if (confirm('Diesen Raum wirklich entfernen?')) {
-          this._config.rooms.splice(idx, 1);
-          this._fireConfigChanged();
-          this.render();
-        }
-      });
-    });
-
-    const btnAddR = this.shadowRoot.getElementById('btnAddRoom');
-    if (btnAddR) {
-      btnAddR.addEventListener('click', () => {
-        const newId = 'raum_' + Date.now().toString().slice(-4);
-        this._config.rooms.push({
-          id: newId,
-          name: 'Neuer Raum',
-          overlay_categories: [
-            { id: 'light', name: 'Beleuchtung', icon: 'ci:light-cove-strip', entities: [] },
-            { id: 'climate', name: 'Klima', icon: 'mdi:radiator', entities: [] }
-          ]
-        });
-        this._fireConfigChanged();
-        this.render();
-      });
-    }
 
     // Dedicated Settings redirect
     const btnEdSet = this.shadowRoot.getElementById('btnEditorOpenSettings');
