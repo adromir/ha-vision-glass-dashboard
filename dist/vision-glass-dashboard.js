@@ -900,7 +900,8 @@ class VisionGlassDashboard extends HTMLElement {
   "type": "<polyline points=\"4 7 4 4 20 4 20 7\"/><line x1=\"9\" y1=\"20\" x2=\"15\" y2=\"20\"/><line x1=\"12\" y1=\"4\" x2=\"12\" y2=\"20\"/>",
   "arrow-up-circle": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"16 12 12 8 8 12\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"8\"/>",
   "alert-circle": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/>",
-  "star": "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>"
+  "star": "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>",
+  "flame": "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-.61-.22-1.17-.58-1.61L12 11.5l-.92 1.39c-.36.44-.58 1-.58 1.61Z\" fill=\"currentColor\" opacity=\"0.4\"/><path d=\"M12 2c1 3 4 4.5 4 9a6 6 0 1 1-12 0c0-4.5 3-6 4-9 1 2 2 3 4 0Z\"/>"
 };
   }
 
@@ -1104,6 +1105,7 @@ class VisionGlassDashboard extends HTMLElement {
       all_lights_entity: 'light.licht_wohnung',
       washing_machine_switch: 'switch.switch_washingmachine_smartplug_switch',
       washing_machine_power: 'sensor.switch_washingmachine_smartplug_power',
+      helper_controls: {},
       rooms: [
         {
           id: 'wohnzimmer',
@@ -1574,7 +1576,8 @@ class VisionGlassDashboard extends HTMLElement {
           illuminance_entity: r.illuminance_entity !== undefined ? r.illuminance_entity : (sr.illuminance_entity || null)
         };
       }) : (stub.rooms || []),
-      dock: config.dock || stub.dock || { auto_detect: true, items: [] }
+      dock: config.dock || stub.dock || { auto_detect: true, items: [] },
+      helper_controls: config.helper_controls || stub.helper_controls || {}
     };
     this._render();
     this._initialRenderDone = true;
@@ -1669,6 +1672,9 @@ class VisionGlassDashboard extends HTMLElement {
     this._startClock();
     this._ensureSettingsViewExists();
     try {
+      this._applyHeaderStyles();
+    } catch (e) {}
+    try {
       const huiRoot = this._getHuiRoot();
       if (huiRoot && window.MutationObserver) {
         this._editModeObserver = new MutationObserver(() => {
@@ -1681,6 +1687,27 @@ class VisionGlassDashboard extends HTMLElement {
     this._editModeInterval = setInterval(() => {
       this._updateEditModeBanner();
     }, 2000);
+  }
+
+  _applyHeaderStyles() {
+    const isLight = this._resolveEffectiveThemeMode() === 'light';
+    const bgHeader = isLight ? 'rgba(248, 250, 252, 0.96)' : 'rgba(11, 17, 30, 0.96)';
+    try {
+      if (document && document.documentElement) {
+        document.documentElement.style.setProperty('--app-header-background-color', bgHeader);
+      }
+      const root = document.querySelector('home-assistant')?.shadowRoot
+        ?.querySelector('home-assistant-main')?.shadowRoot
+        ?.querySelector('ha-drawer ha-panel-lovelace')?.shadowRoot
+        ?.querySelector('hui-root')?.shadowRoot;
+      const header = root?.querySelector('ha-top-app-bar') || root?.querySelector('app-header') || root?.querySelector('.header');
+      if (header) {
+        header.style.zIndex = '100';
+        header.style.backgroundColor = bgHeader;
+        header.style.backdropFilter = 'blur(20px)';
+        header.style.webkitBackdropFilter = 'blur(20px)';
+      }
+    } catch (e) {}
   }
 
   disconnectedCallback() {
@@ -1822,6 +1849,10 @@ class VisionGlassDashboard extends HTMLElement {
       root.style.removeProperty('--text-primary');
       root.style.removeProperty('--text-secondary');
     }
+
+    try {
+      this._applyHeaderStyles();
+    } catch (e) {}
   }
 
   _callService(domain, service, data) {
@@ -2634,6 +2665,55 @@ class VisionGlassDashboard extends HTMLElement {
     }
   }
 
+  _renderClimateControlRow(entityId, stateObj) {
+    if (!stateObj) return '';
+    const name = stateObj.attributes?.friendly_name || entityId;
+    const curTemp = stateObj.attributes?.current_temperature != null ? parseFloat(stateObj.attributes.current_temperature).toFixed(1) : '--';
+    const targetTemp = stateObj.attributes?.temperature != null ? parseFloat(stateObj.attributes.temperature).toFixed(1) : '21.0';
+    const isHeating = stateObj.attributes?.hvac_action === 'heating' || stateObj.attributes?.call_for_heat === true || (stateObj.attributes?.heating_power && stateObj.attributes.heating_power > 0.05);
+    const isOff = stateObj.state === 'off' || stateObj.attributes?.hvac_action === 'off';
+    const isWindowOpen = stateObj.attributes?.window_open === true;
+
+    // Battery warning check (< 10%)
+    let battWarningHtml = '';
+    const battVal = stateObj?.attributes?.battery_level ?? stateObj?.attributes?.battery ?? (stateObj?.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
+    if (battVal != null && !isNaN(battVal) && battVal < 10) {
+      battWarningHtml = `
+        <span class="badge-battery-warn" style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.5);color:#ef4444;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:2px;margin-left:4px;" title="Batterie kritisch: ${Math.round(battVal)}%">
+          ${this._icon('battery-critical', { size: 10, color: '#ef4444' })} ${Math.round(battVal)}%
+        </span>
+      `;
+    }
+
+    return `
+      <div class="control-row climate-control-badge ${isHeating ? 'is-heating' : ''}" style="padding:10px 14px;min-height:54px;display:flex;align-items:center;justify-content:space-between;border-radius:14px;border:1px solid ${isHeating ? 'rgba(245,158,11,0.5)' : 'var(--border-glass)'};background:var(--bg-card);box-shadow:${isHeating ? '0 0 14px rgba(245,158,11,0.18)' : 'var(--shadow-ambient)'};">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+          <div class="climate-icon-wrap ${isHeating ? 'pulsing-flame' : ''}" style="width:34px;height:34px;border-radius:10px;background:${isHeating ? 'rgba(245,158,11,0.2)' : 'rgba(56,189,248,0.12)'};display:flex;align-items:center;justify-content:center;color:${isHeating ? '#f59e0b' : 'var(--accent)'};flex-shrink:0;">
+            ${this._icon(isHeating ? 'flame' : 'climate', { size: 18 })}
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.3;" title="${name}">
+              <span>${name}</span>
+              ${isHeating ? `<span style="background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.5);color:#f59e0b;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">🔥 Heizen</span>` : (isOff ? `<span style="background:rgba(255,255,255,0.06);color:var(--text-secondary);padding:1px 6px;border-radius:6px;font-size:10px;">Aus</span>` : `<span style="background:rgba(56,189,248,0.15);color:var(--accent);padding:1px 6px;border-radius:6px;font-size:10px;">Bereit</span>`)}
+              ${isWindowOpen ? `<span style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">🪟 Fenster offen</span>` : ''}
+              ${battWarningHtml}
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">
+              <span>Ist: <b style="color:var(--text-primary);">${curTemp}°C</b></span>
+              <span style="margin:0 4px;">•</span>
+              <span>Ziel: <b style="color:var(--accent);">${targetTemp}°C</b></span>
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+          <button class="btn-step" data-cust-climate="${entityId}" data-delta="-0.5" title="Temperatur -0.5°C" style="width:28px;height:28px;border-radius:8px;font-size:14px;padding:0;display:flex;align-items:center;justify-content:center;">-</button>
+          <span style="font-size:14px;font-weight:800;color:var(--accent);min-width:40px;text-align:center;">${targetTemp}°</span>
+          <button class="btn-step" data-cust-climate="${entityId}" data-delta="0.5" title="Temperatur +0.5°C" style="width:28px;height:28px;border-radius:8px;font-size:14px;padding:0;display:flex;align-items:center;justify-content:center;">+</button>
+        </div>
+      </div>
+    `;
+  }
+
   _renderSwitchControlRow(entityId, stateObj) {
     const isOn = stateObj && (stateObj.state === 'on' || stateObj.state === 'playing');
     const name = (stateObj && stateObj.attributes.friendly_name) || entityId;
@@ -2653,6 +2733,49 @@ class VisionGlassDashboard extends HTMLElement {
 
     const pwr = stateObj?.attributes?.current_power_w ?? stateObj?.attributes?.power ?? stateObj?.attributes?.load_power;
     const pwrDisplay = (pwr != null && !isNaN(parseFloat(pwr))) ? ` • ${Math.round(parseFloat(pwr))} W` : '';
+
+    const prefCtrl = this._config?.helper_controls?.[entityId];
+    if (prefCtrl === 'badge') {
+      return this._renderSensorBadgeHtml(entityId, stateObj);
+    }
+    if (prefCtrl === 'push_button') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;gap:4px;" title="${name}">
+                <span>${name}</span>
+                ${battWarningHtml}
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);">${isOn ? `${this._t('on')}${pwrDisplay}` : this._t('off')}</div>
+            </div>
+          </div>
+          <button type="button" class="vg-push-btn ${isOn ? 'active' : ''}" data-push-entity="${entityId}" data-push-domain="${domain}">
+            ${isOn ? this._t('on') : this._t('off')}
+          </button>
+        </div>
+      `;
+    }
+    if (prefCtrl === 'icon_button') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;gap:4px;" title="${name}">
+                <span>${name}</span>
+                ${battWarningHtml}
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);">${isOn ? `${this._t('on')}${pwrDisplay}` : this._t('off')}</div>
+            </div>
+          </div>
+          <button type="button" class="vg-icon-btn ${isOn ? 'active' : ''}" data-icon-entity="${entityId}" data-icon-domain="${domain}" title="${isOn ? this._t('on') : this._t('off')}">
+            ${icon}
+          </button>
+        </div>
+      `;
+    }
 
     return `
       <div class="control-row" style="padding:10px 14px;min-height:48px;">
@@ -2717,14 +2840,15 @@ class VisionGlassDashboard extends HTMLElement {
   }
 
   _renderGenericEntityRow(entityId, stateObj) {
-    const name = (stateObj && stateObj.attributes.friendly_name) || entityId;
+    if (!stateObj) return '';
+    const name = stateObj.attributes?.friendly_name || entityId;
     const icon = this._resolveEntityIcon(entityId, stateObj);
     const domain = entityId.split('.')[0];
-    const val = stateObj ? stateObj.state : '--';
+    const val = stateObj.state != null ? stateObj.state : '--';
 
     // Battery warning check
     let battWarningHtml = '';
-    const battVal = stateObj?.attributes?.battery_level ?? stateObj?.attributes?.battery ?? (stateObj?.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
+    const battVal = stateObj.attributes?.battery_level ?? stateObj.attributes?.battery ?? (stateObj.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
     if (battVal != null && !isNaN(battVal) && battVal < 10) {
       battWarningHtml = `
         <span class="badge-battery-warn" style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.5);color:#ef4444;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:2px;margin-left:4px;" title="Batterie kritisch: ${Math.round(battVal)}%">
@@ -2733,19 +2857,106 @@ class VisionGlassDashboard extends HTMLElement {
       `;
     }
 
-    if (domain === 'input_number') {
+    if (domain === 'climate') {
+      return this._renderClimateControlRow(entityId, stateObj);
+    }
+
+    const prefCtrl = this._config?.helper_controls?.[entityId];
+
+    if (domain === 'switch' || domain === 'input_boolean') {
+      return this._renderSwitchControlRow(entityId, stateObj);
+    }
+
+    if (domain === 'input_number' || domain === 'number') {
       const numVal = parseFloat(val) || 0;
+      const min = stateObj.attributes?.min ?? 0;
+      const max = stateObj.attributes?.max ?? 100;
+      const step = stateObj.attributes?.step ?? 1;
+      const unit = stateObj.attributes?.unit_of_measurement || '';
+
+      if (prefCtrl === 'badge') {
+        return this._renderSensorBadgeHtml(entityId, stateObj);
+      }
+
+      if (prefCtrl === 'slider') {
+        const cleanId = entityId.replace(/[^a-zA-Z0-9_]/g, '_');
+        return `
+          <div class="control-row" style="padding:10px 14px;min-height:50px;display:flex;flex-direction:column;gap:6px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex-shrink:0;">${icon}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                ${battWarningHtml}
+              </div>
+              <div class="vg-slider-val" id="vgVal_${cleanId}">${numVal}${unit ? ' ' + unit : ''}</div>
+            </div>
+            <div class="vg-slider-wrap">
+              <input type="range" class="vg-range-slider" data-slider-entity="${entityId}" data-slider-val-target="vgVal_${cleanId}" data-slider-unit="${unit}" min="${min}" max="${max}" step="${step}" value="${numVal}">
+            </div>
+          </div>
+        `;
+      }
+
       return `
         <div class="control-row" style="padding:10px 14px;min-height:48px;">
           <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
             <div style="flex-shrink:0;">${icon}</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">
+              <span>${name}</span>
+              ${battWarningHtml}
+            </div>
           </div>
           <div style="display:flex;align-items:center;gap:6px;">
-            <span style="font-weight:700;font-size:13px;color:var(--accent);">${numVal}</span>
-            <button class="btn-step" data-helper="${entityId}" data-delta="-1" style="width:26px;height:26px;padding:0;">-</button>
-            <button class="btn-step" data-helper="${entityId}" data-delta="1" style="width:26px;height:26px;padding:0;">+</button>
+            <span style="font-weight:700;font-size:13px;color:var(--accent);">${numVal}${unit ? ' ' + unit : ''}</span>
+            <button class="btn-step" data-helper="${entityId}" data-delta="-${step}" style="width:26px;height:26px;padding:0;">-</button>
+            <button class="btn-step" data-helper="${entityId}" data-delta="${step}" style="width:26px;height:26px;padding:0;">+</button>
           </div>
+        </div>
+      `;
+    }
+
+    if (domain === 'input_select' || domain === 'select') {
+      const options = stateObj.attributes?.options || [];
+      if (prefCtrl === 'dropdown') {
+        return `
+          <div class="control-row" style="padding:10px 14px;min-height:48px;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+              ${battWarningHtml}
+            </div>
+            <select class="vg-glass-select" data-select-entity="${entityId}" style="background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);border-radius:8px;padding:6px 10px;font-size:12px;cursor:pointer;">
+              ${options.map(opt => `<option value="${opt}" ${opt === val ? 'selected' : ''}>${opt}</option>`).join('')}
+            </select>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;width:100%;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+            ${battWarningHtml}
+          </div>
+          <div class="vg-seg-group">
+            ${options.map(opt => `
+              <button type="button" class="vg-seg-pill ${opt === val ? 'active' : ''}" data-seg-entity="${entityId}" data-seg-option="${opt}">${opt}</button>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    if (domain === 'input_datetime') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+            ${battWarningHtml}
+          </div>
+          <input type="time" class="vg-time-input" data-time-entity="${entityId}" value="${val.slice(0, 5)}">
         </div>
       `;
     }
@@ -2755,7 +2966,8 @@ class VisionGlassDashboard extends HTMLElement {
         <div class="control-row" style="padding:10px 14px;min-height:48px;">
           <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
             <div style="flex-shrink:0;">${icon}</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+            ${battWarningHtml}
           </div>
           <button class="btn btn-sm btn-primary" data-dyn-action="${entityId}" data-dyn-domain="${domain}" data-dyn-service="press">Ausführen</button>
         </div>
@@ -2767,7 +2979,8 @@ class VisionGlassDashboard extends HTMLElement {
         <div class="control-row" style="padding:10px 14px;min-height:48px;">
           <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
             <div style="flex-shrink:0;">${icon}</div>
-            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+            ${battWarningHtml}
           </div>
           <button class="btn btn-sm btn-primary" data-dyn-action="${entityId}" data-dyn-domain="${domain}" data-dyn-service="turn_on">Starten</button>
         </div>
@@ -2799,6 +3012,63 @@ class VisionGlassDashboard extends HTMLElement {
         sw.classList.toggle('active', !wasActive);
         sw.setAttribute('aria-checked', !wasActive ? 'true' : 'false');
         this._callService(domain, 'toggle', { entity_id: entityId });
+      };
+    });
+    rootEl.querySelectorAll('.vg-push-btn[data-push-entity]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const eId = btn.getAttribute('data-push-entity');
+        const domain = btn.getAttribute('data-push-domain') || eId.split('.')[0];
+        btn.classList.toggle('active');
+        this._callService(domain, 'toggle', { entity_id: eId });
+      };
+    });
+    rootEl.querySelectorAll('.vg-icon-btn[data-icon-entity]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const eId = btn.getAttribute('data-icon-entity');
+        const domain = btn.getAttribute('data-icon-domain') || eId.split('.')[0];
+        btn.classList.toggle('active');
+        this._callService(domain, 'toggle', { entity_id: eId });
+      };
+    });
+    rootEl.querySelectorAll('.vg-range-slider[data-slider-entity]').forEach(sl => {
+      sl.oninput = (e) => {
+        e.stopPropagation();
+        const targetId = sl.getAttribute('data-slider-val-target');
+        const unit = sl.getAttribute('data-slider-unit') || '';
+        const valEl = rootEl.querySelector('#' + targetId);
+        if (valEl) valEl.textContent = `${sl.value}${unit ? ' ' + unit : ''}`;
+      };
+      sl.onchange = (e) => {
+        e.stopPropagation();
+        const eId = sl.getAttribute('data-slider-entity');
+        const domain = eId.split('.')[0];
+        this._callService(domain, 'set_value', { entity_id: eId, value: parseFloat(sl.value) });
+      };
+    });
+    rootEl.querySelectorAll('.vg-seg-pill[data-seg-entity]').forEach(pill => {
+      pill.onclick = (e) => {
+        e.stopPropagation();
+        const eId = pill.getAttribute('data-seg-entity');
+        const opt = pill.getAttribute('data-seg-option');
+        pill.parentElement.querySelectorAll('.vg-seg-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        this._callService('input_select', 'select_option', { entity_id: eId, option: opt });
+      };
+    });
+    rootEl.querySelectorAll('.vg-glass-select[data-select-entity]').forEach(sel => {
+      sel.onchange = (e) => {
+        e.stopPropagation();
+        const eId = sel.getAttribute('data-select-entity');
+        this._callService('input_select', 'select_option', { entity_id: eId, option: sel.value });
+      };
+    });
+    rootEl.querySelectorAll('.vg-time-input[data-time-entity]').forEach(ti => {
+      ti.onchange = (e) => {
+        e.stopPropagation();
+        const eId = ti.getAttribute('data-time-entity');
+        this._callService('input_datetime', 'set_datetime', { entity_id: eId, time: ti.value + ':00' });
       };
     });
     rootEl.querySelectorAll('.btn-step[data-helper]').forEach(b => {
@@ -2886,27 +3156,7 @@ class VisionGlassDashboard extends HTMLElement {
         ${climates.length > 0 ? `
           <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Thermostate (${climates.length})</div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-            ${climates.map(c => {
-              const curTarget = c.state.attributes.temperature || 21.0;
-              const curTemp = c.state.attributes.current_temperature || '--';
-              const name = c.state.attributes.friendly_name || c.id;
-              return `
-                <div class="control-row" style="padding:10px 14px;">
-                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
-                    <div>${this._icon('climate', { size: 18, cls: 'icon-climate' })}</div>
-                    <div style="min-width:0;">
-                      <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
-                      <div style="font-size:11px;color:var(--text-secondary);">Ist: ${curTemp}°C</div>
-                    </div>
-                  </div>
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="font-weight:700;font-size:14px;color:var(--accent);">${curTarget}°</span>
-                    <button class="btn-step" data-cust-climate="${c.id}" data-delta="-0.5" style="width:26px;height:26px;font-size:13px;padding:0;">-</button>
-                    <button class="btn-step" data-cust-climate="${c.id}" data-delta="0.5" style="width:26px;height:26px;font-size:13px;padding:0;">+</button>
-                  </div>
-                </div>
-              `;
-            }).join('')}
+            ${climates.map(c => this._renderClimateControlRow(c.id, c.state)).join('')}
           </div>
         ` : ''}
 
@@ -3734,30 +3984,99 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // Climate Chip (calculate min - max across rooms)
-    const chipClimate = this.shadowRoot.getElementById('chipClimate');
-    if (chipClimate) {
-      const climateIds = [
-        'climate.better_thermostat_wohnzimmer',
-        'climate.better_thermostat_arbeitszimmer',
-        'climate.better_thermostat_schlafzimmer',
-        'climate.better_thermostat_kuche',
-        'climate.better_thermostat_badezimmer',
-        'climate.better_thermostat_flur'
-      ];
-      let temps = [];
-      climateIds.forEach(cid => {
-        const cs = this._hass.states[cid];
-        if (cs && cs.attributes && cs.attributes.current_temperature != null) {
-          temps.push(parseFloat(cs.attributes.current_temperature));
+    // Warning / DWD / NINA Chip
+    const chipWarning = this.shadowRoot.getElementById('chipWarning');
+    if (chipWarning) {
+      let activeWarning = null;
+      Object.keys(this._hass.states).forEach(eId => {
+        if (eId.startsWith('binary_sensor.warning_') || eId.startsWith('sensor.region_') || eId.includes('dwd_weather_warnings') || eId.includes('nina')) {
+          const s = this._hass.states[eId];
+          if (s && ((s.state === 'on') || (!isNaN(parseInt(s.state)) && parseInt(s.state) > 0))) {
+            activeWarning = s.attributes?.headline || s.attributes?.event || s.attributes?.description || s.attributes?.friendly_name || 'Amtliche Warnung!';
+          }
         }
       });
-      if (temps.length > 0) {
-        const minT = Math.min(...temps).toFixed(1).replace('.', ',');
-        const maxT = Math.max(...temps).toFixed(1).replace('.', ',');
-        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate')} ${minT} - ${maxT} °C`;
+      if (activeWarning) {
+        chipWarning.style.display = 'inline-flex';
+        chipWarning.innerHTML = `<span class="chip-dot" style="background:#ef4444;box-shadow:0 0 8px #ef4444;"></span> ${this._icon('alert-circle', { size: 14, color: '#ef4444', style: 'margin-right:4px;' })} ${activeWarning}`;
       } else {
-        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate')} 22°C`;
+        chipWarning.style.display = 'none';
+      }
+    }
+
+    // Washer Chip (sensor.waschmaschine + smartplug power)
+    const chipWasher = this.shadowRoot.getElementById('chipWasher');
+    if (chipWasher) {
+      const wState = this._hass.states['sensor.waschmaschine'];
+      const wPower = this._hass.states['sensor.switch_washingmachine_smartplug_power'] || this._hass.states[this._config.washing_machine_power];
+      const pVal = wPower && !isNaN(parseFloat(wPower.state)) ? parseFloat(wPower.state) : 0;
+      const st = (wState?.state || '').toLowerCase();
+
+      if (st === 'waschen' || pVal > 15) {
+        chipWasher.style.display = 'inline-flex';
+        chipWasher.innerHTML = `<span class="chip-dot dot-blue" style="background:#38bdf8;box-shadow:0 0 8px #38bdf8;"></span> 🧺 Waschen • ${Math.round(pVal)} W`;
+      } else if (st === 'fertig' || (st === 'leerlauf' && pVal < 5 && pVal > 0.5)) {
+        chipWasher.style.display = 'inline-flex';
+        chipWasher.innerHTML = `<span class="chip-dot dot-green" style="background:#10b981;box-shadow:0 0 8px #10b981;"></span> 🧺 Wäsche fertig!`;
+      } else {
+        chipWasher.style.display = 'none';
+      }
+    }
+
+    // Media Playing Chip
+    const chipMedia = this.shadowRoot.getElementById('chipMedia');
+    if (chipMedia) {
+      let playingPlayer = null;
+      Object.keys(this._hass.states).forEach(eId => {
+        if (eId.startsWith('media_player.')) {
+          const s = this._hass.states[eId];
+          if (s && s.state === 'playing') {
+            playingPlayer = s;
+          }
+        }
+      });
+      if (playingPlayer) {
+        chipMedia.style.display = 'inline-flex';
+        const title = playingPlayer.attributes?.media_title || playingPlayer.attributes?.friendly_name || 'Musik';
+        chipMedia.innerHTML = `<span class="chip-dot dot-blue" style="background:#a855f7;box-shadow:0 0 8px #a855f7;"></span> 🎵 ${title}`;
+      } else {
+        chipMedia.style.display = 'none';
+      }
+    }
+
+    // Climate Chip (calculate active heating radiators & average temperature)
+    const chipClimate = this.shadowRoot.getElementById('chipClimate');
+    if (chipClimate) {
+      const climateIds = (this._config.rooms || [])
+        .map(r => r.climate_entity)
+        .filter(Boolean);
+      if (climateIds.length === 0) {
+        climateIds.push(
+          'climate.better_thermostat_wohnzimmer',
+          'climate.better_thermostat_arbeitszimmer',
+          'climate.better_thermostat_schlafzimmer',
+          'climate.better_thermostat_kuche',
+          'climate.better_thermostat_badezimmer',
+          'climate.better_thermostat_flur'
+        );
+      }
+      let temps = [];
+      let heatingCount = 0;
+      climateIds.forEach(cid => {
+        const cs = this._hass.states[cid];
+        if (cs && cs.attributes) {
+          if (cs.attributes.current_temperature != null) {
+            temps.push(parseFloat(cs.attributes.current_temperature));
+          }
+          const isHeating = cs.attributes.hvac_action === 'heating' || cs.attributes.call_for_heat === true || (cs.attributes.heating_power && cs.attributes.heating_power > 0.05);
+          if (isHeating) heatingCount++;
+        }
+      });
+      const avgT = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1).replace('.', ',') : '21,0';
+      if (heatingCount > 0) {
+        chipClimate.innerHTML = `<span class="chip-dot dot-amber" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span> ${this._icon('flame', { size: 14, color: '#f59e0b', cls: 'pulsing-flame', style: 'margin-right:4px;' })} ${heatingCount} ${heatingCount === 1 ? 'heizt' : 'heizen'} • Ø ${avgT}°C`;
+      } else {
+        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Alle Eco • Ø ${avgT}°C`;
       }
     }
 
@@ -3826,15 +4145,25 @@ class VisionGlassDashboard extends HTMLElement {
     const tempEl = card.querySelector('.env-temp');
     if (tempEl) {
       let tVal = null;
+      let isHeating = false;
       if (room.climate_entity && this._hass.states[room.climate_entity]) {
         const c = this._hass.states[room.climate_entity];
         tVal = c.attributes.current_temperature || c.attributes.temperature;
+        isHeating = c.attributes.hvac_action === 'heating' || c.attributes.call_for_heat === true || (c.attributes.heating_power && c.attributes.heating_power > 0.05);
       }
       if (!tVal && room.temp_entity && this._hass.states[room.temp_entity]) {
         tVal = this._hass.states[room.temp_entity].state;
       }
       if (tVal && !isNaN(parseFloat(tVal))) {
-        tempEl.innerHTML = `${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
+        if (isHeating) {
+          tempEl.innerHTML = `${this._icon('flame', { size: 11, cls: 'pulsing-flame', color: '#f59e0b', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
+          tempEl.style.border = '1px solid rgba(245,158,11,0.6)';
+          tempEl.style.background = 'rgba(245,158,11,0.18)';
+        } else {
+          tempEl.innerHTML = `${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
+          tempEl.style.border = '';
+          tempEl.style.background = '';
+        }
         tempEl.style.display = 'inline-flex';
       } else {
         tempEl.style.display = 'none';
@@ -3908,10 +4237,28 @@ class VisionGlassDashboard extends HTMLElement {
 
     // 5. Quick Target Temp Stepper
     const targetValEl = card.querySelector(`#targetTemp_${idx}`);
+    const stepperEl = card.querySelector('.quick-climate-stepper');
     if (targetValEl && room.climate_entity && this._hass.states[room.climate_entity]) {
       const cObj = this._hass.states[room.climate_entity];
       let targetTemp = cObj.attributes.temperature != null ? parseFloat(cObj.attributes.temperature) : 21.0;
-      targetValEl.textContent = `${targetTemp.toFixed(1)}°`;
+      const isHeating = cObj.attributes.hvac_action === 'heating' || cObj.attributes.call_for_heat === true || (cObj.attributes.heating_power && cObj.attributes.heating_power > 0.05);
+      const isWindowOpen = cObj.attributes.window_open === true || (room.window_entity && this._hass.states[room.window_entity]?.state === 'on');
+
+      if (isWindowOpen) {
+        targetValEl.innerHTML = `${targetTemp.toFixed(1)}° <span title="Fenster offen (Heizpause)" style="font-size:11px;">🪟</span>`;
+      } else {
+        targetValEl.textContent = `${targetTemp.toFixed(1)}°`;
+      }
+
+      if (stepperEl) {
+        if (isHeating) {
+          stepperEl.style.boxShadow = '0 0 14px rgba(245,158,11,0.35)';
+          stepperEl.style.borderColor = 'rgba(245,158,11,0.6)';
+        } else {
+          stepperEl.style.boxShadow = '';
+          stepperEl.style.borderColor = '';
+        }
+      }
     }
 
     // Subtitle / Status
@@ -5629,6 +5976,7 @@ class VisionGlassDashboard extends HTMLElement {
         <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms">🏠 ${this._t('rooms_and_cards')} (${rooms.length})</button>
         <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays">📂 Raum-Overlays</button>
         <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock">⚓ ${this._t('dock_navigation')}</button>
+        <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls">🎛️ Helfer-Kontrollen</button>
         <button class="nav-tab ${activeTab === 'general' ? 'active' : ''}" data-stab="general">⚙️ Design & Allgemein</button>
       </div>
 
@@ -5922,7 +6270,89 @@ class VisionGlassDashboard extends HTMLElement {
         </button>
       </div>
 
-      <!-- TAB 4: DESIGN & ALLGEMEIN -->
+      <!-- TAB 4: HELFER-KONTROLLEN -->
+      <div id="stabContentControls" style="${activeTab === 'controls' ? '' : 'display:none;'}">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
+          Konfiguriere hier die visuelle Darstellung deiner Home Assistant Helfer (<code style="color:var(--accent);">input_boolean</code>, <code style="color:var(--accent);">input_number</code>, <code style="color:var(--accent);">input_select</code>, <code style="color:var(--accent);">input_datetime</code>) in den Raum-Overlays und Bento-Karten.
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;" id="helperControlsList">
+          ${(() => {
+            const helperControls = this._config.helper_controls || {};
+            const helperEntities = new Set(Object.keys(helperControls));
+            if (this._hass && this._hass.states) {
+              Object.keys(this._hass.states).forEach(eId => {
+                if (eId.startsWith('input_boolean.') || eId.startsWith('input_number.') || eId.startsWith('input_select.') || eId.startsWith('input_datetime.')) {
+                  helperEntities.add(eId);
+                }
+              });
+            }
+            const sorted = Array.from(helperEntities).sort();
+            if (sorted.length === 0) {
+              return '<div style="font-size:13px;color:var(--text-secondary);padding:14px;">Keine Helfer im System gefunden. Klicke unten, um eine Entität hinzuzufügen.</div>';
+            }
+
+            return sorted.map(eId => {
+              const s = this._hass && this._hass.states[eId];
+              const fname = s?.attributes?.friendly_name || eId;
+              const domain = eId.split('.')[0];
+              const curType = helperControls[eId] || (domain === 'input_number' ? 'slider' : (domain === 'input_select' ? 'segmented' : (domain === 'input_datetime' ? 'time_input' : 'switch')));
+
+              let options = [];
+              if (domain === 'input_boolean' || domain === 'switch') {
+                options = [
+                  { value: 'switch', label: 'Schalter (Glass Switch)' },
+                  { value: 'push_button', label: 'Taster (Push-Button)' },
+                  { value: 'icon_button', label: 'Icon-Button (Kreis)' },
+                  { value: 'badge', label: 'Status-Badge' }
+                ];
+              } else if (domain === 'input_number') {
+                options = [
+                  { value: 'slider', label: 'Schieberegler (Slider mit Live-Wert)' },
+                  { value: 'stepper', label: '+ / - Stepper' },
+                  { value: 'badge', label: 'Status-Badge' }
+                ];
+              } else if (domain === 'input_select') {
+                options = [
+                  { value: 'segmented', label: 'Segmentierte Tabs (Pills)' },
+                  { value: 'dropdown', label: 'Dropdown-Auswahl' }
+                ];
+              } else if (domain === 'input_datetime') {
+                options = [
+                  { value: 'time_input', label: 'Uhrzeit-Picker' },
+                  { value: 'badge', label: 'Status-Badge' }
+                ];
+              } else {
+                options = [
+                  { value: 'badge', label: 'Standard Badge' },
+                  { value: 'push_button', label: 'Taster' }
+                ];
+              }
+
+              return `
+                <div class="card-box" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid var(--border-glass);border-radius:12px;padding:12px 16px;gap:12px;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${fname}</div>
+                    <div style="font-size:11px;color:var(--text-secondary);font-family:monospace;">${eId}</div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <select class="sel-helper-ctrl" data-entity="${eId}" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:12px;font-weight:600;">
+                      ${options.map(opt => `<option value="${opt.value}" ${opt.value === curType ? 'selected' : ''}>${opt.label}</option>`).join('')}
+                    </select>
+                    <button type="button" class="btn btn-sm btn-del-helper-ctrl" data-entity="${eId}" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;padding:4px;" title="Zurücksetzen">✕</button>
+                  </div>
+                </div>
+              `;
+            }).join('');
+          })()}
+        </div>
+
+        <button type="button" class="btn btn-sm btn-primary" id="btnAddHelperControl" style="margin-top:14px;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          🔍 + Weitere Helfer-Entität konfigurieren
+        </button>
+      </div>
+
+      <!-- TAB 5: DESIGN & ALLGEMEIN -->
       <div id="stabContentGeneral" style="${activeTab === 'general' ? '' : 'display:none;'}">
         <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-bottom:14px;">
           <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🎨 Erscheinungsbild & Theme</div>
@@ -6431,6 +6861,32 @@ class VisionGlassDashboard extends HTMLElement {
       };
     });
 
+    // Helper Controls Handlers
+    const btnAddHelper = container.querySelector('#btnAddHelperControl');
+    if (btnAddHelper) {
+      btnAddHelper.onclick = () => {
+        this._showEntityPicker({
+          defaultDomain: 'input_number',
+          onSelect: (eId) => {
+            if (!this._config.helper_controls) this._config.helper_controls = {};
+            const domain = eId.split('.')[0];
+            const defType = domain === 'input_number' ? 'slider' : (domain === 'input_select' ? 'segmented' : (domain === 'input_datetime' ? 'time_input' : 'switch'));
+            this._config.helper_controls[eId] = defType;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    }
+    container.querySelectorAll('.btn-del-helper-ctrl').forEach(btn => {
+      btn.onclick = () => {
+        const eId = btn.getAttribute('data-entity');
+        if (this._config.helper_controls && this._config.helper_controls[eId]) {
+          delete this._config.helper_controls[eId];
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
     // Live Preview for Appearance Controls
     const selThemeMode = container.querySelector('#cfgThemeMode');
     if (selThemeMode) {
@@ -6537,6 +6993,14 @@ class VisionGlassDashboard extends HTMLElement {
 
         const cAutoDock = container.querySelector('#chkSettingsDockAutoDetect');
         if (cAutoDock && this._config.dock) this._config.dock.auto_detect = cAutoDock.checked;
+
+        // Collect helper controls
+        const helperCtrls = {};
+        container.querySelectorAll('.sel-helper-ctrl').forEach(sel => {
+          const eId = sel.getAttribute('data-entity');
+          if (eId) helperCtrls[eId] = sel.value;
+        });
+        this._config.helper_controls = helperCtrls;
 
         // Persist via WebSocket to Lovelace
         await this._saveDashboardConfig(this._config);
@@ -8430,10 +8894,164 @@ class VisionGlassDashboard extends HTMLElement {
           color: #ffffff !important;
         }
 
+        /* --- Enhanced Climate & Flame Styles --- */
+        .pulsing-flame {
+          animation: pulseFlame 1.8s ease-in-out infinite alternate;
+        }
+        @keyframes pulseFlame {
+          0% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(245, 158, 11, 0.4)); }
+          100% { transform: scale(1.15); filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.85)); }
+        }
+        .climate-control-badge.is-heating {
+          border-color: rgba(245, 158, 11, 0.5) !important;
+          background: rgba(245, 158, 11, 0.08) !important;
+          box-shadow: 0 0 16px rgba(245, 158, 11, 0.22) !important;
+        }
+
+        /* --- Helper Controls: Push Button, Icon Button, Slider, Segmented, Time --- */
+        .vg-push-btn {
+          padding: 8px 16px;
+          border-radius: 12px;
+          border: 1px solid var(--border-glass);
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          font-weight: 600;
+          font-size: 13px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: var(--shadow-ambient);
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+        }
+        .vg-push-btn:hover {
+          transform: translateY(-1px);
+          filter: brightness(1.1);
+        }
+        .vg-push-btn:active {
+          transform: translateY(1px);
+        }
+        .vg-push-btn.active {
+          background: var(--accent);
+          color: #ffffff;
+          border-color: var(--accent);
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+        }
+
+        .vg-icon-btn {
+          width: 38px;
+          height: 38px;
+          border-radius: 50%;
+          border: 1px solid var(--border-glass);
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          box-shadow: var(--shadow-ambient);
+        }
+        .vg-icon-btn:hover {
+          transform: scale(1.08);
+        }
+        .vg-icon-btn.active {
+          background: var(--accent);
+          color: #ffffff;
+          border-color: var(--accent);
+          box-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
+        }
+
+        .vg-slider-wrap {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          width: 100%;
+          max-width: 220px;
+        }
+        .vg-range-slider {
+          -webkit-appearance: none;
+          appearance: none;
+          flex: 1;
+          height: 6px;
+          border-radius: 3px;
+          background: rgba(255, 255, 255, 0.15);
+          outline: none;
+          transition: background 0.2s;
+        }
+        .theme-light .vg-range-slider {
+          background: rgba(15, 23, 42, 0.15);
+        }
+        .vg-range-slider::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          appearance: none;
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: var(--accent);
+          cursor: pointer;
+          border: 2px solid #ffffff;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+          transition: transform 0.15s;
+        }
+        .vg-range-slider::-webkit-slider-thumb:hover {
+          transform: scale(1.18);
+        }
+        .vg-slider-val {
+          font-size: 13px;
+          font-weight: 700;
+          color: var(--accent);
+          min-width: 44px;
+          text-align: right;
+        }
+
+        .vg-seg-group {
+          display: flex;
+          background: rgba(0, 0, 0, 0.18);
+          padding: 3px;
+          border-radius: 10px;
+          gap: 3px;
+          border: 1px solid var(--border-subtle);
+        }
+        .theme-light .vg-seg-group {
+          background: rgba(15, 23, 42, 0.06);
+        }
+        .vg-seg-pill {
+          padding: 5px 12px;
+          border-radius: 7px;
+          font-size: 12px;
+          font-weight: 600;
+          color: var(--text-secondary);
+          background: transparent;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .vg-seg-pill.active {
+          background: var(--accent);
+          color: #ffffff;
+          box-shadow: 0 2px 8px rgba(56, 189, 248, 0.35);
+        }
+
+        .vg-time-input {
+          padding: 6px 10px;
+          border-radius: 8px;
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          border: 1px solid var(--border-subtle);
+          font-family: inherit;
+          font-size: 13px;
+          font-weight: 600;
+          outline: none;
+        }
+        .vg-time-input:focus {
+          border-color: var(--accent);
+        }
+
       </style>
 
       ${isSettings ? `
-        <div class="dashboard-root theme-dark" style="min-height:calc(100vh - 56px);padding:24px 32px 80px 32px;box-sizing:border-box;">
+        <div class="dashboard-root theme-dark" style="min-height:calc(100vh - 56px);padding:28px 32px 80px 32px;box-sizing:border-box;">
           <!-- Liquid Background Morphing Orbs -->
           <div class="liquid-backdrop" aria-hidden="true">
             <div class="liquid-orb liquid-orb-1"></div>
@@ -8441,7 +9059,7 @@ class VisionGlassDashboard extends HTMLElement {
             <div class="liquid-orb liquid-orb-3"></div>
             <div class="liquid-orb liquid-orb-4"></div>
           </div>
-          <div id="settingsPageContainer" style="max-width:960px;margin:0 auto;position:relative;z-index:1;"></div>
+          <div id="settingsPageContainer" style="max-width:960px;margin:14px auto 0 auto;position:relative;z-index:1;"></div>
         </div>
       ` : `
         <div class="dashboard-root theme-dark">
@@ -8477,6 +9095,9 @@ class VisionGlassDashboard extends HTMLElement {
           <div class="chips-container">
             <div class="chip" id="chipPersonAndreas" title="Status Andreas">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Andreas...</div>
             <div class="chip" id="chipPersonShanty" title="Status Shanty">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Shanty...</div>
+            <div class="chip" id="chipWarning" style="display:none;"></div>
+            <div class="chip" id="chipWasher" style="display:none;"></div>
+            <div class="chip" id="chipMedia" style="display:none;"></div>
             <div class="chip" id="chipLights">${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('lights_loading')}</div>
             <div class="chip" id="chipClimate">${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate_loading')}</div>
             <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('lock_loading')}</div>
@@ -8876,9 +9497,31 @@ class VisionGlassDashboardEditor extends HTMLElement {
     this.dispatchEvent(event);
   }
 
+  _t(key) {
+    const dict = {
+      lighting: 'Beleuchtung',
+      climate: 'Heizung',
+      stats: 'Statistiken',
+      security: 'Sicherheit',
+      alarmo: 'Alarmo',
+      switches: 'Geräte & Schalter',
+      battery: 'Batteriestatus',
+      weather: 'Wetter'
+    };
+    return dict[key] || key;
+  }
+
   render() {
     if (!this.shadowRoot) return;
+    try {
+      this._renderInternal();
+    } catch (err) {
+      console.error('[VisionGlassDashboardEditor] render error:', err);
+      this.shadowRoot.innerHTML = `<div style="padding:16px;color:#ef4444;font-family:sans-serif;"><b>Konfigurations-Hinweis:</b> Bitte verwende die dedizierte Einstellungsseite unter <code>/vision-glass/settings</code>.</div>`;
+    }
+  }
 
+  _renderInternal() {
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
     const rooms = this._config.rooms || [];
     const curRoom = rooms[this._selectedRoomIdx] || rooms[0] || null;
