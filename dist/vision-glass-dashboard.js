@@ -5802,36 +5802,56 @@ class VisionGlassDashboard extends HTMLElement {
     });
 
     // Entity Picker for Room Properties
+    const openRoomPicker = (rIdx, prop, targetInp) => {
+      const room = this._config.rooms && this._config.rooms[rIdx];
+      if (!room) return;
+      const curVal = targetInp ? targetInp.value : (room[prop] || '');
+      
+      let defDomain = 'all';
+      if (prop === 'light_entity') defDomain = 'light';
+      else if (prop === 'climate_entity') defDomain = 'climate';
+      else if (prop === 'switch_entity') defDomain = 'switch';
+      else if (prop === 'tv_entity' || prop === 'video_entity' || prop === 'media_entity') defDomain = 'media_player';
+      else if (prop === 'temp_entity' || prop === 'humidity_entity' || prop === 'illuminance_entity') defDomain = 'sensor';
+      else if (prop === 'presence_entity' || prop === 'window_entity') defDomain = 'binary_sensor';
+      else if (prop === 'target_temp_entity') defDomain = 'input_number';
+      
+      this._showEntityPicker({
+        currentValue: curVal,
+        roomId: room.id,
+        roomName: room.name,
+        defaultDomain: defDomain,
+        onSelect: (selectedId) => {
+          if (targetInp) targetInp.value = selectedId;
+          if (this._config.rooms && this._config.rooms[rIdx]) {
+            this._config.rooms[rIdx][prop] = selectedId;
+          }
+        }
+      });
+    };
+
     container.querySelectorAll('.btn-pick-entity').forEach(btn => {
       btn.onclick = () => {
         const rIdx = parseInt(btn.getAttribute('data-ridx'));
         const prop = btn.getAttribute('data-prop');
-        const room = this._config.rooms && this._config.rooms[rIdx];
-        if (!room) return;
         const targetInp = container.querySelector(`.in-room-prop[data-ridx="${rIdx}"][data-prop="${prop}"]`);
-        const curVal = targetInp ? targetInp.value : (room[prop] || '');
-        
-        let defDomain = 'all';
-        if (prop === 'light_entity') defDomain = 'light';
-        else if (prop === 'climate_entity') defDomain = 'climate';
-        else if (prop === 'switch_entity') defDomain = 'switch';
-        else if (prop === 'tv_entity' || prop === 'video_entity' || prop === 'media_entity') defDomain = 'media_player';
-        else if (prop === 'temp_entity' || prop === 'humidity_entity' || prop === 'illuminance_entity') defDomain = 'sensor';
-        else if (prop === 'presence_entity' || prop === 'window_entity') defDomain = 'binary_sensor';
-        else if (prop === 'target_temp_entity') defDomain = 'input_number';
-        
-        this._showEntityPicker({
-          currentValue: curVal,
-          roomId: room.id,
-          roomName: room.name,
-          defaultDomain: defDomain,
-          onSelect: (selectedId) => {
-            if (targetInp) targetInp.value = selectedId;
-            if (this._config.rooms && this._config.rooms[rIdx]) {
-              this._config.rooms[rIdx][prop] = selectedId;
-            }
-          }
-        });
+        openRoomPicker(rIdx, prop, targetInp);
+      };
+    });
+
+    container.querySelectorAll('.in-room-prop').forEach(inp => {
+      inp.style.cursor = 'pointer';
+      inp.onclick = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const prop = inp.getAttribute('data-prop');
+        openRoomPicker(rIdx, prop, inp);
+      };
+      inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const prop = inp.getAttribute('data-prop');
+        if (this._config.rooms && this._config.rooms[rIdx]) {
+          this._config.rooms[rIdx][prop] = inp.value.trim();
+        }
       };
     });
 
