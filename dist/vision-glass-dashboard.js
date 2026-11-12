@@ -1195,25 +1195,42 @@ class VisionGlassDashboard extends HTMLElement {
         try {
           const currentDash = await this._hass.callWS({ type: 'lovelace/config', url_path: 'vision-glass', force_reload: true });
           if (currentDash && currentDash.views) {
+            // Update root dashboard theme to persist across reloads
+            const themeMode = this._config.theme_mode || 'auto';
+            if (themeMode === 'light') {
+              currentDash.theme = 'Vision Glass Light';
+            } else if (themeMode === 'dark') {
+              currentDash.theme = 'Vision Glass Dark';
+            } else {
+              currentDash.theme = 'Vision Glass';
+            }
+
             let found = false;
             for (const view of currentDash.views) {
+              if (view.theme) delete view.theme;
               if (view.cards) {
                 for (let i = 0; i < view.cards.length; i++) {
-                  if (view.cards[i].type === 'custom:vision-glass-dashboard' && view.cards[i].mode !== 'settings') {
-                    const saveConfig = JSON.parse(JSON.stringify(this._config));
-                    delete saveConfig.mode;
-                    delete saveConfig.title;
-                    view.cards[i] = saveConfig;
-                    found = true;
-                    break;
+                  if (view.cards[i].type === 'custom:vision-glass-dashboard') {
+                    if (view.cards[i].mode !== 'settings') {
+                      const saveConfig = JSON.parse(JSON.stringify(this._config));
+                      delete saveConfig.mode;
+                      delete saveConfig.title;
+                      view.cards[i] = saveConfig;
+                      found = true;
+                    } else {
+                      view.cards[i].theme_mode = themeMode;
+                      view.cards[i].background_style = this._config.background_style;
+                      view.cards[i].ambient_speed = this._config.ambient_speed;
+                      view.cards[i].background_mode = this._config.background_mode;
+                      view.cards[i].color_scheme = this._config.color_scheme;
+                    }
                   }
                 }
               }
-              if (found) break;
             }
             if (found) {
               await this._hass.callWS({ type: 'lovelace/config/save', url_path: 'vision-glass', config: currentDash });
-              console.info('[VisionGlass] Successfully saved dashboard configuration to Lovelace storage!');
+              console.info(`[VisionGlass] Successfully saved dashboard configuration and theme (${currentDash.theme}) to Lovelace storage!`);
             }
           }
         } catch (wsErr) {
@@ -1514,8 +1531,8 @@ class VisionGlassDashboard extends HTMLElement {
         return {
           ...sr,
           ...r,
-          humidity_entity: r.humidity_entity || sr.humidity_entity,
-          illuminance_entity: r.illuminance_entity || sr.illuminance_entity
+          humidity_entity: r.humidity_entity !== undefined ? r.humidity_entity : (sr.humidity_entity || null),
+          illuminance_entity: r.illuminance_entity !== undefined ? r.illuminance_entity : (sr.illuminance_entity || null)
         };
       }) : stub.rooms,
       dock: config.dock || stub.dock || { auto_detect: true, items: [] }
@@ -5635,6 +5652,38 @@ class VisionGlassDashboard extends HTMLElement {
         });
       };
     });
+
+    // Live Preview for Appearance Controls
+    const selThemeMode = container.querySelector('#cfgThemeMode');
+    if (selThemeMode) {
+      selThemeMode.onchange = () => {
+        this._config.theme_mode = selThemeMode.value;
+        this._applyThemeClass();
+      };
+    }
+    const selBgStyle = container.querySelector('#cfgBgStyle');
+    if (selBgStyle) {
+      selBgStyle.onchange = () => {
+        this._config.background_style = selBgStyle.value;
+        const rowBgUrl = container.querySelector('#rowCustomBgUrl');
+        if (rowBgUrl) rowBgUrl.style.display = (selBgStyle.value === 'custom') ? 'block' : 'none';
+        this._applyThemeClass();
+      };
+    }
+    const selBgMode = container.querySelector('#cfgBgMode');
+    if (selBgMode) {
+      selBgMode.onchange = () => {
+        this._config.background_mode = selBgMode.value;
+        this._applyThemeClass();
+      };
+    }
+    const selAmbientSpeed = container.querySelector('#cfgAmbientSpeed');
+    if (selAmbientSpeed) {
+      selAmbientSpeed.onchange = () => {
+        this._config.ambient_speed = selAmbientSpeed.value;
+        this._applyThemeClass();
+      };
+    }
 
     // Save button
     const btnSave = container.querySelector('#btnSaveDashboardSettings');
