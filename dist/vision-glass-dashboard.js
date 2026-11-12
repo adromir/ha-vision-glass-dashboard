@@ -2952,72 +2952,154 @@ class VisionGlassDashboard extends HTMLElement {
           })() : ''}
         </div>
 
-        ${otherSwitches.length > 0 ? `
-          <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('other_devices')} (${otherSwitches.length})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-            ${otherSwitches.map(s => {
-              const isOn = s.state && s.state.state === 'on';
-              const name = (s.state && s.state.attributes.friendly_name) || s.id;
-              const domain = s.id.split('.')[0];
-              const icon = this._resolveEntityIcon(s.id, s.state);
-              return `
-                <div class="control-row" style="padding:10px 14px;min-height:48px;">
-                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
-                    <div style="flex-shrink:0;">${icon}</div>
-                    <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
-                  </div>
-                  <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
-                    ${isOn ? this._t('on') : this._t('off')}
-                  </button>
+        ${(room.overlay_categories && room.overlay_categories.length > 0) ? `
+          ${room.overlay_categories.map(cat => {
+            const ents = (cat.entities || []).map(id => ({ id, state: this._hass.states[id] })).filter(e => e.state);
+            if (ents.length === 0) return '';
+            const switchesOrLights = ents.filter(e => e.id.startsWith('switch.') || e.id.startsWith('light.'));
+            const sensorsOrBin = ents.filter(e => e.id.startsWith('sensor.') || e.id.startsWith('binary_sensor.'));
+            const otherEnts = ents.filter(e => !e.id.startsWith('switch.') && !e.id.startsWith('light.') && !e.id.startsWith('sensor.') && !e.id.startsWith('binary_sensor.'));
+            return `
+              <div style="font-size:14px;font-weight:700;margin-top:10px;">${cat.name} (${ents.length})</div>
+              ${switchesOrLights.length > 0 ? `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+                  ${switchesOrLights.map(s => {
+                    const isOn = s.state && s.state.state === 'on';
+                    const name = (s.state && s.state.attributes.friendly_name) || s.id;
+                    const domain = s.id.split('.')[0];
+                    const icon = this._resolveEntityIcon(s.id, s.state);
+                    return `
+                      <div class="control-row" style="padding:10px 14px;min-height:48px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+                          <div style="flex-shrink:0;">${icon}</div>
+                          <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
+                        </div>
+                        <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
+                          ${isOn ? this._t('on') : this._t('off')}
+                        </button>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-              `;
-            }).join('')}
-          </div>
-        ` : ''}
-
-        ${otherSensors.length > 0 ? `
-          <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('measurements_sensors')} (${otherSensors.length})</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
-            ${otherSensors.map(s => {
-              const name = (s.state && s.state.attributes.friendly_name) || s.id;
-              let rawVal = s.state ? s.state.state : '--';
-              const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
-
-              let valDisplay = rawVal;
-              let valColor = 'var(--text-primary)';
-              if (rawVal === 'unknown') {
-                valDisplay = this._t('unknown');
-                valColor = 'var(--text-secondary)';
-              } else if (rawVal === 'unavailable') {
-                valDisplay = this._t('unavailable');
-                valColor = 'var(--text-secondary)';
-              } else if (rawVal === 'on') {
-                valDisplay = this._t('on');
-                valColor = '#10b981';
-              } else if (rawVal === 'off') {
-                valDisplay = this._t('off');
-                valColor = 'var(--text-secondary)';
-              } else if (!isNaN(parseFloat(rawVal))) {
-                const num = parseFloat(rawVal);
-                valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
-              } else if (unit) {
-                valDisplay = `${rawVal} ${unit}`;
-              }
-
-              const icon = this._resolveEntityIcon(s.id, s.state);
-
-              return `
-                <div class="sensor-badge">
-                  <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
-                    <div style="flex-shrink:0;">${icon}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
-                  </div>
-                  <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
+              ` : ''}
+              ${sensorsOrBin.length > 0 ? `
+                <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
+                  ${sensorsOrBin.map(s => {
+                    const name = (s.state && s.state.attributes.friendly_name) || s.id;
+                    let rawVal = s.state ? s.state.state : '--';
+                    const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
+                    let valDisplay = rawVal;
+                    let valColor = 'var(--text-primary)';
+                    if (rawVal === 'unknown') { valDisplay = this._t('unknown'); valColor = 'var(--text-secondary)'; }
+                    else if (rawVal === 'unavailable') { valDisplay = this._t('unavailable'); valColor = 'var(--text-secondary)'; }
+                    else if (rawVal === 'on') { valDisplay = this._t('on'); valColor = '#10b981'; }
+                    else if (rawVal === 'off') { valDisplay = this._t('off'); valColor = 'var(--text-secondary)'; }
+                    else if (!isNaN(parseFloat(rawVal))) {
+                      const num = parseFloat(rawVal);
+                      valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
+                    } else if (unit) {
+                      valDisplay = `${rawVal} ${unit}`;
+                    }
+                    const icon = this._resolveEntityIcon(s.id, s.state);
+                    return `
+                      <div class="sensor-badge">
+                        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
+                          <div style="flex-shrink:0;">${icon}</div>
+                          <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
+                        </div>
+                        <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
+                      </div>
+                    `;
+                  }).join('')}
                 </div>
-              `;
-            }).join('')}
-          </div>
-        ` : ''}
+              ` : ''}
+              ${otherEnts.length > 0 ? `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+                  ${otherEnts.map(o => {
+                    const name = (o.state && o.state.attributes.friendly_name) || o.id;
+                    const icon = this._resolveEntityIcon(o.id, o.state);
+                    return `
+                      <div class="control-row" style="padding:10px 14px;min-height:48px;">
+                        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+                          <div style="flex-shrink:0;">${icon}</div>
+                          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                        </div>
+                        <div style="font-size:12px;color:var(--text-secondary);">${o.state.state}</div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              ` : ''}
+            `;
+          }).join('')}
+        ` : `
+          ${otherSwitches.length > 0 ? `
+            <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('other_devices')} (${otherSwitches.length})</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+              ${otherSwitches.map(s => {
+                const isOn = s.state && s.state.state === 'on';
+                const name = (s.state && s.state.attributes.friendly_name) || s.id;
+                const domain = s.id.split('.')[0];
+                const icon = this._resolveEntityIcon(s.id, s.state);
+                return `
+                  <div class="control-row" style="padding:10px 14px;min-height:48px;">
+                    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+                      <div style="flex-shrink:0;">${icon}</div>
+                      <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
+                    </div>
+                    <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
+                      ${isOn ? this._t('on') : this._t('off')}
+                    </button>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+
+          ${otherSensors.length > 0 ? `
+            <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('measurements_sensors')} (${otherSensors.length})</div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
+              ${otherSensors.map(s => {
+                const name = (s.state && s.state.attributes.friendly_name) || s.id;
+                let rawVal = s.state ? s.state.state : '--';
+                const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
+
+                let valDisplay = rawVal;
+                let valColor = 'var(--text-primary)';
+                if (rawVal === 'unknown') {
+                  valDisplay = this._t('unknown');
+                  valColor = 'var(--text-secondary)';
+                } else if (rawVal === 'unavailable') {
+                  valDisplay = this._t('unavailable');
+                  valColor = 'var(--text-secondary)';
+                } else if (rawVal === 'on') {
+                  valDisplay = this._t('on');
+                  valColor = '#10b981';
+                } else if (rawVal === 'off') {
+                  valDisplay = this._t('off');
+                  valColor = 'var(--text-secondary)';
+                } else if (!isNaN(parseFloat(rawVal))) {
+                  const num = parseFloat(rawVal);
+                  valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
+                } else if (unit) {
+                  valDisplay = `${rawVal} ${unit}`;
+                }
+
+                const icon = this._resolveEntityIcon(s.id, s.state);
+
+                return `
+                  <div class="sensor-badge">
+                    <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
+                      <div style="flex-shrink:0;">${icon}</div>
+                      <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
+                    </div>
+                    <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          ` : ''}
+        `}
       </div>
     `;
 
@@ -4735,6 +4817,70 @@ class VisionGlassDashboard extends HTMLElement {
     }
   }
 
+  _ensureRoomOverlayCategories(room) {
+    if (!room) return [];
+    if (room.overlay_categories && room.overlay_categories.length > 0) {
+      return room.overlay_categories;
+    }
+    const mainEntities = [
+      room.light_entity,
+      room.climate_entity,
+      room.media_entity,
+      room.tv_entity,
+      room.video_entity,
+      room.switch_entity,
+      room.multimedia_switch
+    ].filter(e => e && typeof e === 'string' && e.trim());
+
+    const matchSwitches = [];
+    const matchSensors = [];
+
+    if (this._hass && this._hass.states) {
+      Object.keys(this._hass.states).forEach(eId => {
+        if (mainEntities.includes(eId)) return;
+        if (this._isEntityInRoom(eId, room.id, room.name)) {
+          if (eId.startsWith('switch.') || eId.startsWith('light.')) {
+            matchSwitches.push(eId);
+          } else if (eId.startsWith('sensor.') || eId.startsWith('binary_sensor.')) {
+            matchSensors.push(eId);
+          }
+        }
+      });
+    }
+
+    const defaultCats = [];
+    if (mainEntities.length > 0) {
+      defaultCats.push({
+        id: 'main',
+        name: 'Hauptgeräte',
+        entities: [...new Set(mainEntities)]
+      });
+    }
+    if (matchSwitches.length > 0) {
+      defaultCats.push({
+        id: 'switches',
+        name: 'Weitere Geräte & Steckdosen',
+        entities: [...new Set(matchSwitches)]
+      });
+    }
+    if (matchSensors.length > 0) {
+      defaultCats.push({
+        id: 'sensors',
+        name: 'Messwerte & Sensoren',
+        entities: [...new Set(matchSensors)]
+      });
+    }
+    if (defaultCats.length === 0) {
+      defaultCats.push({
+        id: 'custom',
+        name: 'Geräte & Sensoren',
+        entities: []
+      });
+    }
+    room.overlay_categories = defaultCats;
+    return defaultCats;
+  }
+
   _isEntityInRoom(eId, roomId, roomName) {
     if (!eId) return false;
     if (!roomId && !roomName) return true;
@@ -5225,26 +5371,47 @@ class VisionGlassDashboard extends HTMLElement {
             const rIdx = this._settingsOverlayRoomIdx || 0;
             const r = rooms[rIdx];
             if (!r) return '<div>Kein Raum ausgewählt</div>';
-            const cats = r.overlay_categories || [];
+            const cats = this._ensureRoomOverlayCategories(r);
             return `
-              <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;flex-direction:column;gap:12px;">
                 ${cats.map((cat, cIdx) => `
-                  <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:12px;padding:12px 14px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                      <strong style="font-size:13px;">${cat.name || cat.id}</strong>
-                      <button class="btn btn-sm btn-del-cat" data-cidx="${cIdx}" style="color:#ef4444;">✕</button>
+                  <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;gap:8px;">
+                      <div style="display:flex;align-items:center;gap:8px;flex:1;">
+                        <span style="color:var(--accent);font-weight:700;font-size:14px;">${cIdx + 1}.</span>
+                        <input type="text" class="in-cat-name" data-cidx="${cIdx}" value="${cat.name || ''}" placeholder="Kategorie Name" style="font-weight:700;font-size:14px;padding:6px 12px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);flex:1;max-width:320px;">
+                      </div>
+                      <div style="display:flex;gap:4px;">
+                        <button type="button" class="btn btn-sm btn-cat-up" data-cidx="${cIdx}" ${cIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
+                        <button type="button" class="btn btn-sm btn-cat-down" data-cidx="${cIdx}" ${cIdx === cats.length - 1 ? 'disabled' : ''} title="Nach unten">▼</button>
+                        <button type="button" class="btn btn-sm btn-del-cat" data-cidx="${cIdx}" style="color:#ef4444;" title="Kategorie löschen">✕</button>
+                      </div>
                     </div>
-                    <div class="row">
-                      <label>Kategorie-Name</label>
-                      <input type="text" class="in-cat-name" data-cidx="${cIdx}" value="${cat.name || ''}">
+
+                    <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;">
+                      Zugeordnete Entitäten (${(cat.entities || []).length}):
                     </div>
-                    <div class="row">
-                      <label>Zugeordnete Entitäten (kommagetrennt)</label>
-                      <input type="text" class="in-cat-ents" data-cidx="${cIdx}" value="${(cat.entities || []).join(', ')}">
+
+                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;min-height:36px;padding:8px;background:rgba(0,0,0,0.12);border-radius:10px;border:1px solid var(--border-subtle);align-items:center;">
+                      ${(cat.entities || []).length === 0 ? `<span style="font-size:12px;color:var(--text-secondary);padding:4px;">Keine Entitäten zugeordnet. Klicke auf "+ Entität hinzufügen".</span>` : ''}
+                      ${(cat.entities || []).map((eId, eIdx) => {
+                        const s = this._hass && this._hass.states[eId];
+                        const fname = s?.attributes?.friendly_name || eId;
+                        return `
+                          <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg-surface);border:1px solid var(--border-glass);border-radius:20px;font-size:12px;color:var(--text-primary);">
+                            <span title="${eId}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${fname}</span>
+                            <button type="button" class="btn-del-cat-ent" data-cidx="${cIdx}" data-eidx="${eIdx}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;font-size:13px;line-height:1;display:flex;align-items:center;" title="Entfernen">✕</button>
+                          </span>
+                        `;
+                      }).join('')}
                     </div>
+
+                    <button type="button" class="btn btn-sm btn-add-cat-ent" data-cidx="${cIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+                      🔍 + Entität hinzufügen
+                    </button>
                   </div>
                 `).join('')}
-                <button class="btn btn-sm btn-primary" id="btnAddOverlayCategory" style="align-self:flex-start;">+ Kategorie hinzufügen</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnAddOverlayCategory" style="align-self:flex-start;padding:8px 16px;border-radius:8px;cursor:pointer;">+ Neue Kategorie hinzufügen</button>
               </div>
             `;
           })()}
@@ -5451,9 +5618,10 @@ class VisionGlassDashboard extends HTMLElement {
     if (btnAddCat) {
       btnAddCat.onclick = () => {
         const rIdx = this._settingsOverlayRoomIdx || 0;
-        if (this._config.rooms && this._config.rooms[rIdx]) {
-          if (!this._config.rooms[rIdx].overlay_categories) this._config.rooms[rIdx].overlay_categories = [];
-          this._config.rooms[rIdx].overlay_categories.push({ id: 'neue_kategorie', name: 'Neue Kategorie', entities: [] });
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r) {
+          const cats = this._ensureRoomOverlayCategories(r);
+          cats.push({ id: 'cat_' + Date.now(), name: 'Neue Kategorie', entities: [] });
           this._renderSettingsContent(container, isModal);
         }
       };
@@ -5463,9 +5631,86 @@ class VisionGlassDashboard extends HTMLElement {
       b.onclick = () => {
         const rIdx = this._settingsOverlayRoomIdx || 0;
         const cIdx = parseInt(b.getAttribute('data-cidx'));
-        if (this._config.rooms && this._config.rooms[rIdx]?.overlay_categories) {
-          this._config.rooms[rIdx].overlay_categories.splice(cIdx, 1);
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r?.overlay_categories) {
+          r.overlay_categories.splice(cIdx, 1);
           this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-cat-up').forEach(b => {
+      b.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(b.getAttribute('data-cidx'));
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r?.overlay_categories && cIdx > 0) {
+          const tmp = r.overlay_categories[cIdx];
+          r.overlay_categories[cIdx] = r.overlay_categories[cIdx - 1];
+          r.overlay_categories[cIdx - 1] = tmp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-cat-down').forEach(b => {
+      b.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(b.getAttribute('data-cidx'));
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r?.overlay_categories && cIdx < r.overlay_categories.length - 1) {
+          const tmp = r.overlay_categories[cIdx];
+          r.overlay_categories[cIdx] = r.overlay_categories[cIdx + 1];
+          r.overlay_categories[cIdx + 1] = tmp;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-add-cat-ent').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(btn.getAttribute('data-cidx'));
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (!r?.overlay_categories?.[cIdx]) return;
+        const cat = r.overlay_categories[cIdx];
+        if (!cat.entities) cat.entities = [];
+
+        this._showEntityPicker({
+          currentValue: '',
+          roomId: r.id,
+          roomName: r.name,
+          defaultDomain: 'all',
+          onSelect: (chosenId) => {
+            if (chosenId && !cat.entities.includes(chosenId)) {
+              cat.entities.push(chosenId);
+              this._renderSettingsContent(container, isModal);
+            }
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-del-cat-ent').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(btn.getAttribute('data-cidx'));
+        const eIdx = parseInt(btn.getAttribute('data-eidx'));
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r?.overlay_categories?.[cIdx]?.entities) {
+          r.overlay_categories[cIdx].entities.splice(eIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-cat-name').forEach(inp => {
+      inp.oninput = () => {
+        const rIdx = this._settingsOverlayRoomIdx || 0;
+        const cIdx = parseInt(inp.getAttribute('data-cidx'));
+        const r = this._config.rooms && this._config.rooms[rIdx];
+        if (r?.overlay_categories?.[cIdx]) {
+          r.overlay_categories[cIdx].name = inp.value;
         }
       };
     });
