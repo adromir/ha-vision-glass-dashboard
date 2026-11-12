@@ -885,7 +885,22 @@ class VisionGlassDashboard extends HTMLElement {
   "power": "<path d=\"M18.36 6.64a9 9 0 1 1-12.73 0M12 2v10\"/>",
   "stop": "<rect x=\"6\" y=\"6\" width=\"12\" height=\"12\" rx=\"2\" fill=\"currentColor\"/>",
   "rotate-ccw": "<path d=\"M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8\"/><path d=\"M3 3v5h5\"/>",
-  "menu": "<line x1=\"4\" y1=\"6\" x2=\"20\" y2=\"6\"/><line x1=\"4\" y1=\"12\" x2=\"20\" y2=\"12\"/><line x1=\"4\" y1=\"18\" x2=\"20\" y2=\"18\"/>"
+  "menu": "<line x1=\"4\" y1=\"6\" x2=\"20\" y2=\"6\"/><line x1=\"4\" y1=\"12\" x2=\"20\" y2=\"12\"/><line x1=\"4\" y1=\"18\" x2=\"20\" y2=\"18\"/>",
+  "alarm": "<circle cx=\"12\" cy=\"13\" r=\"8\"/><path d=\"M12 9v4l2 2\"/><path d=\"M5 3 2 6\"/><path d=\"m22 6-3-3\"/><path d=\"M6.38 18.7 4 21\"/><path d=\"M17.64 18.67 20 21\"/>",
+  "timer": "<line x1=\"10\" y1=\"2\" x2=\"14\" y2=\"2\"/><line x1=\"12\" y1=\"14\" x2=\"15\" y2=\"11\"/><circle cx=\"12\" cy=\"14\" r=\"8\"/>",
+  "toggle-right": "<rect x=\"1\" y=\"5\" width=\"22\" height=\"14\" rx=\"7\" fill=\"none\"/><circle cx=\"16\" cy=\"12\" r=\"3\" fill=\"currentColor\"/>",
+  "camera": "<path d=\"M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z\"/><circle cx=\"12\" cy=\"13\" r=\"3\"/>",
+  "fan": "<path d=\"M10.827 16.379a6.082 6.082 0 0 1-8.618-7.002l5.412 1.45a6.082 6.082 0 0 1 7.002-8.618l-1.45 5.412a6.082 6.082 0 0 1 8.618 7.002l-5.412-1.45a6.082 6.082 0 0 1-7.002 8.618l1.45-5.412Z\"/><circle cx=\"12\" cy=\"12\" r=\"2\"/>",
+  "vacuum": "<path d=\"M12 17v4M8 21h8M5 11l4-7h6l4 7M3 13a9 9 0 0 0 18 0v-2H3v2Z\"/>",
+  "blinds": "<path d=\"M3 3h18M20 7H4M20 11H4M20 15H4M4 19h16M10 19v2M14 19v2\"/>",
+  "code": "<polyline points=\"16 18 22 12 16 6\"/><polyline points=\"8 6 2 12 8 18\"/>",
+  "cpu": "<rect x=\"4\" y=\"4\" width=\"16\" height=\"16\" rx=\"2\"/><rect x=\"9\" y=\"9\" width=\"6\" height=\"6\"/><path d=\"M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3\"/>",
+  "bell": "<path d=\"M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9\"/><path d=\"M13.73 21a2 2 0 0 1-3.46 0\"/>",
+  "list": "<line x1=\"8\" y1=\"6\" x2=\"21\" y2=\"6\"/><line x1=\"8\" y1=\"12\" x2=\"21\" y2=\"12\"/><line x1=\"8\" y1=\"18\" x2=\"21\" y2=\"18\"/><line x1=\"3\" y1=\"6\" x2=\"3.01\" y2=\"6\"/><line x1=\"3\" y1=\"12\" x2=\"3.01\" y2=\"12\"/><line x1=\"3\" y1=\"18\" x2=\"3.01\" y2=\"18\"/>",
+  "type": "<polyline points=\"4 7 4 4 20 4 20 7\"/><line x1=\"9\" y1=\"20\" x2=\"15\" y2=\"20\"/><line x1=\"12\" y1=\"4\" x2=\"12\" y2=\"20\"/>",
+  "arrow-up-circle": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><polyline points=\"16 12 12 8 8 12\"/><line x1=\"12\" y1=\"16\" x2=\"12\" y2=\"8\"/>",
+  "alert-circle": "<circle cx=\"12\" cy=\"12\" r=\"10\"/><line x1=\"12\" y1=\"8\" x2=\"12\" y2=\"12\"/><line x1=\"12\" y1=\"16\" x2=\"12.01\" y2=\"16\"/>",
+  "star": "<polygon points=\"12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2\"/>"
 };
   }
 
@@ -984,6 +999,9 @@ class VisionGlassDashboard extends HTMLElement {
 
     // 3. Name & Entity ID keywords
     const text = `${eId} ${fn}`;
+    if (text.includes('wecker') || text.includes('alarm')) {
+      return this._icon('alarm', { size: 16, color: '#f59e0b' });
+    }
     if (text.includes('indikator') || text.includes('indicator') || text.includes('led')) {
       return this._icon('eye', { size: 16, cls: 'icon-light' });
     }
@@ -1045,11 +1063,32 @@ class VisionGlassDashboard extends HTMLElement {
       return this._icon('sliders', { size: 16, cls: 'icon-stats' });
     }
 
-    // 4. Domain Fallbacks
+    // 4. Domain & Helper Fallbacks
     if (eId.startsWith('light.')) return this._icon('light', { size: 16, cls: 'icon-light' });
     if (eId.startsWith('switch.')) return this._icon('power', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('input_boolean.')) return this._icon('toggle-right', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('input_number.')) return this._icon('sliders', { size: 16, cls: 'icon-stats' });
+    if (eId.startsWith('input_datetime.')) return this._icon('clock', { size: 16, cls: 'icon-calendar' });
+    if (eId.startsWith('input_select.')) return this._icon('list', { size: 16, cls: 'icon-stats' });
+    if (eId.startsWith('input_text.')) return this._icon('type', { size: 16, cls: 'icon-stats' });
+    if (eId.startsWith('input_button.') || eId.startsWith('button.')) return this._icon('play', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('automation.')) return this._icon('cpu', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('script.')) return this._icon('code', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('scene.')) return this._icon('sparkles', { size: 16, cls: 'icon-light' });
+    if (eId.startsWith('timer.')) return this._icon('timer', { size: 16, cls: 'icon-stats' });
     if (eId.startsWith('climate.')) return this._icon('climate', { size: 16, cls: 'icon-climate' });
     if (eId.startsWith('media_player.')) return this._icon('music', { size: 16, cls: 'icon-media' });
+    if (eId.startsWith('alarm_control_panel.')) return this._icon('shield', { size: 16, cls: 'icon-alarmo' });
+    if (eId.startsWith('cover.')) return this._icon('blinds', { size: 16, cls: 'icon-climate' });
+    if (eId.startsWith('fan.')) return this._icon('fan', { size: 16, cls: 'icon-climate' });
+    if (eId.startsWith('vacuum.')) return this._icon('vacuum', { size: 16, cls: 'icon-switch' });
+    if (eId.startsWith('camera.')) return this._icon('camera', { size: 16, cls: 'icon-security' });
+    if (eId.startsWith('lock.')) return this._icon(val === 'locked' ? 'lock-closed' : 'lock-open', { size: 16, cls: 'icon-security' });
+    if (eId.startsWith('person.')) return this._icon('user-walk', { size: 16, cls: 'icon-security' });
+    if (eId.startsWith('zone.')) return this._icon('map-pin', { size: 16, cls: 'icon-stats' });
+    if (eId.startsWith('update.')) return this._icon('arrow-up-circle', { size: 16, cls: 'icon-stats' });
+    if (eId.startsWith('siren.')) return this._icon('bell', { size: 16, cls: 'icon-security' });
+    if (eId.startsWith('weather.')) return this._icon('weather-partlycloudy', { size: 16, cls: 'icon-weather' });
     if (eId.startsWith('binary_sensor.')) return this._icon(val === 'on' ? 'check' : 'activity', { size: 16, cls: 'icon-security' });
     if (eId.startsWith('sensor.')) return this._icon('activity', { size: 16, cls: 'icon-stats' });
 
@@ -2580,6 +2619,317 @@ class VisionGlassDashboard extends HTMLElement {
     };
   }
 
+  _getBuiltinDockIcon(id, size = 19) {
+    switch (id) {
+      case 'lighting': return this._icon('light', { size, cls: 'icon-light' });
+      case 'climate': return this._icon('climate', { size, cls: 'icon-climate' });
+      case 'stats': return this._icon('chart-bar', { size, cls: 'icon-stats' });
+      case 'security': return this._icon('lock-closed', { size, cls: 'icon-security' });
+      case 'alarmo': return this._icon('shield', { size, cls: 'icon-alarmo' });
+      case 'switches': return this._icon('plug', { size, cls: 'icon-switch' });
+      case 'battery': return this._icon('battery-full', { size, cls: 'icon-battery' });
+      case 'weather': return this._icon('weather-partlycloudy', { size, cls: 'icon-weather' });
+      case 'settings': return this._icon('settings', { size });
+      default: return this._icon('star', { size });
+    }
+  }
+
+  _renderSwitchControlRow(entityId, stateObj) {
+    const isOn = stateObj && (stateObj.state === 'on' || stateObj.state === 'playing');
+    const name = (stateObj && stateObj.attributes.friendly_name) || entityId;
+    const domain = entityId.split('.')[0];
+    const icon = this._resolveEntityIcon(entityId, stateObj);
+
+    // Battery warning check (< 10%)
+    let battWarningHtml = '';
+    const battVal = stateObj?.attributes?.battery_level ?? stateObj?.attributes?.battery ?? (stateObj?.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
+    if (battVal != null && !isNaN(battVal) && battVal < 10) {
+      battWarningHtml = `
+        <span class="badge-battery-warn" style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.5);color:#ef4444;border-radius:8px;padding:2px 6px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px;margin-left:6px;" title="Batterie kritisch: ${Math.round(battVal)}%">
+          ${this._icon('battery-critical', { size: 11, color: '#ef4444' })} ${Math.round(battVal)}%
+        </span>
+      `;
+    }
+
+    const pwr = stateObj?.attributes?.current_power_w ?? stateObj?.attributes?.power ?? stateObj?.attributes?.load_power;
+    const pwrDisplay = (pwr != null && !isNaN(parseFloat(pwr))) ? ` • ${Math.round(parseFloat(pwr))} W` : '';
+
+    return `
+      <div class="control-row" style="padding:10px 14px;min-height:48px;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+          <div style="flex-shrink:0;">${icon}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;gap:4px;" title="${name}">
+              <span>${name}</span>
+              ${battWarningHtml}
+            </div>
+            <div style="font-size:11px;color:var(--text-secondary);">${isOn ? `${this._t('on')}${pwrDisplay}` : this._t('off')}</div>
+          </div>
+        </div>
+        <div class="vg-switch ${isOn ? 'active' : ''}" data-vg-switch="${entityId}" data-vg-domain="${domain}" role="switch" aria-checked="${isOn ? 'true' : 'false'}" title="${isOn ? this._t('on') : this._t('off')}">
+          <div class="vg-switch-thumb"></div>
+        </div>
+      </div>
+    `;
+  }
+
+  _renderSensorBadgeHtml(entityId, stateObj) {
+    const name = (stateObj && stateObj.attributes.friendly_name) || entityId;
+    let rawVal = stateObj ? stateObj.state : '--';
+    const unit = (stateObj && stateObj.attributes.unit_of_measurement) || '';
+    let valDisplay = rawVal;
+    let valColor = 'var(--text-primary)';
+    if (rawVal === 'unknown') { valDisplay = this._t('unknown'); valColor = 'var(--text-secondary)'; }
+    else if (rawVal === 'unavailable') { valDisplay = this._t('unavailable'); valColor = 'var(--text-secondary)'; }
+    else if (rawVal === 'on') { valDisplay = this._t('on'); valColor = '#10b981'; }
+    else if (rawVal === 'off') { valDisplay = this._t('off'); valColor = 'var(--text-secondary)'; }
+    else if (!isNaN(parseFloat(rawVal))) {
+      const num = parseFloat(rawVal);
+      valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
+    } else if (unit) {
+      valDisplay = `${rawVal} ${unit}`;
+    }
+    const icon = this._resolveEntityIcon(entityId, stateObj);
+
+    // Battery warning check (< 10%)
+    let battWarningHtml = '';
+    const battVal = stateObj?.attributes?.battery_level ?? stateObj?.attributes?.battery ?? (stateObj?.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
+    if (battVal != null && !isNaN(battVal) && battVal < 10) {
+      battWarningHtml = `
+        <span class="badge-battery-warn" style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.5);color:#ef4444;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:2px;margin-left:4px;" title="Batterie kritisch: ${Math.round(battVal)}%">
+          ${this._icon('battery-critical', { size: 10, color: '#ef4444' })} ${Math.round(battVal)}%
+        </span>
+      `;
+    }
+
+    return `
+      <div class="sensor-badge" style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-card);border:1px solid var(--border-glass);border-radius:12px;padding:8px 12px;">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
+          <div style="flex-shrink:0;">${icon}</div>
+          <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;display:flex;align-items:center;flex-wrap:wrap;" title="${name}">
+            <span>${name}</span>
+            ${battWarningHtml}
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
+      </div>
+    `;
+  }
+
+  _renderGenericEntityRow(entityId, stateObj) {
+    const name = (stateObj && stateObj.attributes.friendly_name) || entityId;
+    const icon = this._resolveEntityIcon(entityId, stateObj);
+    const domain = entityId.split('.')[0];
+    const val = stateObj ? stateObj.state : '--';
+
+    // Battery warning check
+    let battWarningHtml = '';
+    const battVal = stateObj?.attributes?.battery_level ?? stateObj?.attributes?.battery ?? (stateObj?.attributes?.device_class === 'battery' ? parseFloat(stateObj.state) : null);
+    if (battVal != null && !isNaN(battVal) && battVal < 10) {
+      battWarningHtml = `
+        <span class="badge-battery-warn" style="background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.5);color:#ef4444;border-radius:6px;padding:1px 5px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:2px;margin-left:4px;" title="Batterie kritisch: ${Math.round(battVal)}%">
+          ${this._icon('battery-critical', { size: 10, color: '#ef4444' })} ${Math.round(battVal)}%
+        </span>
+      `;
+    }
+
+    if (domain === 'input_number') {
+      const numVal = parseFloat(val) || 0;
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;">
+            <span style="font-weight:700;font-size:13px;color:var(--accent);">${numVal}</span>
+            <button class="btn-step" data-helper="${entityId}" data-delta="-1" style="width:26px;height:26px;padding:0;">-</button>
+            <button class="btn-step" data-helper="${entityId}" data-delta="1" style="width:26px;height:26px;padding:0;">+</button>
+          </div>
+        </div>
+      `;
+    }
+
+    if (domain === 'button' || domain === 'input_button') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+          </div>
+          <button class="btn btn-sm btn-primary" data-dyn-action="${entityId}" data-dyn-domain="${domain}" data-dyn-service="press">Ausführen</button>
+        </div>
+      `;
+    }
+
+    if (domain === 'script') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+          </div>
+          <button class="btn btn-sm btn-primary" data-dyn-action="${entityId}" data-dyn-domain="${domain}" data-dyn-service="turn_on">Starten</button>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="control-row" style="padding:10px 14px;min-height:48px;">
+        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
+          <div style="flex-shrink:0;">${icon}</div>
+          <div style="font-size:13px;font-weight:600;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;" title="${name}">
+            <span>${name}</span>
+            ${battWarningHtml}
+          </div>
+        </div>
+        <div style="font-size:12px;font-weight:600;color:var(--text-secondary);">${val}</div>
+      </div>
+    `;
+  }
+
+  _bindInteractiveRows(rootEl) {
+    if (!rootEl) return;
+    rootEl.querySelectorAll('.vg-switch[data-vg-switch]').forEach(sw => {
+      sw.onclick = (e) => {
+        e.stopPropagation();
+        const entityId = sw.getAttribute('data-vg-switch');
+        const domain = sw.getAttribute('data-vg-domain') || entityId.split('.')[0];
+        const wasActive = sw.classList.contains('active');
+        sw.classList.toggle('active', !wasActive);
+        sw.setAttribute('aria-checked', !wasActive ? 'true' : 'false');
+        this._callService(domain, 'toggle', { entity_id: entityId });
+      };
+    });
+    rootEl.querySelectorAll('.btn-step[data-helper]').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const hId = b.getAttribute('data-helper');
+        const delta = parseFloat(b.getAttribute('data-delta'));
+        const s = this._hass.states[hId];
+        if (s && s.state != null) {
+          const curVal = parseFloat(s.state) || 0;
+          const newVal = Math.round((curVal + delta) * 2) / 2;
+          this._callService('input_number', 'set_value', { entity_id: hId, value: newVal });
+        }
+      };
+    });
+    rootEl.querySelectorAll('.btn-step[data-cust-climate]').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const cId = b.getAttribute('data-cust-climate');
+        const delta = parseFloat(b.getAttribute('data-delta'));
+        const s = this._hass.states[cId];
+        if (s && s.attributes) {
+          const curTarget = s.attributes.temperature || 21.0;
+          const newTarget = Math.round((curTarget + delta) * 2) / 2;
+          this._callService('climate', 'set_temperature', { entity_id: cId, temperature: newTarget });
+        }
+      };
+    });
+    rootEl.querySelectorAll('[data-dyn-action]').forEach(b => {
+      b.onclick = (e) => {
+        e.stopPropagation();
+        const entityId = b.getAttribute('data-dyn-action');
+        const domain = b.getAttribute('data-dyn-domain');
+        const service = b.getAttribute('data-dyn-service') || 'turn_on';
+        this._callService(domain, service, { entity_id: entityId });
+      };
+    });
+  }
+
+  _openCustomDockModal(item) {
+    const modal = this.shadowRoot.getElementById('modalContainer');
+    const title = this.shadowRoot.getElementById('modalTitle');
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!modal || !title || !body || !this._hass) return;
+
+    const iconName = item.icon || 'star';
+    title.innerHTML = `${this._icon(iconName, { size: 22, cls: 'icon-light', style: 'margin-right:8px;' })} ${item.title || 'Menüpunkt'}`;
+
+    const entities = (item.entities || []).map(id => ({ id, state: this._hass.states[id] })).filter(e => e.state);
+
+    if (entities.length === 0) {
+      body.innerHTML = `
+        <div style="text-align:center;padding:36px 16px;color:var(--text-secondary);">
+          <div style="font-size:36px;margin-bottom:12px;">📂</div>
+          <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Keine Entitäten zugeordnet</div>
+          <div style="font-size:13px;">Füge in den Einstellungen unter „Dock & Buttons“ Entitäten zu diesem Menüpunkt hinzu.</div>
+        </div>
+      `;
+      modal.classList.remove('hidden');
+      return;
+    }
+
+    const switches = entities.filter(e => e.id.startsWith('switch.') || e.id.startsWith('input_boolean.'));
+    const lights = entities.filter(e => e.id.startsWith('light.'));
+    const climates = entities.filter(e => e.id.startsWith('climate.'));
+    const sensors = entities.filter(e => e.id.startsWith('sensor.') || e.id.startsWith('binary_sensor.'));
+    const others = entities.filter(e => !switches.includes(e) && !lights.includes(e) && !climates.includes(e) && !sensors.includes(e));
+
+    body.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:14px;">
+        ${switches.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Schalter & Steckdosen (${switches.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+            ${switches.map(s => this._renderSwitchControlRow(s.id, s.state)).join('')}
+          </div>
+        ` : ''}
+
+        ${lights.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Beleuchtung (${lights.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+            ${lights.map(l => this._renderSwitchControlRow(l.id, l.state)).join('')}
+          </div>
+        ` : ''}
+
+        ${climates.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Thermostate (${climates.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+            ${climates.map(c => {
+              const curTarget = c.state.attributes.temperature || 21.0;
+              const curTemp = c.state.attributes.current_temperature || '--';
+              const name = c.state.attributes.friendly_name || c.id;
+              return `
+                <div class="control-row" style="padding:10px 14px;">
+                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+                    <div>${this._icon('climate', { size: 18, cls: 'icon-climate' })}</div>
+                    <div style="min-width:0;">
+                      <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${name}</div>
+                      <div style="font-size:11px;color:var(--text-secondary);">Ist: ${curTemp}°C</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:6px;">
+                    <span style="font-weight:700;font-size:14px;color:var(--accent);">${curTarget}°</span>
+                    <button class="btn-step" data-cust-climate="${c.id}" data-delta="-0.5" style="width:26px;height:26px;font-size:13px;padding:0;">-</button>
+                    <button class="btn-step" data-cust-climate="${c.id}" data-delta="0.5" style="width:26px;height:26px;font-size:13px;padding:0;">+</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        ` : ''}
+
+        ${sensors.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Sensoren & Messwerte (${sensors.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px;">
+            ${sensors.map(s => this._renderSensorBadgeHtml(s.id, s.state)).join('')}
+          </div>
+        ` : ''}
+
+        ${others.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Weitere Geräte (${others.length})</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px;">
+            ${others.map(o => this._renderGenericEntityRow(o.id, o.state)).join('')}
+          </div>
+        ` : ''}
+      </div>
+    `;
+
+    this._bindInteractiveRows(body);
+    modal.classList.remove('hidden');
+  }
+
   _renderRoomModal(room) {
     const body = this.shadowRoot.getElementById('modalBody');
     const title = this.shadowRoot.getElementById('modalTitle');
@@ -2752,9 +3102,9 @@ class VisionGlassDashboard extends HTMLElement {
                 <div style="font-weight:700;font-size:15px;color:var(--text-primary);display:flex;align-items:center;gap:6px;">${this._icon('tv', { size: 16, cls: 'icon-switch' })} ${this._t('multimedia_hub')}</div>
                 <div style="font-size:12px;color:var(--text-secondary);">${this._t('multimedia_desc')} • ${mmSwitchObj.state === 'on' ? this._t('active') : this._t('off')}</div>
               </div>
-              <button class="toggle-pill ${mmSwitchObj.state === 'on' ? 'active-blue' : ''}" id="roomModalMultimediaToggle">
-                ${mmSwitchObj.state === 'on' ? this._t('on') : this._t('off')}
-              </button>
+              <div class="vg-switch ${mmSwitchObj.state === 'on' ? 'active' : ''}" id="roomModalMultimediaToggle" role="switch">
+                <div class="vg-switch-thumb"></div>
+              </div>
             </div>
           ` : ''}
 
@@ -2981,78 +3331,24 @@ class VisionGlassDashboard extends HTMLElement {
           ${room.overlay_categories.map(cat => {
             const ents = (cat.entities || []).map(id => ({ id, state: this._hass.states[id] })).filter(e => e.state);
             if (ents.length === 0) return '';
-            const switchesOrLights = ents.filter(e => e.id.startsWith('switch.') || e.id.startsWith('light.'));
+            const switchesOrLights = ents.filter(e => e.id.startsWith('switch.') || e.id.startsWith('light.') || e.id.startsWith('input_boolean.'));
             const sensorsOrBin = ents.filter(e => e.id.startsWith('sensor.') || e.id.startsWith('binary_sensor.'));
-            const otherEnts = ents.filter(e => !e.id.startsWith('switch.') && !e.id.startsWith('light.') && !e.id.startsWith('sensor.') && !e.id.startsWith('binary_sensor.'));
+            const otherEnts = ents.filter(e => !switchesOrLights.includes(e) && !sensorsOrBin.includes(e));
             return `
               <div style="font-size:14px;font-weight:700;margin-top:10px;">${cat.name} (${ents.length})</div>
               ${switchesOrLights.length > 0 ? `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-                  ${switchesOrLights.map(s => {
-                    const isOn = s.state && s.state.state === 'on';
-                    const name = (s.state && s.state.attributes.friendly_name) || s.id;
-                    const domain = s.id.split('.')[0];
-                    const icon = this._resolveEntityIcon(s.id, s.state);
-                    return `
-                      <div class="control-row" style="padding:10px 14px;min-height:48px;">
-                        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
-                          <div style="flex-shrink:0;">${icon}</div>
-                          <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
-                        </div>
-                        <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
-                          ${isOn ? this._t('on') : this._t('off')}
-                        </button>
-                      </div>
-                    `;
-                  }).join('')}
+                  ${switchesOrLights.map(s => this._renderSwitchControlRow(s.id, s.state)).join('')}
                 </div>
               ` : ''}
               ${sensorsOrBin.length > 0 ? `
                 <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
-                  ${sensorsOrBin.map(s => {
-                    const name = (s.state && s.state.attributes.friendly_name) || s.id;
-                    let rawVal = s.state ? s.state.state : '--';
-                    const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
-                    let valDisplay = rawVal;
-                    let valColor = 'var(--text-primary)';
-                    if (rawVal === 'unknown') { valDisplay = this._t('unknown'); valColor = 'var(--text-secondary)'; }
-                    else if (rawVal === 'unavailable') { valDisplay = this._t('unavailable'); valColor = 'var(--text-secondary)'; }
-                    else if (rawVal === 'on') { valDisplay = this._t('on'); valColor = '#10b981'; }
-                    else if (rawVal === 'off') { valDisplay = this._t('off'); valColor = 'var(--text-secondary)'; }
-                    else if (!isNaN(parseFloat(rawVal))) {
-                      const num = parseFloat(rawVal);
-                      valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
-                    } else if (unit) {
-                      valDisplay = `${rawVal} ${unit}`;
-                    }
-                    const icon = this._resolveEntityIcon(s.id, s.state);
-                    return `
-                      <div class="sensor-badge">
-                        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
-                          <div style="flex-shrink:0;">${icon}</div>
-                          <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
-                        </div>
-                        <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
-                      </div>
-                    `;
-                  }).join('')}
+                  ${sensorsOrBin.map(s => this._renderSensorBadgeHtml(s.id, s.state)).join('')}
                 </div>
               ` : ''}
               ${otherEnts.length > 0 ? `
                 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-                  ${otherEnts.map(o => {
-                    const name = (o.state && o.state.attributes.friendly_name) || o.id;
-                    const icon = this._resolveEntityIcon(o.id, o.state);
-                    return `
-                      <div class="control-row" style="padding:10px 14px;min-height:48px;">
-                        <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
-                          <div style="flex-shrink:0;">${icon}</div>
-                          <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
-                        </div>
-                        <div style="font-size:12px;color:var(--text-secondary);">${o.state.state}</div>
-                      </div>
-                    `;
-                  }).join('')}
+                  ${otherEnts.map(o => this._renderGenericEntityRow(o.id, o.state)).join('')}
                 </div>
               ` : ''}
             `;
@@ -3061,67 +3357,14 @@ class VisionGlassDashboard extends HTMLElement {
           ${otherSwitches.length > 0 ? `
             <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('other_devices')} (${otherSwitches.length})</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-              ${otherSwitches.map(s => {
-                const isOn = s.state && s.state.state === 'on';
-                const name = (s.state && s.state.attributes.friendly_name) || s.id;
-                const domain = s.id.split('.')[0];
-                const icon = this._resolveEntityIcon(s.id, s.state);
-                return `
-                  <div class="control-row" style="padding:10px 14px;min-height:48px;">
-                    <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
-                      <div style="flex-shrink:0;">${icon}</div>
-                      <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);" title="${name}">${name}</div>
-                    </div>
-                    <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-dyn-toggle="${s.id}" data-dyn-domain="${domain}">
-                      ${isOn ? this._t('on') : this._t('off')}
-                    </button>
-                  </div>
-                `;
-              }).join('')}
+              ${otherSwitches.map(s => this._renderSwitchControlRow(s.id, s.state)).join('')}
             </div>
           ` : ''}
 
           ${otherSensors.length > 0 ? `
             <div style="font-size:14px;font-weight:700;margin-top:8px;">${this._t('measurements_sensors')} (${otherSensors.length})</div>
             <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px;">
-              ${otherSensors.map(s => {
-                const name = (s.state && s.state.attributes.friendly_name) || s.id;
-                let rawVal = s.state ? s.state.state : '--';
-                const unit = (s.state && s.state.attributes.unit_of_measurement) || '';
-
-                let valDisplay = rawVal;
-                let valColor = 'var(--text-primary)';
-                if (rawVal === 'unknown') {
-                  valDisplay = this._t('unknown');
-                  valColor = 'var(--text-secondary)';
-                } else if (rawVal === 'unavailable') {
-                  valDisplay = this._t('unavailable');
-                  valColor = 'var(--text-secondary)';
-                } else if (rawVal === 'on') {
-                  valDisplay = this._t('on');
-                  valColor = '#10b981';
-                } else if (rawVal === 'off') {
-                  valDisplay = this._t('off');
-                  valColor = 'var(--text-secondary)';
-                } else if (!isNaN(parseFloat(rawVal))) {
-                  const num = parseFloat(rawVal);
-                  valDisplay = `${Number.isInteger(num) ? num : num.toFixed(1)}${unit ? ' ' + unit : ''}`;
-                } else if (unit) {
-                  valDisplay = `${rawVal} ${unit}`;
-                }
-
-                const icon = this._resolveEntityIcon(s.id, s.state);
-
-                return `
-                  <div class="sensor-badge">
-                    <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;margin-right:8px;">
-                      <div style="flex-shrink:0;">${icon}</div>
-                      <div style="font-size:12px;color:var(--text-secondary);line-height:1.25;word-break:break-word;white-space:normal;" title="${name}">${name}</div>
-                    </div>
-                    <div style="font-size:12px;font-weight:700;color:${valColor};white-space:nowrap;flex-shrink:0;text-align:right;">${valDisplay}</div>
-                  </div>
-                `;
-              }).join('')}
+              ${otherSensors.map(s => this._renderSensorBadgeHtml(s.id, s.state)).join('')}
             </div>
           ` : ''}
         `}
@@ -3229,6 +3472,14 @@ class VisionGlassDashboard extends HTMLElement {
       const avUp = body.querySelector('#btnMediaVolUp_' + room.id);
       if (avUp) avUp.onclick = () => this._callService('media_player', 'volume_up', { entity_id: audioId });
     }
+    if (mmSwitchObj && body.querySelector('#roomModalMultimediaToggle')) {
+      body.querySelector('#roomModalMultimediaToggle').onclick = () => {
+        const sw = body.querySelector('#roomModalMultimediaToggle');
+        sw.classList.toggle('active');
+        this._callService('switch', 'toggle', { entity_id: room.multimedia_switch });
+      };
+    }
+    this._bindInteractiveRows(body);
     body.querySelectorAll('[data-dyn-toggle]').forEach(b => {
       b.onclick = () => {
         const ent = b.getAttribute('data-dyn-toggle');
@@ -3322,9 +3573,82 @@ class VisionGlassDashboard extends HTMLElement {
       if (sidebarMiniWind && a.wind_speed != null) sidebarMiniWind.innerHTML = `${this._icon('wind', { size: 13, cls: 'icon-weather', style: 'margin-right:3px;' })} ${a.wind_speed} km/h`;
       const sunObj = this._hass.states['sun.sun'];
       const sidebarMiniSun = this.shadowRoot.getElementById('sidebarMiniSun');
-      if (sidebarMiniSun && sunObj && sunObj.attributes && sunObj.attributes.next_setting) {
-        const d = new Date(sunObj.attributes.next_setting);
-        sidebarMiniSun.innerHTML = `${this._icon('sunset', { size: 13, cls: 'icon-light', style: 'margin-right:3px;' })} ${d.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
+      if (sidebarMiniSun && sunObj && sunObj.attributes) {
+        const rising = sunObj.attributes.next_rising ? new Date(sunObj.attributes.next_rising) : null;
+        const setting = sunObj.attributes.next_setting ? new Date(sunObj.attributes.next_setting) : null;
+        let nextSunDate = null;
+        let isSunrise = false;
+        if (rising && setting) {
+          if (rising < setting) { nextSunDate = rising; isSunrise = true; }
+          else { nextSunDate = setting; isSunrise = false; }
+        } else if (rising) { nextSunDate = rising; isSunrise = true; }
+        else if (setting) { nextSunDate = setting; isSunrise = false; }
+
+        if (nextSunDate) {
+          const iconName = isSunrise ? 'sunrise' : 'sunset';
+          const label = isSunrise ? this._t('sunrise') : this._t('sunset');
+          sidebarMiniSun.setAttribute('title', `${label}: ${nextSunDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`);
+          sidebarMiniSun.innerHTML = `${this._icon(iconName, { size: 13, cls: 'icon-light', style: 'margin-right:3px;' })} ${nextSunDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}`;
+        }
+      }
+
+      // Sidebar Alarm / Wecker detection & display
+      let nextAlarmTime = null;
+      let alarmLabel = 'Wecker';
+      let alarmActive = false;
+
+      const weckerBool = this._hass.states['input_boolean.wecker_aktiviert'];
+      const weckerTime = this._hass.states['input_datetime.wecker_zeit'];
+      if (weckerBool && weckerBool.state === 'on' && weckerTime && weckerTime.state) {
+        alarmActive = true;
+        const parts = weckerTime.state.split(':');
+        nextAlarmTime = `${parts[0]}:${parts[1]}`;
+      }
+
+      if (!alarmActive) {
+        const nowMs = Date.now();
+        let earliestDate = null;
+        Object.keys(this._hass.states).forEach(eId => {
+          if (eId.includes('next_alarm') || eId.includes('nachster_wecker')) {
+            const s = this._hass.states[eId];
+            if (s && s.state && s.state !== 'unavailable' && s.state !== 'unknown') {
+              const d = new Date(s.state);
+              if (!isNaN(d.getTime()) && d.getTime() > nowMs) {
+                if (!earliestDate || d < earliestDate) {
+                  earliestDate = d;
+                  alarmLabel = (s.attributes && s.attributes.friendly_name) ? s.attributes.friendly_name.replace(/next alarm/i, '').replace(/nächster wecker/i, '').trim() : 'Wecker';
+                }
+              }
+            }
+          }
+        });
+        if (earliestDate) {
+          alarmActive = true;
+          nextAlarmTime = earliestDate.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+        }
+      }
+
+      const sidebarMiniAlarm = this.shadowRoot.getElementById('sidebarMiniAlarm');
+      if (sidebarMiniAlarm) {
+        if (alarmActive && nextAlarmTime) {
+          sidebarMiniAlarm.style.display = 'inline-flex';
+          sidebarMiniAlarm.setAttribute('title', `${alarmLabel}: ${nextAlarmTime} (Klicken zum Umschalten)`);
+          sidebarMiniAlarm.innerHTML = `${this._icon('alarm', { size: 13, color: '#f59e0b', style: 'margin-right:3px;' })} ${nextAlarmTime}`;
+          sidebarMiniAlarm.onclick = () => {
+            if (this._hass.states['input_boolean.wecker_aktiviert']) {
+              this._callService('input_boolean', 'toggle', { entity_id: 'input_boolean.wecker_aktiviert' });
+            }
+          };
+        } else if (weckerBool && weckerTime) {
+          sidebarMiniAlarm.style.display = 'inline-flex';
+          sidebarMiniAlarm.setAttribute('title', 'Wecker aus (Klicken zum Aktivieren)');
+          sidebarMiniAlarm.innerHTML = `${this._icon('alarm', { size: 13, style: 'opacity:0.45;margin-right:3px;' })} Aus`;
+          sidebarMiniAlarm.onclick = () => {
+            this._callService('input_boolean', 'turn_on', { entity_id: 'input_boolean.wecker_aktiviert' });
+          };
+        } else {
+          sidebarMiniAlarm.style.display = 'none';
+        }
       }
     }
 
@@ -3543,7 +3867,46 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // 4. Quick Target Temp Stepper
+    // 4. Battery warning (< 10%) on Bento Card
+    let battWarnEl = card.querySelector('.env-batt-warn');
+    if (!battWarnEl) {
+      const envBar = card.querySelector('.room-env-bar');
+      if (envBar) {
+        battWarnEl = document.createElement('span');
+        battWarnEl.className = 'env-pill env-batt-warn badge-battery-warn';
+        battWarnEl.style.cssText = 'background:rgba(239,68,68,0.22);border:1px solid rgba(239,68,68,0.55);color:#ef4444;font-size:11px;font-weight:700;padding:2px 8px;border-radius:12px;display:none;align-items:center;gap:3px;';
+        envBar.appendChild(battWarnEl);
+      }
+    }
+    if (battWarnEl) {
+      const roomEntities = [
+        room.temp_entity, room.target_temp_entity, room.climate_entity,
+        room.humidity_entity, room.illuminance_entity, room.light_entity,
+        room.media_entity, room.switch_entity, room.presence_entity, room.window_entity,
+        ...(room.overlay_categories ? room.overlay_categories.flatMap(c => c.entities || []) : [])
+      ].filter(Boolean);
+
+      let lowestBatt = null;
+      roomEntities.forEach(eId => {
+        const s = this._hass.states[eId];
+        if (s) {
+          const val = s.attributes?.battery_level ?? s.attributes?.battery ?? (s.attributes?.device_class === 'battery' ? parseFloat(s.state) : null);
+          if (val != null && !isNaN(val)) {
+            if (lowestBatt == null || val < lowestBatt) lowestBatt = val;
+          }
+        }
+      });
+
+      if (lowestBatt != null && lowestBatt < 10) {
+        battWarnEl.innerHTML = `${this._icon('battery-critical', { size: 11, color: '#ef4444' })} ${Math.round(lowestBatt)}%`;
+        battWarnEl.style.display = 'inline-flex';
+        battWarnEl.title = `Batterie kritisch: ${Math.round(lowestBatt)}%`;
+      } else {
+        battWarnEl.style.display = 'none';
+      }
+    }
+
+    // 5. Quick Target Temp Stepper
     const targetValEl = card.querySelector(`#targetTemp_${idx}`);
     if (targetValEl && room.climate_entity && this._hass.states[room.climate_entity]) {
       const cObj = this._hass.states[room.climate_entity];
@@ -3633,17 +3996,41 @@ class VisionGlassDashboard extends HTMLElement {
       }
     });
 
-    // Sun times
+    // Sun times (Dynamic next event: Sunrise or Sunset)
     const sunState = this._hass.states['sun.sun'];
     if (sunState && sunState.attributes) {
-      if (sunState.attributes.next_setting) {
-        const dSet = new Date(sunState.attributes.next_setting);
+      const rising = sunState.attributes.next_rising ? new Date(sunState.attributes.next_rising) : null;
+      const setting = sunState.attributes.next_setting ? new Date(sunState.attributes.next_setting) : null;
+      let nextSun = null;
+      let isRising = false;
+      if (rising && setting) {
+        if (rising < setting) { nextSun = rising; isRising = true; }
+        else { nextSun = setting; isRising = false; }
+      } else if (rising) { nextSun = rising; isRising = true; }
+      else if (setting) { nextSun = setting; isRising = false; }
+
+      if (nextSun) {
         items.push({
-          date: dSet,
-          text: `${this._icon('sunset', { size: 14, cls: 'icon-light', style: 'margin-right:5px;' })} ${this._t('sunset')} ${dSet.toLocaleTimeString(this._getLocale(), { hour: '2-digit', minute: '2-digit' })}`,
+          date: nextSun,
+          text: `${this._icon(isRising ? 'sunrise' : 'sunset', { size: 14, cls: 'icon-light', style: 'margin-right:5px;' })} ${isRising ? this._t('sunrise') : this._t('sunset')} ${nextSun.toLocaleTimeString(this._getLocale(), { hour: '2-digit', minute: '2-digit' })}`,
           color: 'dot-amber'
         });
       }
+    }
+
+    // Active Alarms in Agenda
+    const weckerBool = this._hass.states['input_boolean.wecker_aktiviert'];
+    const weckerTime = this._hass.states['input_datetime.wecker_zeit'];
+    if (weckerBool && weckerBool.state === 'on' && weckerTime && weckerTime.state) {
+      const parts = weckerTime.state.split(':');
+      const aD = new Date();
+      aD.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10), 0, 0);
+      if (aD < new Date()) aD.setDate(aD.getDate() + 1); // tomorrow
+      items.push({
+        date: aD,
+        text: `${this._icon('alarm', { size: 14, color: '#f59e0b', style: 'margin-right:5px;' })} ${this._t('alarm') || 'Wecker'} ${aD.toLocaleTimeString(this._getLocale(), { hour: '2-digit', minute: '2-digit' })}`,
+        color: 'dot-amber'
+      });
     }
 
     // Sort by date
@@ -4244,33 +4631,12 @@ class VisionGlassDashboard extends HTMLElement {
         <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
           ${switches.map(sw => {
             const s = this._hass.states[sw.id];
-            const isOn = s && s.state === 'on';
-            const pwrSensor = sw.pwr && this._hass.states[sw.pwr] ? `${Math.round(parseFloat(this._hass.states[sw.pwr].state))} W` : '';
-            const icon = sw.icon ? this._icon(sw.icon, { size: 16, cls: 'icon-switch' }) : this._resolveEntityIcon(sw.id, s);
-            return `
-              <div class="control-row" style="padding:10px 14px;min-height:50px;">
-                <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
-                  <div style="flex-shrink:0;">${icon}</div>
-                  <div style="flex:1;min-width:0;">
-                    <div style="font-weight:600;font-size:14px;line-height:1.25;word-break:break-word;white-space:normal;color:var(--text-primary);">${sw.name}</div>
-                    <div style="font-size:12px;color:var(--text-secondary);">${isOn ? (pwrSensor ? `${this._t('active')} • ${pwrSensor}` : this._t('on')) : this._t('off')}</div>
-                  </div>
-                </div>
-                <button class="toggle-pill ${isOn ? 'active' : ''}" style="flex-shrink:0;" data-switch="${sw.id}">
-                  ${isOn ? this._t('on') : this._t('off')}
-                </button>
-              </div>
-            `;
+            return this._renderSwitchControlRow(sw.id, s);
           }).join('')}
         </div>
       `;
 
-      body.querySelectorAll('[data-switch]').forEach(btn => {
-        btn.onclick = () => {
-          const swId = btn.getAttribute('data-switch');
-          this._callService('switch', 'toggle', { entity_id: swId });
-        };
-      });
+      this._bindInteractiveRows(body);
     } else if (type === 'weather') {
       title.innerHTML = `${this._icon('weather-partlycloudy', { size: 22, cls: 'icon-weather', style: 'margin-right:8px;' })} ${this._t('weather_modal_title')}`;
 
@@ -5214,7 +5580,22 @@ class VisionGlassDashboard extends HTMLElement {
     const activeTab = this._settingsActiveTab;
 
     const rooms = this._config.rooms || [];
-    const dock = this._config.dock || { auto_detect: true, items: [] };
+    const defaultDockItems = [
+      { id: 'lighting', title: this._t('lighting'), enabled: true, auto_hide: true },
+      { id: 'climate', title: this._t('climate'), enabled: true, auto_hide: true },
+      { id: 'stats', title: this._t('stats'), enabled: true, auto_hide: false },
+      { id: 'security', title: this._t('security'), enabled: true, auto_hide: false },
+      { id: 'alarmo', title: this._t('alarmo'), enabled: true, auto_hide: true },
+      { id: 'switches', title: this._t('switches'), enabled: true, auto_hide: true },
+      { id: 'battery', title: this._t('battery'), enabled: true, auto_hide: true },
+      { id: 'weather', title: this._t('weather'), enabled: true, auto_hide: false }
+    ];
+    if (!this._config.dock) {
+      this._config.dock = { auto_detect: true, items: JSON.parse(JSON.stringify(defaultDockItems)) };
+    } else if (!this._config.dock.items || this._config.dock.items.length === 0) {
+      this._config.dock.items = JSON.parse(JSON.stringify(defaultDockItems));
+    }
+    const dock = this._config.dock;
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
 
     const bgStyle = this._config.background_style || 'aurora';
@@ -5455,21 +5836,90 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:8px;">
-          ${(dock.items || []).map((item, dIdx) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:10px;padding:10px 14px;">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:16px;height:16px;">
-                <span style="font-weight:600;font-size:13px;">${item.title || item.id}</span>
-                <span style="font-size:11px;color:var(--text-secondary);font-family:monospace;">(${item.id})</span>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${(dock.items || []).map((item, dIdx) => {
+            const isCustom = !['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(item.id);
+            const iconHtml = item.icon ? this._icon(item.icon, { size: 18 }) : this._getBuiltinDockIcon(item.id, 18);
+            if (!isCustom) {
+              return `
+                <div class="card-box" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:12px 16px;">
+                  <div style="display:flex;align-items:center;gap:12px;">
+                    <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;">
+                        ${iconHtml}
+                      </div>
+                      <div>
+                        <div style="font-weight:600;font-size:14px;">${item.title || item.id}</div>
+                        <div style="font-size:11px;color:var(--text-secondary);font-family:monospace;">${item.id} • Standard</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:4px;">
+                    <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
+                    <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
+                  </div>
+                </div>
+              `;
+            }
+
+            return `
+              <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
+                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(56,189,248,0.15);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+                      ${iconHtml}
+                    </div>
+                    <span style="font-weight:700;font-size:14px;">${item.title || 'Eigener Menüpunkt'}</span>
+                    <span style="font-size:11px;padding:2px 6px;border-radius:6px;background:rgba(56,189,248,0.15);color:var(--accent);font-weight:600;">Eigener Punkt</span>
+                  </div>
+                  <div style="display:flex;gap:4px;align-items:center;">
+                    <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
+                    <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
+                    <button type="button" class="btn btn-sm btn-danger btn-del-dock-item" data-didx="${dIdx}" style="padding:4px 8px;margin-left:4px;">✕</button>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;margin-bottom:12px;">
+                  <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Titel im Dock</label>
+                    <input type="text" class="inp-custom-dock-title" data-didx="${dIdx}" value="${item.title || ''}" placeholder="z.B. Kameras, Musik..." style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
+                  </div>
+                  <div>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Icon</label>
+                    <select class="sel-custom-dock-icon" data-didx="${dIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
+                      ${['star', 'camera', 'fan', 'vacuum', 'music', 'tv', 'blinds', 'bell', 'lock-closed', 'zap', 'eye', 'flame', 'clock', 'robot', 'sliders', 'speaker', 'light'].map(ic => `
+                        <option value="${ic}" ${item.icon === ic ? 'selected' : ''}>${ic}</option>
+                      `).join('')}
+                    </select>
+                  </div>
+                </div>
+
+                <div>
+                  <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Zugeordnete Entitäten im Modal (${(item.entities || []).length})</div>
+                  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
+                    ${(item.entities || []).map((entId, eIdx) => `
+                      <span class="badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:4px 8px;border-radius:6px;font-size:12px;font-family:monospace;">
+                        ${this._resolveEntityIcon(entId, this._hass?.states[entId])}
+                        <span>${entId}</span>
+                        <button type="button" class="btn-micro btn-del-cust-entity" data-didx="${dIdx}" data-eidx="${eIdx}" style="padding:0 4px;font-size:12px;cursor:pointer;color:#ef4444;background:none;border:none;">&times;</button>
+                      </span>
+                    `).join('')}
+                    ${(!item.entities || item.entities.length === 0) ? `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">Noch keine Entitäten zugeordnet</span>` : ''}
+                  </div>
+                  <button type="button" class="btn btn-sm btn-add-cust-entity" data-didx="${dIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
+                    🔍 + Entität hinzufügen
+                  </button>
+                </div>
               </div>
-              <div style="display:flex;gap:4px;">
-                <button class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
-                <button class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
-              </div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
+
+        <button type="button" class="btn btn-sm btn-primary" id="btnAddCustomDockItem" style="margin-top:14px;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          + Eigenen Dock-Punkt mit Modal hinzufügen
+        </button>
       </div>
 
       <!-- TAB 4: DESIGN & ALLGEMEIN -->
@@ -5792,7 +6242,7 @@ class VisionGlassDashboard extends HTMLElement {
       };
     }
 
-    // Dock up / down / toggle
+    // Dock up / down / toggle / custom items
     container.querySelectorAll('.btn-set-dock-up').forEach(b => {
       b.onclick = () => {
         const idx = parseInt(b.getAttribute('data-didx'));
@@ -5822,6 +6272,85 @@ class VisionGlassDashboard extends HTMLElement {
         const idx = parseInt(chk.getAttribute('data-didx'));
         if (this._config.dock?.items && this._config.dock.items[idx]) {
           this._config.dock.items[idx].enabled = chk.checked;
+        }
+      };
+    });
+
+    const btnAddDock = container.querySelector('#btnAddCustomDockItem');
+    if (btnAddDock) {
+      btnAddDock.onclick = () => {
+        if (!this._config.dock) this._config.dock = { auto_detect: true, items: [] };
+        if (!this._config.dock.items) this._config.dock.items = [];
+        this._config.dock.items.push({
+          id: 'custom_' + Date.now(),
+          title: 'Neuer Menüpunkt',
+          icon: 'star',
+          enabled: true,
+          type: 'modal',
+          entities: []
+        });
+        this._renderSettingsContent(container, isModal);
+      };
+    }
+
+    container.querySelectorAll('.btn-del-dock-item').forEach(b => {
+      b.onclick = () => {
+        const idx = parseInt(b.getAttribute('data-didx'));
+        if (this._config.dock?.items) {
+          this._config.dock.items.splice(idx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.inp-custom-dock-title').forEach(inp => {
+      inp.oninput = () => {
+        const idx = parseInt(inp.getAttribute('data-didx'));
+        if (this._config.dock?.items?.[idx]) {
+          this._config.dock.items[idx].title = inp.value;
+        }
+      };
+    });
+
+    container.querySelectorAll('.sel-custom-dock-icon').forEach(sel => {
+      sel.onchange = () => {
+        const idx = parseInt(sel.getAttribute('data-didx'));
+        if (this._config.dock?.items?.[idx]) {
+          this._config.dock.items[idx].icon = sel.value;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-add-cust-entity').forEach(b => {
+      b.onclick = () => {
+        const dIdx = parseInt(b.getAttribute('data-didx'));
+        const item = this._config.dock?.items?.[dIdx];
+        if (item) {
+          this._showEntityPicker({
+            currentValue: '',
+            defaultDomain: 'all',
+            onSelect: (selectedId) => {
+              if (selectedId) {
+                if (!item.entities) item.entities = [];
+                if (!item.entities.includes(selectedId)) {
+                  item.entities.push(selectedId);
+                  this._renderSettingsContent(container, isModal);
+                }
+              }
+            }
+          });
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-del-cust-entity').forEach(b => {
+      b.onclick = () => {
+        const dIdx = parseInt(b.getAttribute('data-didx'));
+        const eIdx = parseInt(b.getAttribute('data-eidx'));
+        if (this._config.dock?.items?.[dIdx]?.entities) {
+          this._config.dock.items[dIdx].entities.splice(eIdx, 1);
+          this._renderSettingsContent(container, isModal);
         }
       };
     });
@@ -7474,6 +8003,61 @@ class VisionGlassDashboard extends HTMLElement {
           color: #fff;
         }
 
+        /* VisionOS Glass Toggle Switch */
+        .vg-switch {
+          position: relative;
+          width: 44px;
+          height: 24px;
+          background: rgba(255, 255, 255, 0.16);
+          border: 1px solid var(--border-glass);
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          flex-shrink: 0;
+          display: flex;
+          align-items: center;
+          padding: 2px;
+          box-sizing: border-box;
+        }
+        .vg-switch.active {
+          background: var(--accent);
+          border-color: var(--accent);
+          box-shadow: 0 0 10px rgba(56, 189, 248, 0.45);
+        }
+        .vg-switch .vg-switch-thumb {
+          width: 18px;
+          height: 18px;
+          border-radius: 50%;
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+          transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          transform: translateX(0);
+        }
+        .vg-switch.active .vg-switch-thumb {
+          transform: translateX(20px);
+        }
+        .theme-light .vg-switch {
+          background: rgba(0, 0, 0, 0.14);
+          border-color: rgba(0, 0, 0, 0.16);
+        }
+        .theme-light .vg-switch.active {
+          background: var(--accent);
+          border-color: var(--accent);
+        }
+        .theme-light .vg-switch .vg-switch-thumb {
+          background: #ffffff;
+          box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+        }
+
+        /* Pulsing Battery Warning Badge */
+        .badge-battery-warn {
+          animation: pulse-warn 2s infinite ease-in-out;
+        }
+        @keyframes pulse-warn {
+          0%, 100% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.75; transform: scale(0.97); }
+        }
+
         /* VisionOS Styled D-Pad Remote Navigation Grid */
         .dpad-grid {
           display: grid;
@@ -7857,7 +8441,7 @@ class VisionGlassDashboard extends HTMLElement {
             <div class="liquid-orb liquid-orb-3"></div>
             <div class="liquid-orb liquid-orb-4"></div>
           </div>
-          <div id="settingsPageContainer" style="max-width:960px;margin:0 auto;position:relative;z-index:10;"></div>
+          <div id="settingsPageContainer" style="max-width:960px;margin:0 auto;position:relative;z-index:1;"></div>
         </div>
       ` : `
         <div class="dashboard-root theme-dark">
@@ -7932,6 +8516,7 @@ class VisionGlassDashboard extends HTMLElement {
                 <span class="sidebar-mini-pill" id="sidebarMiniHum">${this._icon('droplet', { size: 13, cls: 'icon-humidity', style: 'margin-right:3px;' })} --%</span>
                 <span class="sidebar-mini-pill" id="sidebarMiniWind">${this._icon('wind', { size: 13, cls: 'icon-weather', style: 'margin-right:3px;' })} -- km/h</span>
                 <span class="sidebar-mini-pill" id="sidebarMiniSun">${this._icon('sunset', { size: 13, cls: 'icon-light', style: 'margin-right:3px;' })} --:--</span>
+                <span class="sidebar-mini-pill" id="sidebarMiniAlarm" style="display:none;cursor:pointer;"></span>
               </div>
             </div>
 
@@ -8022,15 +8607,40 @@ class VisionGlassDashboard extends HTMLElement {
 
         <!-- Floating Glass Dock -->
         <div class="dock-container">
-          <div class="dock-item" id="dockLighting" title="${this._t('lighting')}">${this._icon('light', { size: 19, cls: 'icon-light' })}</div>
-          <div class="dock-item" id="dockClimate" title="${this._t('climate')}">${this._icon('climate', { size: 19, cls: 'icon-climate' })}</div>
-          <div class="dock-item" id="dockStats" title="${this._t('stats')}">${this._icon('chart-bar', { size: 19, cls: 'icon-stats' })}</div>
-          <div class="dock-item" id="dockSecurity" title="${this._t('security')}">${this._icon('lock-closed', { size: 19, cls: 'icon-security' })}</div>
-          <div class="dock-item" id="dockAlarmo" title="${this._t('alarmo')}">${this._icon('shield', { size: 19, cls: 'icon-alarmo' })}</div>
-          <div class="dock-item" id="dockSwitches" title="${this._t('switches')}">${this._icon('plug', { size: 19, cls: 'icon-switch' })}</div>
-          <div class="dock-item" id="dockBattery" title="${this._t('battery')}">${this._icon('battery-full', { size: 19, cls: 'icon-battery' })}</div>
-          <div class="dock-item" id="dockWeather" title="${this._t('weather')}">${this._icon('weather-partlycloudy', { size: 19, cls: 'icon-weather' })}</div>
-          <div class="dock-item" id="dockSettings" title="${this._t('settings')}" style="color:var(--accent);">${this._icon('settings', { size: 19 })}</div>
+          ${(() => {
+            const dockCfg = this._config.dock || { auto_detect: true, items: [] };
+            const defaultDockItems = [
+              { id: 'lighting', title: this._t('lighting'), enabled: true, auto_hide: true },
+              { id: 'climate', title: this._t('climate'), enabled: true, auto_hide: true },
+              { id: 'stats', title: this._t('stats'), enabled: true, auto_hide: false },
+              { id: 'security', title: this._t('security'), enabled: true, auto_hide: false },
+              { id: 'alarmo', title: this._t('alarmo'), enabled: true, auto_hide: true },
+              { id: 'switches', title: this._t('switches'), enabled: true, auto_hide: true },
+              { id: 'battery', title: this._t('battery'), enabled: true, auto_hide: true },
+              { id: 'weather', title: this._t('weather'), enabled: true, auto_hide: false }
+            ];
+            const effItems = (dockCfg.items && dockCfg.items.length > 0) ? dockCfg.items : defaultDockItems;
+            const states = this._hass ? this._hass.states : {};
+            const hasAlarmo = Object.keys(states).some(e => e.startsWith('alarm_control_panel.'));
+            const hasLights = Object.keys(states).some(e => e.startsWith('light.'));
+            const hasClimate = Object.keys(states).some(e => e.startsWith('climate.'));
+            const hasSwitches = Object.keys(states).some(e => e.startsWith('switch.'));
+            const hasBatteries = Object.keys(states).some(e => e.includes('battery') || states[e]?.attributes?.device_class === 'battery');
+
+            return effItems.map(item => {
+              if (item.enabled === false) return '';
+              if (dockCfg.auto_detect !== false && item.auto_hide) {
+                if (item.id === 'alarmo' && !hasAlarmo) return '';
+                if (item.id === 'lighting' && !hasLights) return '';
+                if (item.id === 'climate' && !hasClimate) return '';
+                if (item.id === 'switches' && !hasSwitches) return '';
+                if (item.id === 'battery' && !hasBatteries) return '';
+              }
+              const iconHtml = item.icon ? this._icon(item.icon, { size: 19 }) : this._getBuiltinDockIcon(item.id, 19);
+              return `<div class="dock-item" data-dock-id="${item.id}" title="${item.title || item.id}">${iconHtml}</div>`;
+            }).join('');
+          })()}
+          <div class="dock-item" data-dock-id="settings" title="${this._t('settings')}" style="color:var(--accent);">${this._icon('settings', { size: 19 })}</div>
         </div>
 
         <!-- Popup Modal Container -->
@@ -8075,21 +8685,27 @@ class VisionGlassDashboard extends HTMLElement {
     this.shadowRoot.getElementById('chipAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('chipWeather').addEventListener('click', () => this._openModal('weather'));
 
-    // Dock Items
-    this.shadowRoot.getElementById('dockLighting').addEventListener('click', () => this._openModal('lighting'));
-    this.shadowRoot.getElementById('dockClimate').addEventListener('click', () => this._openModal('climate'));
-    this.shadowRoot.getElementById('dockStats').addEventListener('click', () => this._openModal('stats'));
-    this.shadowRoot.getElementById('dockSecurity').addEventListener('click', () => this._openModal('security'));
-    this.shadowRoot.getElementById('dockAlarmo').addEventListener('click', () => this._openModal('alarmo'));
-    this.shadowRoot.getElementById('dockSwitches').addEventListener('click', () => this._openModal('switches'));
-    this.shadowRoot.getElementById('dockBattery').addEventListener('click', () => this._openModal('battery'));
-    this.shadowRoot.getElementById('dockWeather').addEventListener('click', () => this._openModal('weather'));
+    // Dock Items (Dynamic click binding)
     const navigateToSettings = () => {
       window.history.pushState(null, '', '/vision-glass/settings');
       window.dispatchEvent(new CustomEvent('location-changed'));
     };
-    const dSet = this.shadowRoot.getElementById('dockSettings');
-    if (dSet) dSet.addEventListener('click', navigateToSettings);
+
+    this.shadowRoot.querySelectorAll('.dock-item[data-dock-id]').forEach(itemEl => {
+      itemEl.onclick = () => {
+        const dockId = itemEl.getAttribute('data-dock-id');
+        if (dockId === 'settings') {
+          navigateToSettings();
+        } else if (['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
+          this._openModal(dockId);
+        } else {
+          const customItem = (this._config.dock?.items || []).find(i => i.id === dockId);
+          if (customItem) {
+            this._openCustomDockModal(customItem);
+          }
+        }
+      };
+    });
     const cSet = this.shadowRoot.getElementById('chipSettings');
     if (cSet) cSet.addEventListener('click', navigateToSettings);
     const bSet = this.shadowRoot.getElementById('btnEditBannerSettings');
@@ -8266,7 +8882,22 @@ class VisionGlassDashboardEditor extends HTMLElement {
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
     const rooms = this._config.rooms || [];
     const curRoom = rooms[this._selectedRoomIdx] || rooms[0] || null;
-    const dock = this._config.dock || { auto_detect: true, items: [] };
+    const defaultDockItems = [
+      { id: 'lighting', title: this._t('lighting'), enabled: true, auto_hide: true },
+      { id: 'climate', title: this._t('climate'), enabled: true, auto_hide: true },
+      { id: 'stats', title: this._t('stats'), enabled: true, auto_hide: false },
+      { id: 'security', title: this._t('security'), enabled: true, auto_hide: false },
+      { id: 'alarmo', title: this._t('alarmo'), enabled: true, auto_hide: true },
+      { id: 'switches', title: this._t('switches'), enabled: true, auto_hide: true },
+      { id: 'battery', title: this._t('battery'), enabled: true, auto_hide: true },
+      { id: 'weather', title: this._t('weather'), enabled: true, auto_hide: false }
+    ];
+    if (!this._config.dock) {
+      this._config.dock = { auto_detect: true, items: JSON.parse(JSON.stringify(defaultDockItems)) };
+    } else if (!this._config.dock.items || this._config.dock.items.length === 0) {
+      this._config.dock.items = JSON.parse(JSON.stringify(defaultDockItems));
+    }
+    const dock = this._config.dock;
 
     this.shadowRoot.innerHTML = `
       <style>
