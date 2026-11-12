@@ -4929,11 +4929,15 @@ class VisionGlassDashboard extends HTMLElement {
     pickerOverlay.id = 'entityPickerOverlay';
     pickerOverlay.style.cssText = `
       position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: var(--header-height, 56px);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: calc(100vh - var(--header-height, 56px));
       background: rgba(0, 0, 0, 0.72);
       backdrop-filter: blur(14px);
       -webkit-backdrop-filter: blur(14px);
-      z-index: 999999;
+      z-index: 200;
       display: flex;
       align-items: center;
       justify-content: center;
@@ -4965,7 +4969,7 @@ class VisionGlassDashboard extends HTMLElement {
         border-radius: 18px;
         width: 100%;
         max-width: 580px;
-        max-height: 85vh;
+        max-height: calc(100vh - var(--header-height, 56px) - 32px);
         display: flex;
         flex-direction: column;
         box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.65);
@@ -7107,15 +7111,20 @@ class VisionGlassDashboard extends HTMLElement {
         /* Modals */
         .modal-overlay {
           position: fixed;
-          inset: 0;
-          background: rgba(0, 0, 0, 0.5);
+          top: var(--header-height, 56px);
+          left: 0;
+          right: 0;
+          bottom: 0;
+          height: calc(100vh - var(--header-height, 56px));
+          background: rgba(0, 0, 0, 0.55);
           backdrop-filter: blur(14px);
           -webkit-backdrop-filter: blur(14px);
           display: flex;
           align-items: center;
           justify-content: center;
-          z-index: 1000;
-          padding: 24px;
+          z-index: 100;
+          padding: 16px;
+          box-sizing: border-box;
           overscroll-behavior: contain;
         }
         .modal-overlay.hidden { display: none; }
@@ -7129,7 +7138,7 @@ class VisionGlassDashboard extends HTMLElement {
           border-radius: 28px;
           width: 94%;
           max-width: 940px;
-          max-height: 86vh;
+          max-height: calc(100vh - var(--header-height, 56px) - 32px);
           box-shadow:
             inset 0 1.5px 1.5px 0 rgba(255, 255, 255, 0.55),
             inset 0 -1.5px 1.5px 0 rgba(0, 0, 0, 0.35),
