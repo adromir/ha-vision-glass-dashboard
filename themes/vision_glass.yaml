@@ -1,0 +1,599 @@
+# ==============================================================================
+# Vision Glass Theme for Home Assistant
+# Translucent Glassmorphism inspired by Apple VisionOS & macOS
+# Author: Adromir (https://github.com/adromir)
+# Repository: https://github.com/adromir/ha-vision-glass-theme
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# 1. Vision Glass (Auto Switching via Home Assistant modes)
+# ------------------------------------------------------------------------------
+Vision Glass:
+  # --- Card-Mod Global Enhancements ---
+  card-mod-theme: "Vision Glass"
+  card-mod-root: |
+    app-header, .header, ha-top-app-bar-fixed {
+      background: var(--app-header-background-color, rgba(238, 246, 255, 0.85)) !important;
+      backdrop-filter: var(--app-header-backdrop-filter, blur(28px) saturate(190%)) !important;
+      -webkit-backdrop-filter: var(--app-header-backdrop-filter, blur(28px) saturate(190%)) !important;
+      border-bottom: 1px solid var(--divider-color, rgba(255, 255, 255, 0.20)) !important;
+    }
+  card-mod-sidebar: |
+    :host {
+      background: var(--sidebar-background-color) !important;
+      backdrop-filter: var(--sidebar-backdrop-filter, blur(30px) saturate(190%)) !important;
+      -webkit-backdrop-filter: var(--sidebar-backdrop-filter, blur(30px) saturate(190%)) !important;
+      border-right: 1px solid var(--divider-color, rgba(255, 255, 255, 0.15)) !important;
+    }
+    .menu {
+      border-bottom: 1px solid var(--divider-color, rgba(255, 255, 255, 0.15)) !important;
+    }
+    paper-listbox {
+      background: transparent !important;
+    }
+    paper-icon-item {
+      border-radius: 14px !important;
+      margin: 3px 8px !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    paper-icon-item:hover {
+      background: rgba(255, 255, 255, 0.12) !important;
+    }
+    paper-icon-item.iron-selected {
+      background: rgba(2, 132, 199, 0.18) !important;
+      border: 1px solid rgba(2, 132, 199, 0.35) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+  card-mod-more-info: |
+    ha-dialog {
+      --mdc-dialog-box-shadow: 0 25px 60px rgba(0, 0, 0, 0.50) !important;
+      --ha-dialog-border-radius: 28px !important;
+    }
+    ha-dialog .content, ha-dialog-surface {
+      border-radius: 28px !important;
+      backdrop-filter: blur(35px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(35px) saturate(190%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.20) !important;
+    }
+  card-mod-card: |
+    ha-card {
+      border-radius: 22px !important;
+      backdrop-filter: blur(25px) saturate(170%) !important;
+      -webkit-backdrop-filter: blur(25px) saturate(170%) !important;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    @media (prefers-color-scheme: light) {
+      ha-card {
+        background: rgba(255, 255, 255, 0.65) !important;
+        border: 1px solid rgba(255, 255, 255, 0.90) !important;
+        box-shadow: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+      }
+      ha-card:hover {
+        box-shadow: 0 14px 40px rgba(31, 38, 135, 0.14), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+      }
+    }
+    @media (prefers-color-scheme: dark) {
+      ha-card {
+        background: rgba(24, 32, 48, 0.70) !important;
+        border: 1px solid rgba(255, 255, 255, 0.14) !important;
+        box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+      }
+      ha-card:hover {
+        border-color: rgba(56, 189, 248, 0.35) !important;
+        box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.15) !important;
+      }
+    }
+
+  modes:
+    light:
+      # --- Backgrounds ---
+      lovelace-background: 'radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%), radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.65) 0%, transparent 50%), linear-gradient(135deg, #cbe3f7 0%, #dbeafe 30%, #eef5ff 65%, #cde2f8 100%) fixed'
+      primary-background-color: '#d0e1f3'
+      secondary-background-color: 'rgba(255, 255, 255, 0.50)'
+      card-background-color: 'rgba(255, 255, 255, 0.65)'
+
+      # --- Card Glassmorphism ---
+      ha-card-background: 'rgba(255, 255, 255, 0.65)'
+      ha-card-backdrop-filter: 'blur(25px) saturate(180%)'
+      ha-card-border-radius: '22px'
+      ha-card-border-width: '1px'
+      ha-card-border-color: 'rgba(255, 255, 255, 0.90)'
+      ha-card-box-shadow: '0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95)'
+
+      # --- Typography ---
+      primary-text-color: '#0f172a'
+      secondary-text-color: '#475569'
+      text-primary-color: '#0f172a'
+      disabled-text-color: 'rgba(15, 23, 42, 0.38)'
+      divider-color: 'rgba(203, 213, 225, 0.60)'
+
+      # --- Accents & States ---
+      primary-color: '#0284c7'
+      accent-color: '#ea580c'
+      state-icon-color: '#475569'
+      state-icon-active-color: '#0284c7'
+      state-active-color: '#0284c7'
+      state-inactive-color: '#94a3b8'
+
+      # --- Forms, Dropdowns, Inputs ---
+      ha-color-form-background: 'rgba(255, 255, 255, 0.45)'
+      ha-color-form-background-hover: 'rgba(255, 255, 255, 0.65)'
+      ha-color-form-background-disabled: 'rgba(255, 255, 255, 0.20)'
+      input-fill-color: 'rgba(255, 255, 255, 0.45)'
+      input-ink-color: '#0f172a'
+      input-label-ink-color: '#475569'
+      input-disabled-fill-color: 'rgba(255, 255, 255, 0.20)'
+      input-disabled-ink-color: 'rgba(15, 23, 42, 0.38)'
+      input-idle-line-color: 'transparent'
+      input-hover-line-color: '#0284c7'
+      input-dropdown-icon-color: '#475569'
+      mdc-text-field-fill-color: 'rgba(255, 255, 255, 0.45)'
+      mdc-text-field-ink-color: '#0f172a'
+      mdc-text-field-label-ink-color: '#475569'
+      mdc-text-field-idle-line-color: 'transparent'
+      mdc-text-field-hover-line-color: '#0284c7'
+      mdc-select-fill-color: 'rgba(255, 255, 255, 0.45)'
+      mdc-select-ink-color: '#0f172a'
+      mdc-select-label-ink-color: '#475569'
+      mdc-select-idle-line-color: 'transparent'
+      mdc-select-hover-line-color: '#0284c7'
+      mdc-select-dropdown-icon-color: '#475569'
+      mdc-shape-small: '14px'
+
+      # --- Switches & Toggles ---
+      switch-checked-track-color: '#0284c7'
+      switch-checked-button-color: '#ffffff'
+      switch-unchecked-track-color: 'rgba(0, 0, 0, 0.15)'
+      switch-unchecked-button-color: '#ffffff'
+      paper-toggle-button-checked-bar-color: '#0284c7'
+      paper-toggle-button-checked-button-color: '#ffffff'
+      paper-toggle-button-unchecked-bar-color: 'rgba(0, 0, 0, 0.15)'
+      paper-toggle-button-unchecked-button-color: '#ffffff'
+
+      # --- Sliders ---
+      slider-color: '#0284c7'
+      slider-bar-color: 'rgba(0, 0, 0, 0.08)'
+      slider-secondary-color: '#7dd3fc'
+      paper-slider-active-color: '#0284c7'
+      paper-slider-container-color: 'rgba(0, 0, 0, 0.08)'
+      paper-slider-knob-color: '#ffffff'
+      paper-slider-knob-start-color: '#ffffff'
+      paper-slider-pin-color: '#0284c7'
+
+      # --- Header & Navigation (Frosted Glass with Blur) ---
+      app-header-background-color: 'rgba(238, 246, 255, 0.85)'
+      app-header-backdrop-filter: 'blur(28px) saturate(190%)'
+      app-header-text-color: '#0f172a'
+      app-header-selection-bar-color: '#0284c7'
+      app-header-border-bottom: '1px solid rgba(255, 255, 255, 0.85)'
+      sidebar-background-color: 'rgba(238, 246, 255, 0.85)'
+      sidebar-backdrop-filter: 'blur(30px) saturate(190%)'
+      sidebar-text-color: '#0f172a'
+      sidebar-selected-text-color: '#0284c7'
+      sidebar-selected-icon-color: '#0284c7'
+      sidebar-icon-color: '#475569'
+
+      # --- Dialogs & Modals ---
+      dialog-backdrop-filter: 'blur(20px)'
+      ha-dialog-surface-backdrop-filter: 'blur(30px) saturate(190%)'
+      mdc-dialog-box-shadow: '0 20px 50px rgba(15, 23, 42, 0.15)'
+      ha-dialog-border-radius: '28px'
+      ha-dialog-border-width: '1px'
+      ha-dialog-border-color: 'rgba(255, 255, 255, 0.85)'
+
+    dark:
+      # --- Backgrounds ---
+      lovelace-background: 'radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 40%), linear-gradient(135deg, #090e18 0%, #101828 35%, #182338 70%, #0c121e 100%) fixed'
+      primary-background-color: '#0c1017'
+      secondary-background-color: 'rgba(20, 27, 40, 0.65)'
+      card-background-color: 'rgba(24, 32, 48, 0.70)'
+
+      # --- Card Glassmorphism ---
+      ha-card-background: 'rgba(24, 32, 48, 0.70)'
+      ha-card-backdrop-filter: 'blur(25px) saturate(160%)'
+      ha-card-border-radius: '22px'
+      ha-card-border-width: '1px'
+      ha-card-border-color: 'rgba(255, 255, 255, 0.14)'
+      ha-card-box-shadow: '0 10px 35px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)'
+
+      # --- Typography ---
+      primary-text-color: '#f8fafc'
+      secondary-text-color: '#94a3b8'
+      text-primary-color: '#f8fafc'
+      disabled-text-color: 'rgba(248, 250, 252, 0.38)'
+      divider-color: 'rgba(255, 255, 255, 0.12)'
+
+      # --- Accents & States ---
+      primary-color: '#38bdf8'
+      accent-color: '#f59e0b'
+      state-icon-color: '#94a3b8'
+      state-icon-active-color: '#38bdf8'
+      state-active-color: '#38bdf8'
+      state-inactive-color: '#64748b'
+
+      # --- Forms, Dropdowns, Inputs ---
+      ha-color-form-background: 'rgba(255, 255, 255, 0.08)'
+      ha-color-form-background-hover: 'rgba(255, 255, 255, 0.14)'
+      ha-color-form-background-disabled: 'rgba(255, 255, 255, 0.04)'
+      input-fill-color: 'rgba(255, 255, 255, 0.08)'
+      input-ink-color: '#f8fafc'
+      input-label-ink-color: '#94a3b8'
+      input-disabled-fill-color: 'rgba(255, 255, 255, 0.04)'
+      input-disabled-ink-color: 'rgba(248, 250, 252, 0.38)'
+      input-idle-line-color: 'transparent'
+      input-hover-line-color: '#38bdf8'
+      input-dropdown-icon-color: '#94a3b8'
+      mdc-text-field-fill-color: 'rgba(255, 255, 255, 0.08)'
+      mdc-text-field-ink-color: '#f8fafc'
+      mdc-text-field-label-ink-color: '#94a3b8'
+      mdc-text-field-idle-line-color: 'transparent'
+      mdc-text-field-hover-line-color: '#38bdf8'
+      mdc-select-fill-color: 'rgba(255, 255, 255, 0.08)'
+      mdc-select-ink-color: '#f8fafc'
+      mdc-select-label-ink-color: '#94a3b8'
+      mdc-select-idle-line-color: 'transparent'
+      mdc-select-hover-line-color: '#38bdf8'
+      mdc-select-dropdown-icon-color: '#94a3b8'
+      mdc-shape-small: '14px'
+
+      # --- Switches & Toggles ---
+      switch-checked-track-color: '#38bdf8'
+      switch-checked-button-color: '#ffffff'
+      switch-unchecked-track-color: 'rgba(255, 255, 255, 0.18)'
+      switch-unchecked-button-color: '#ffffff'
+      paper-toggle-button-checked-bar-color: '#38bdf8'
+      paper-toggle-button-checked-button-color: '#ffffff'
+      paper-toggle-button-unchecked-bar-color: 'rgba(255, 255, 255, 0.18)'
+      paper-toggle-button-unchecked-button-color: '#ffffff'
+
+      # --- Sliders ---
+      slider-color: '#38bdf8'
+      slider-bar-color: 'rgba(255, 255, 255, 0.10)'
+      slider-secondary-color: '#0284c7'
+      paper-slider-active-color: '#38bdf8'
+      paper-slider-container-color: 'rgba(255, 255, 255, 0.10)'
+      paper-slider-knob-color: '#ffffff'
+      paper-slider-knob-start-color: '#ffffff'
+      paper-slider-pin-color: '#38bdf8'
+
+      # --- Header & Navigation (Frosted Glass with Blur) ---
+      app-header-background-color: 'rgba(15, 23, 42, 0.80)'
+      app-header-backdrop-filter: 'blur(28px) saturate(180%)'
+      app-header-text-color: '#f8fafc'
+      app-header-selection-bar-color: '#38bdf8'
+      app-header-border-bottom: '1px solid rgba(255, 255, 255, 0.12)'
+      sidebar-background-color: 'rgba(15, 23, 42, 0.80)'
+      sidebar-backdrop-filter: 'blur(30px) saturate(190%)'
+      sidebar-text-color: '#f8fafc'
+      sidebar-selected-text-color: '#38bdf8'
+      sidebar-selected-icon-color: '#38bdf8'
+      sidebar-icon-color: '#94a3b8'
+
+      # --- Dialogs & Modals ---
+      dialog-backdrop-filter: 'blur(20px)'
+      ha-dialog-surface-backdrop-filter: 'blur(30px) saturate(190%)'
+      mdc-dialog-box-shadow: '0 20px 50px rgba(0, 0, 0, 0.65)'
+      ha-dialog-border-radius: '28px'
+      ha-dialog-border-width: '1px'
+      ha-dialog-border-color: 'rgba(255, 255, 255, 0.15)'
+
+
+# ------------------------------------------------------------------------------
+# 2. Vision Glass Light (Dedicated Day Mode - Guaranteed Light)
+# ------------------------------------------------------------------------------
+Vision Glass Light:
+  # --- Card-Mod Global Enhancements ---
+  card-mod-theme: "Vision Glass Light"
+  card-mod-root: |
+    app-header, .header, ha-top-app-bar-fixed {
+      background: rgba(238, 246, 255, 0.85) !important;
+      backdrop-filter: blur(28px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.85) !important;
+    }
+  card-mod-sidebar: |
+    :host {
+      background: rgba(238, 246, 255, 0.85) !important;
+      backdrop-filter: blur(30px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+      border-right: 1px solid rgba(203, 213, 225, 0.60) !important;
+    }
+    .menu {
+      border-bottom: 1px solid rgba(203, 213, 225, 0.60) !important;
+    }
+    paper-listbox {
+      background: transparent !important;
+    }
+    paper-icon-item {
+      border-radius: 14px !important;
+      margin: 3px 8px !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    paper-icon-item:hover {
+      background: rgba(255, 255, 255, 0.40) !important;
+    }
+    paper-icon-item.iron-selected {
+      background: rgba(2, 132, 199, 0.18) !important;
+      border: 1px solid rgba(2, 132, 199, 0.35) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+  card-mod-more-info: |
+    ha-dialog {
+      --mdc-dialog-box-shadow: 0 25px 60px rgba(15, 23, 42, 0.18) !important;
+      --ha-dialog-border-radius: 28px !important;
+    }
+    ha-dialog .content, ha-dialog-surface {
+      border-radius: 28px !important;
+      backdrop-filter: blur(35px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(35px) saturate(190%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.85) !important;
+    }
+  card-mod-card: |
+    ha-card {
+      border-radius: 22px !important;
+      backdrop-filter: blur(25px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(25px) saturate(180%) !important;
+      background: rgba(255, 255, 255, 0.65) !important;
+      border: 1px solid rgba(255, 255, 255, 0.90) !important;
+      box-shadow: 0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95) !important;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    ha-card:hover {
+      box-shadow: 0 14px 40px rgba(31, 38, 135, 0.14), inset 0 1px 1px rgba(255, 255, 255, 1) !important;
+    }
+
+  # --- Backgrounds ---
+  lovelace-background: 'radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%), radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.65) 0%, transparent 50%), linear-gradient(135deg, #cbe3f7 0%, #dbeafe 30%, #eef5ff 65%, #cde2f8 100%) fixed'
+  primary-background-color: '#d0e1f3'
+  secondary-background-color: 'rgba(255, 255, 255, 0.50)'
+  card-background-color: 'rgba(255, 255, 255, 0.65)'
+
+  # --- Card Glassmorphism ---
+  ha-card-background: 'rgba(255, 255, 255, 0.65)'
+  ha-card-backdrop-filter: 'blur(25px) saturate(180%)'
+  ha-card-border-radius: '22px'
+  ha-card-border-width: '1px'
+  ha-card-border-color: 'rgba(255, 255, 255, 0.90)'
+  ha-card-box-shadow: '0 10px 30px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.95)'
+
+  # --- Typography ---
+  primary-text-color: '#0f172a'
+  secondary-text-color: '#475569'
+  text-primary-color: '#0f172a'
+  disabled-text-color: 'rgba(15, 23, 42, 0.38)'
+  divider-color: 'rgba(203, 213, 225, 0.60)'
+
+  # --- Accents & States ---
+  primary-color: '#0284c7'
+  accent-color: '#ea580c'
+  state-icon-color: '#475569'
+  state-icon-active-color: '#0284c7'
+  state-active-color: '#0284c7'
+  state-inactive-color: '#94a3b8'
+
+  # --- Forms, Dropdowns, Inputs ---
+  ha-color-form-background: 'rgba(255, 255, 255, 0.45)'
+  ha-color-form-background-hover: 'rgba(255, 255, 255, 0.65)'
+  ha-color-form-background-disabled: 'rgba(255, 255, 255, 0.20)'
+  input-fill-color: 'rgba(255, 255, 255, 0.45)'
+  input-ink-color: '#0f172a'
+  input-label-ink-color: '#475569'
+  input-disabled-fill-color: 'rgba(255, 255, 255, 0.20)'
+  input-disabled-ink-color: 'rgba(15, 23, 42, 0.38)'
+  input-idle-line-color: 'transparent'
+  input-hover-line-color: '#0284c7'
+  input-dropdown-icon-color: '#475569'
+  mdc-text-field-fill-color: 'rgba(255, 255, 255, 0.45)'
+  mdc-text-field-ink-color: '#0f172a'
+  mdc-text-field-label-ink-color: '#475569'
+  mdc-text-field-idle-line-color: 'transparent'
+  mdc-text-field-hover-line-color: '#0284c7'
+  mdc-select-fill-color: 'rgba(255, 255, 255, 0.45)'
+  mdc-select-ink-color: '#0f172a'
+  mdc-select-label-ink-color: '#475569'
+  mdc-select-idle-line-color: 'transparent'
+  mdc-select-hover-line-color: '#0284c7'
+  mdc-select-dropdown-icon-color: '#475569'
+  mdc-shape-small: '14px'
+
+  # --- Switches & Toggles ---
+  switch-checked-track-color: '#0284c7'
+  switch-checked-button-color: '#ffffff'
+  switch-unchecked-track-color: 'rgba(0, 0, 0, 0.15)'
+  switch-unchecked-button-color: '#ffffff'
+  paper-toggle-button-checked-bar-color: '#0284c7'
+  paper-toggle-button-checked-button-color: '#ffffff'
+  paper-toggle-button-unchecked-bar-color: 'rgba(0, 0, 0, 0.15)'
+  paper-toggle-button-unchecked-button-color: '#ffffff'
+
+  # --- Sliders ---
+  slider-color: '#0284c7'
+  slider-bar-color: 'rgba(0, 0, 0, 0.08)'
+  slider-secondary-color: '#7dd3fc'
+  paper-slider-active-color: '#0284c7'
+  paper-slider-container-color: 'rgba(0, 0, 0, 0.08)'
+  paper-slider-knob-color: '#ffffff'
+  paper-slider-knob-start-color: '#ffffff'
+  paper-slider-pin-color: '#0284c7'
+
+  # --- Header & Navigation (Frosted Glass with Blur) ---
+  app-header-background-color: 'rgba(238, 246, 255, 0.85)'
+  app-header-backdrop-filter: 'blur(28px) saturate(190%)'
+  app-header-text-color: '#0f172a'
+  app-header-selection-bar-color: '#0284c7'
+  app-header-border-bottom: '1px solid rgba(255, 255, 255, 0.85)'
+  sidebar-background-color: 'rgba(238, 246, 255, 0.85)'
+  sidebar-backdrop-filter: 'blur(30px) saturate(190%)'
+  sidebar-text-color: '#0f172a'
+  sidebar-selected-text-color: '#0284c7'
+  sidebar-selected-icon-color: '#0284c7'
+  sidebar-icon-color: '#475569'
+
+  # --- Dialogs & Modals ---
+  dialog-backdrop-filter: 'blur(20px)'
+  ha-dialog-surface-backdrop-filter: 'blur(30px) saturate(190%)'
+  mdc-dialog-box-shadow: '0 20px 50px rgba(15, 23, 42, 0.15)'
+  ha-dialog-border-radius: '28px'
+  ha-dialog-border-width: '1px'
+  ha-dialog-border-color: 'rgba(255, 255, 255, 0.85)'
+
+
+# ------------------------------------------------------------------------------
+# 3. Vision Glass Dark (Dedicated Night Mode - Guaranteed Dark)
+# ------------------------------------------------------------------------------
+Vision Glass Dark:
+  # --- Card-Mod Global Enhancements ---
+  card-mod-theme: "Vision Glass Dark"
+  card-mod-root: |
+    app-header, .header, ha-top-app-bar-fixed {
+      background: rgba(15, 23, 42, 0.80) !important;
+      backdrop-filter: blur(28px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(28px) saturate(180%) !important;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+  card-mod-sidebar: |
+    :host {
+      background: rgba(15, 23, 42, 0.80) !important;
+      backdrop-filter: blur(30px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+      border-right: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    .menu {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12) !important;
+    }
+    paper-listbox {
+      background: transparent !important;
+    }
+    paper-icon-item {
+      border-radius: 14px !important;
+      margin: 3px 8px !important;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    paper-icon-item:hover {
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+    paper-icon-item.iron-selected {
+      background: rgba(56, 189, 248, 0.18) !important;
+      border: 1px solid rgba(56, 189, 248, 0.35) !important;
+      backdrop-filter: blur(10px) !important;
+    }
+  card-mod-more-info: |
+    ha-dialog {
+      --mdc-dialog-box-shadow: 0 25px 60px rgba(0, 0, 0, 0.65) !important;
+      --ha-dialog-border-radius: 28px !important;
+    }
+    ha-dialog .content, ha-dialog-surface {
+      border-radius: 28px !important;
+      backdrop-filter: blur(35px) saturate(190%) !important;
+      -webkit-backdrop-filter: blur(35px) saturate(190%) !important;
+      border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    }
+  card-mod-card: |
+    ha-card {
+      border-radius: 22px !important;
+      backdrop-filter: blur(25px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(25px) saturate(160%) !important;
+      background: rgba(24, 32, 48, 0.70) !important;
+      border: 1px solid rgba(255, 255, 255, 0.14) !important;
+      box-shadow: 0 12px 35px rgba(0, 0, 0, 0.45), inset 0 1px 1px rgba(255, 255, 255, 0.15) !important;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    }
+    ha-card:hover {
+      border-color: rgba(56, 189, 248, 0.35) !important;
+      box-shadow: 0 16px 45px rgba(0, 0, 0, 0.55), 0 0 20px rgba(56, 189, 248, 0.15) !important;
+    }
+
+  # --- Backgrounds ---
+  lovelace-background: 'radial-gradient(circle at 80% 20%, rgba(56, 189, 248, 0.12) 0%, transparent 40%), linear-gradient(135deg, #090e18 0%, #101828 35%, #182338 70%, #0c121e 100%) fixed'
+  primary-background-color: '#0c1017'
+  secondary-background-color: 'rgba(20, 27, 40, 0.65)'
+  card-background-color: 'rgba(24, 32, 48, 0.70)'
+
+  # --- Card Glassmorphism ---
+  ha-card-background: 'rgba(24, 32, 48, 0.70)'
+  ha-card-backdrop-filter: 'blur(25px) saturate(160%)'
+  ha-card-border-radius: '22px'
+  ha-card-border-width: '1px'
+  ha-card-border-color: 'rgba(255, 255, 255, 0.14)'
+  ha-card-box-shadow: '0 10px 35px 0 rgba(0, 0, 0, 0.45), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15)'
+
+  # --- Typography ---
+  primary-text-color: '#f8fafc'
+  secondary-text-color: '#94a3b8'
+  text-primary-color: '#f8fafc'
+  disabled-text-color: 'rgba(248, 250, 252, 0.38)'
+  divider-color: 'rgba(255, 255, 255, 0.12)'
+
+  # --- Accents & States ---
+  primary-color: '#38bdf8'
+  accent-color: '#f59e0b'
+  state-icon-color: '#94a3b8'
+  state-icon-active-color: '#38bdf8'
+  state-active-color: '#38bdf8'
+  state-inactive-color: '#64748b'
+
+  # --- Forms, Dropdowns, Inputs ---
+  ha-color-form-background: 'rgba(255, 255, 255, 0.08)'
+  ha-color-form-background-hover: 'rgba(255, 255, 255, 0.14)'
+  ha-color-form-background-disabled: 'rgba(255, 255, 255, 0.04)'
+  input-fill-color: 'rgba(255, 255, 255, 0.08)'
+  input-ink-color: '#f8fafc'
+  input-label-ink-color: '#94a3b8'
+  input-disabled-fill-color: 'rgba(255, 255, 255, 0.04)'
+  input-disabled-ink-color: 'rgba(248, 250, 252, 0.38)'
+  input-idle-line-color: 'transparent'
+  input-hover-line-color: '#38bdf8'
+  input-dropdown-icon-color: '#94a3b8'
+  mdc-text-field-fill-color: 'rgba(255, 255, 255, 0.08)'
+  mdc-text-field-ink-color: '#f8fafc'
+  mdc-text-field-label-ink-color: '#94a3b8'
+  mdc-text-field-idle-line-color: 'transparent'
+  mdc-text-field-hover-line-color: '#38bdf8'
+  mdc-select-fill-color: 'rgba(255, 255, 255, 0.08)'
+  mdc-select-ink-color: '#f8fafc'
+  mdc-select-label-ink-color: '#94a3b8'
+  mdc-select-idle-line-color: 'transparent'
+  mdc-select-hover-line-color: '#38bdf8'
+  mdc-select-dropdown-icon-color: '#94a3b8'
+  mdc-shape-small: '14px'
+
+  # --- Switches & Toggles ---
+  switch-checked-track-color: '#38bdf8'
+  switch-checked-button-color: '#ffffff'
+  switch-unchecked-track-color: 'rgba(255, 255, 255, 0.18)'
+  switch-unchecked-button-color: '#ffffff'
+  paper-toggle-button-checked-bar-color: '#38bdf8'
+  paper-toggle-button-checked-button-color: '#ffffff'
+  paper-toggle-button-unchecked-bar-color: 'rgba(255, 255, 255, 0.18)'
+  paper-toggle-button-unchecked-button-color: '#ffffff'
+
+  # --- Sliders ---
+  slider-color: '#38bdf8'
+  slider-bar-color: 'rgba(255, 255, 255, 0.10)'
+  slider-secondary-color: '#0284c7'
+  paper-slider-active-color: '#38bdf8'
+  paper-slider-container-color: 'rgba(255, 255, 255, 0.10)'
+  paper-slider-knob-color: '#ffffff'
+  paper-slider-knob-start-color: '#ffffff'
+  paper-slider-pin-color: '#38bdf8'
+
+  # --- Header & Navigation (Frosted Glass with Blur) ---
+  app-header-background-color: 'rgba(15, 23, 42, 0.80)'
+  app-header-backdrop-filter: 'blur(28px) saturate(180%)'
+  app-header-text-color: '#f8fafc'
+  app-header-selection-bar-color: '#38bdf8'
+  app-header-border-bottom: '1px solid rgba(255, 255, 255, 0.12)'
+  sidebar-background-color: 'rgba(15, 23, 42, 0.80)'
+  sidebar-backdrop-filter: 'blur(30px) saturate(190%)'
+  sidebar-text-color: '#f8fafc'
+  sidebar-selected-text-color: '#38bdf8'
+  sidebar-selected-icon-color: '#38bdf8'
+  sidebar-icon-color: '#94a3b8'
+
+  # --- Dialogs & Modals ---
+  dialog-backdrop-filter: 'blur(20px)'
+  ha-dialog-surface-backdrop-filter: 'blur(30px) saturate(190%)'
+  mdc-dialog-box-shadow: '0 20px 50px rgba(0, 0, 0, 0.65)'
+  ha-dialog-border-radius: '28px'
+  ha-dialog-border-width: '1px'
+  ha-dialog-border-color: 'rgba(255, 255, 255, 0.15)'

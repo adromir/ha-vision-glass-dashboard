@@ -1,0 +1,35 @@
+alias: "Vision Glass: Tag/Nacht Theme-Wechsel"
+description: "Schaltet bei Sonnenaufgang automatisch auf Vision Glass Light und bei Sonnenuntergang auf Vision Glass Dark"
+id: vision_glass_day_night_switch
+mode: single
+trigger:
+  - platform: sun
+    event: sunrise
+    id: sunrise
+  - platform: sun
+    event: sunset
+    id: sunset
+  - platform: homeassistant
+    event: start
+    id: startup
+action:
+  - choose:
+      - conditions:
+          - condition: sun
+            after: sunrise
+            before: sunset
+        sequence:
+          - action: frontend.set_theme
+            data:
+              name: "Vision Glass Light"
+      - conditions:
+          - condition: or
+            conditions:
+              - condition: sun
+                after: sunset
+              - condition: sun
+                before: sunrise
+        sequence:
+          - action: frontend.set_theme
+            data:
+              name: "Vision Glass Dark"

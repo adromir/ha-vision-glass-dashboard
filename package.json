@@ -1,0 +1,25 @@
+{
+  "name": "ha-vision-glass-dashboard",
+  "version": "2.0.0",
+  "description": "Turnkey spatial glassmorphism smart home dashboard for Home Assistant with initial auto-provisioning, visual configurator, custom dock sections, and custom overlay categories",
+  "main": "dist/vision-glass-dashboard.js",
+  "keywords": [
+    "home-assistant",
+    "homeassistant",
+    "lovelace",
+    "dashboard",
+    "visionos",
+    "glassmorphism",
+    "hacs"
+  ],
+  "author": "Adromir",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/adromir/ha-vision-glass-dashboard.git"
+  },
+  "bugs": {
+    "url": "https://github.com/adromir/ha-vision-glass-dashboard/issues"
+  },
+  "homepage": "https://github.com/adromir/ha-vision-glass-dashboard#readme"
+}
