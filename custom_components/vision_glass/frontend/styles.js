@@ -315,34 +315,164 @@ export const VISION_GLASS_STYLES = `
         .chip {
           display: inline-flex;
           align-items: center;
-          gap: 5px;
-          background: var(--bg-surface);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid var(--border-glass);
-          border-radius: 9999px;
-          padding: 4px 10px;
+          gap: 6px;
+          background: linear-gradient(145deg, rgba(24, 32, 48, 0.85) 0%, rgba(15, 23, 42, 0.92) 100%);
+          backdrop-filter: blur(24px) saturate(190%);
+          -webkit-backdrop-filter: blur(24px) saturate(190%);
+          border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.14));
+          border-radius: 12px;
+          padding: 5px 12px;
           font-size: 11.5px;
-          font-weight: 500;
+          font-weight: 600;
+          letter-spacing: 0.2px;
           cursor: pointer;
-          box-shadow: var(--shadow-ambient);
-          transition: transform 0.2s, background 0.2s;
+          color: var(--text-primary, #f8fafc);
+          box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.35), inset 0 -1px 1px rgba(0, 0, 0, 0.2);
+          transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s, background 0.25s;
+          user-select: none;
         }
         .chip:hover {
-          transform: translateY(-1px);
-          background: var(--bg-surface-hover);
+          transform: translateY(-2px) scale(1.02);
+          border-color: rgba(56, 189, 248, 0.55);
+          box-shadow: 0 8px 22px rgba(0, 0, 0, 0.36), 0 0 14px rgba(56, 189, 248, 0.25), inset 0 1px 1.5px rgba(255, 255, 255, 0.6);
         }
 
         .theme-light .chip {
-          background: rgba(255, 255, 255, 0.94);
-          border: 1px solid rgba(148, 163, 184, 0.42);
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.92) 0%, rgba(241, 245, 249, 0.85) 100%);
+          border: 1px solid rgba(203, 213, 225, 0.90);
+          box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), 0 1px 3px rgba(15, 23, 42, 0.04), inset 0 1.5px 1px #ffffff, inset 0 -1px 1px rgba(148, 163, 184, 0.25);
           color: #0f172a;
           font-weight: 600;
         }
         .theme-light .chip:hover {
-          background: #ffffff;
-          border-color: rgba(2, 132, 199, 0.6);
+          transform: translateY(-2px) scale(1.02);
+          background: linear-gradient(145deg, #ffffff 0%, rgba(248, 250, 252, 0.95) 100%);
+          border-color: rgba(2, 132, 199, 0.65);
+          box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12), 0 0 14px rgba(2, 132, 199, 0.20), inset 0 1.5px 1px #ffffff;
+        }
+
+        /* Presence Avatar Cluster with Fanning Animation */
+        .chip-persons-cluster {
+          position: relative;
+          padding: 4px 10px 4px 6px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+        }
+        .cluster-stack {
+          display: inline-flex;
+          align-items: center;
+          transition: gap 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .cluster-avatar-wrap {
+          position: relative;
+          margin-right: -10px;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), margin-right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          cursor: pointer;
+        }
+        .cluster-avatar-wrap:last-child {
+          margin-right: 0;
+        }
+        .cluster-avatar {
+          width: 22px;
+          height: 22px;
+          border-radius: 50%;
+          object-fit: cover;
+          display: block;
+          border: 1.5px solid rgba(255, 255, 255, 0.85);
+          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+          transition: transform 0.25s ease, box-shadow 0.25s ease;
+        }
+        .theme-light .cluster-avatar {
+          border-color: #ffffff;
+          box-shadow: 0 2px 5px rgba(15, 23, 42, 0.15);
+        }
+        .cluster-avatar-initial {
+          width: 22px;
+          height: 22px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 700;
+          font-size: 10px;
+          color: #fff;
+          background: linear-gradient(135deg, #0284c7, #818cf8);
+        }
+        .cluster-status-dot {
+          position: absolute;
+          bottom: -1px;
+          right: -1px;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          border: 1.5px solid var(--bg-card, #101826);
+        }
+        .theme-light .cluster-status-dot {
+          border-color: #ffffff;
+        }
+
+        .cluster-collapsed-label {
+          font-size: 11px;
+          font-weight: 600;
+          color: var(--text-secondary, #94a3b8);
+          transition: opacity 0.2s, max-width 0.3s;
+          white-space: nowrap;
+        }
+
+        .cluster-expanded-list {
+          display: none;
+          align-items: center;
+          gap: 10px;
+          animation: clusterFadeIn 0.25s ease-out;
+        }
+        @keyframes clusterFadeIn {
+          from { opacity: 0; transform: translateX(-4px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        .cluster-expanded-item {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          cursor: pointer;
+          white-space: nowrap;
+          padding: 2px 6px;
+          border-radius: 8px;
+          transition: background 0.15s;
+        }
+        .cluster-expanded-item:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+        .theme-light .cluster-expanded-item:hover {
+          background: rgba(2, 132, 199, 0.10);
+        }
+        .cluster-dot {
+          width: 6px;
+          height: 6px;
+          border-radius: 50%;
+        }
+        .cluster-user-name {
+          font-weight: 600;
+          font-size: 11px;
+        }
+        .cluster-user-status {
+          font-size: 10px;
+          color: var(--text-secondary, #94a3b8);
+        }
+
+        /* Hover expansion: Fan out avatars! */
+        .chip-persons-cluster:hover .cluster-avatar-wrap {
+          margin-right: 4px;
+          transform: scale(1.08);
+        }
+        .chip-persons-cluster:hover .cluster-avatar-wrap:hover {
+          transform: scale(1.22) translateY(-2px);
+          z-index: 10 !important;
+        }
+        .chip-persons-cluster:hover .cluster-collapsed-label {
+          display: none;
+        }
+        .chip-persons-cluster:hover .cluster-expanded-list {
+          display: inline-flex;
         }
 
         .chip-avatar {
@@ -435,41 +565,10 @@ export const VISION_GLASS_STYLES = `
           transition: transform 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.28s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
         }
 
-        .sidebar-card::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 10%;
-          right: 10%;
-          height: 1.5px;
-          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
-          pointer-events: none;
-          z-index: 3;
-        }
-
-        .sidebar-card::after {
-          content: '';
-          position: absolute;
-          inset: 0;
-          border-radius: inherit;
-          background: linear-gradient(115deg, transparent 0%, transparent 35%, rgba(255, 255, 255, 0.26) 50%, rgba(255, 255, 255, 0.06) 54%, transparent 68%);
-          background-size: 250% 250%;
-          background-position: -120% -120%;
-          pointer-events: none;
-          z-index: 2;
-          opacity: 0.5;
-          transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
-        }
-
         .sidebar-card:hover {
-          transform: translateY(-3px) scale(1.008);
-          border-color: rgba(56, 189, 248, 0.5);
-          box-shadow: 0 20px 48px rgba(0, 0, 0, 0.45), 0 0 22px rgba(56, 189, 248, 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.85);
-        }
-
-        .sidebar-card:hover::after {
-          background-position: 140% 140%;
-          opacity: 1;
+          transform: translateY(-2px);
+          border-color: rgba(56, 189, 248, 0.4);
+          box-shadow: 0 16px 38px rgba(0, 0, 0, 0.42);
         }
 
         .theme-light .sidebar-card {
@@ -479,21 +578,9 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .sidebar-card:hover {
-          transform: translateY(-3px) scale(1.008);
-          border-color: rgba(2, 132, 199, 0.55);
-          box-shadow: 0 20px 42px rgba(15, 23, 42, 0.16), 0 0 20px rgba(2, 132, 199, 0.2), inset 0 1px 2px rgba(255, 255, 255, 1);
-        }
-
-        .theme-light .sidebar-card::after {
-          background: linear-gradient(115deg,
-            transparent 0%,
-            transparent 32%,
-            rgba(15, 23, 42, 0.03) 42%,
-            rgba(15, 23, 42, 0.14) 50%,
-            rgba(15, 23, 42, 0.04) 58%,
-            transparent 70%);
-          background-size: 250% 250%;
-          background-position: -120% -120%;
+          transform: translateY(-2px);
+          border-color: rgba(2, 132, 199, 0.45);
+          box-shadow: 0 16px 36px rgba(15, 23, 42, 0.14);
         }
 
         .sidebar-header-badge {
@@ -804,23 +891,42 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .room-card {
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.90) 100%);
-          border: 1px solid rgba(148, 163, 184, 0.40);
-          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05), inset 0 1px 1.5px #ffffff;
+          background: linear-gradient(145deg, rgba(255, 255, 255, 0.88) 0%, rgba(241, 245, 249, 0.72) 55%, rgba(226, 232, 240, 0.62) 100%);
+          backdrop-filter: blur(30px) saturate(190%);
+          -webkit-backdrop-filter: blur(30px) saturate(190%);
+          border: 1px solid rgba(203, 213, 225, 0.90);
+          box-shadow:
+            0 16px 36px -4px rgba(15, 23, 42, 0.14),
+            0 4px 12px rgba(15, 23, 42, 0.06),
+            inset 0 1.5px 1.5px 0 #ffffff,
+            inset 0 -1.5px 1.5px 0 rgba(148, 163, 184, 0.28),
+            inset 0 0 0 1px rgba(255, 255, 255, 0.70);
+        }
+
+        .theme-light .room-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 6%;
+          right: 6%;
+          height: 2px;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.95), transparent);
+          pointer-events: none;
+          z-index: 3;
         }
 
         .theme-light .room-card::after {
           background: linear-gradient(115deg,
             transparent 0%,
             transparent 35%,
-            rgba(255, 255, 255, 0.70) 50%,
-            rgba(255, 255, 255, 0.20) 55%,
+            rgba(255, 255, 255, 0.75) 50%,
+            rgba(255, 255, 255, 0.25) 55%,
             transparent 70%);
           background-size: 250% 250%;
           background-position: -120% -120%;
           pointer-events: none;
           z-index: 2;
-          opacity: 0.6;
+          opacity: 0.7;
           transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
         }
 
@@ -830,9 +936,13 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .room-card:hover {
-          transform: translateY(-5px) scale(1.015);
-          border-color: rgba(2, 132, 199, 0.6);
-          box-shadow: 0 20px 42px rgba(15, 23, 42, 0.16), 0 0 22px rgba(2, 132, 199, 0.22), inset 0 1px 2px rgba(255, 255, 255, 1);
+          transform: translateY(-6px) scale(1.018);
+          border-color: rgba(2, 132, 199, 0.65);
+          box-shadow:
+            0 26px 52px -6px rgba(15, 23, 42, 0.20),
+            0 0 24px rgba(2, 132, 199, 0.24),
+            inset 0 2px 2px #ffffff,
+            inset 0 -1.5px 1.5px rgba(148, 163, 184, 0.35);
         }
 
         /* Eliminate crosshair rendering artifact on scale/transform */

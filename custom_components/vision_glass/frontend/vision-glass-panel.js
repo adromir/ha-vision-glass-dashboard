@@ -775,29 +775,65 @@ class VisionGlassPanel extends HTMLElement {
           ? configuredPersons.filter(id => this._hass.states[id])
           : allPersonIds;
 
-        personsContainer.innerHTML = activePersonIds.map(pId => {
-          const pState = this._hass.states[pId];
-          const isHome = pState && pState.state === 'home';
-          const name = pState?.attributes?.friendly_name || pId.replace('person.', '');
-          const pic = pState?.attributes?.entity_picture;
-          const statusText = isHome ? this._t('home') : (pState ? (pState.state === 'not_home' ? this._t('away') : pState.state) : this._t('unknown'));
-          return `
-            <div class="chip chip-person" data-person-id="${pId}" title="Status ${name}">
-              ${pic ? `<img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="${name}" />`
-                    : `<div class="chip-avatar chip-avatar-initial" style="background: linear-gradient(135deg, #38bdf8, #818cf8);">${name.charAt(0).toUpperCase()}</div>`}
-              <span class="chip-name">${name}</span>
-              <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
-              <span class="chip-status-text">${statusText}</span>
+        if (activePersonIds.length === 0) {
+          personsContainer.innerHTML = '';
+        } else {
+          let homeCount = 0;
+          const personData = activePersonIds.map(pId => {
+            const pState = this._hass.states[pId];
+            const isHome = pState && pState.state === 'home';
+            if (isHome) homeCount++;
+            const name = pState?.attributes?.friendly_name || pId.replace('person.', '');
+            const pic = pState?.attributes?.entity_picture;
+            const statusText = isHome
+              ? this._t('home')
+              : (pState ? (pState.state === 'not_home' ? this._t('away') : pState.state) : this._t('unknown'));
+            return { id: pId, name, pic, isHome, statusText };
+          });
+
+          let summaryLabel = '';
+          if (homeCount === personData.length) {
+            summaryLabel = personData.length === 1 ? '1 daheim' : `${personData.length} daheim`;
+          } else if (homeCount === 0) {
+            summaryLabel = 'Niemand daheim';
+          } else {
+            summaryLabel = `${homeCount}/${personData.length} daheim`;
+          }
+
+          personsContainer.innerHTML = `
+            <div class="chip chip-persons-cluster" id="chipPersonsCluster" title="Anwesenheit (${summaryLabel})">
+              <div class="cluster-stack">
+                ${personData.map((p, idx) => `
+                  <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
+                    ${p.pic
+                      ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
+                      : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
+                    }
+                    <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                  </div>
+                `).join('')}
+              </div>
+              <div class="cluster-collapsed-label">${summaryLabel}</div>
+              <div class="cluster-expanded-list">
+                ${personData.map(p => `
+                  <div class="cluster-expanded-item" data-person-id="${p.id}" title="${p.name} Details öffnen">
+                    <span class="cluster-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                    <span class="cluster-user-name">${p.name}</span>
+                    <span class="cluster-user-status">(${p.statusText})</span>
+                  </div>
+                `).join('')}
+              </div>
             </div>
           `;
-        }).join('');
 
-        personsContainer.querySelectorAll('.chip-person[data-person-id]').forEach(chip => {
-          chip.onclick = () => {
-            const pId = chip.getAttribute('data-person-id');
-            this._openPersonModal(pId);
-          };
-        });
+          personsContainer.querySelectorAll('[data-person-id]').forEach(el => {
+            el.onclick = (e) => {
+              e.stopPropagation();
+              const pId = el.getAttribute('data-person-id');
+              if (pId) this._openPersonModal(pId);
+            };
+          });
+        }
       }
     }
 
@@ -1621,12 +1657,12 @@ class VisionGlassPanel extends HTMLElement {
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
             <div id="chipsCustomList" style="display:contents;"></div>
             <div class="chip" id="chipTheme" style="display:none;cursor:pointer;" title="Theme Switch Engine"></div>
-            <button class="chip chip-stats" id="chipStatsNav" title="${this._t('stats')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
-              ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} ${this._t('stats')}
-            </button>
-            <button class="chip chip-settings" id="chipSettings" title="${this._t('settings')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
-              ${this._icon('settings', { size: 14, style: 'margin-right:4px;' })} ${this._t('settings')}
-            </button>
+            <div class="chip chip-stats" id="chipStatsNav" title="${this._t('stats')}">
+              ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} <span>${this._t('stats')}</span>
+            </div>
+            <div class="chip chip-settings" id="chipSettings" title="${this._t('settings')}">
+              ${this._icon('settings', { size: 14, style: 'margin-right:4px;' })} <span>${this._t('settings')}</span>
+            </div>
           </div>
         </div>
 
