@@ -1757,7 +1757,7 @@ export const modalMethods = {
       }
 
       const statsConf = this._config.stats || {};
-      const enabledRoomIds = statsConf.enabled_rooms;
+      const roomStatsConf = statsConf.rooms || {};
       const customSections = Array.isArray(statsConf.custom_sections) ? statsConf.custom_sections : [];
 
       let tab = this._statsTab || 'temperature';
@@ -1765,7 +1765,6 @@ export const modalMethods = {
       const validTabs = [];
       if (statsConf.show_temperature !== false) validTabs.push('temperature');
       if (statsConf.show_illuminance !== false) validTabs.push('illuminance');
-      if (statsConf.show_occupancy !== false) validTabs.push('occupancy_heating');
       if (statsConf.show_battery !== false) validTabs.push('battery');
       customSections.forEach(cs => validTabs.push(`custom_${cs.id}`));
       if (validTabs.length > 0 && !validTabs.includes(tab)) {
@@ -1773,33 +1772,66 @@ export const modalMethods = {
         this._statsTab = tab;
       }
 
-      const palette = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#a855f7'];
+      const palette = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#a855f7', '#6366f1', '#14b8a6'];
       const roomSensorsConfig = {};
       (this._config.rooms || []).forEach(r => {
-        if (!r || r.id === 'wohnung' || r.id === 'umwelt') return;
-        if (Array.isArray(enabledRoomIds) && enabledRoomIds.length > 0 && !enabledRoomIds.includes(r.id)) return;
-        const tempIds = new Set();
-        const illumIds = new Set();
-        if (r.temp_entity) tempIds.add(r.temp_entity);
-        if (r.illuminance_entity) illumIds.add(r.illuminance_entity);
-        if (this._discovery && this._discovery.entities) {
-          Object.values(this._discovery.entities).forEach(meta => {
-            if (meta.area_id !== r.id || meta.domain !== 'sensor') return;
-            if (meta.device_class === 'temperature') tempIds.add(meta.entity_id);
-            if (meta.device_class === 'illuminance') illumIds.add(meta.entity_id);
-          });
+        if (!r) return;
+        const roomCfg = roomStatsConf[r.id];
+        let isEnabled = true;
+        if (roomCfg && typeof roomCfg.enabled === 'boolean') {
+          isEnabled = roomCfg.enabled;
+        } else if (Array.isArray(statsConf.enabled_rooms)) {
+          isEnabled = statsConf.enabled_rooms.includes(r.id);
+        } else {
+          // Default: enable if room has any temp, climate or illuminance entity
+          const hasAny = r.temp_entity || r.climate_entity || r.illuminance_entity;
+          isEnabled = !!hasAny;
         }
-        // Fallback: If no standalone temperature sensor, fall back to climate entity
-        if (tempIds.size === 0 && r.climate_entity && this._hass.states[r.climate_entity]) {
-          tempIds.add(r.climate_entity);
+        if (!isEnabled) return;
+
+        // Determine temperature entities for this room
+        let tempIds = [];
+        if (roomCfg && Array.isArray(roomCfg.temp_entities)) {
+          tempIds = roomCfg.temp_entities;
+        } else {
+          const discoveredTemp = new Set();
+          if (r.temp_entity) discoveredTemp.add(r.temp_entity);
+          if (this._discovery && this._discovery.entities) {
+            Object.values(this._discovery.entities).forEach(meta => {
+              if (meta.area_id === r.id && meta.domain === 'sensor' && meta.device_class === 'temperature') {
+                discoveredTemp.add(meta.entity_id);
+              }
+            });
+          }
+          if (discoveredTemp.size === 0 && r.climate_entity && this._hass?.states[r.climate_entity]) {
+            discoveredTemp.add(r.climate_entity);
+          }
+          tempIds = [...discoveredTemp];
         }
-        if (tempIds.size === 0 && illumIds.size === 0 && !r.climate_entity && !r.light_entity && !r.presence_entity) return;
+
+        // Determine illuminance entities for this room
+        let illumIds = [];
+        if (roomCfg && Array.isArray(roomCfg.illum_entities)) {
+          illumIds = roomCfg.illum_entities;
+        } else {
+          const discoveredIllum = new Set();
+          if (r.illuminance_entity) discoveredIllum.add(r.illuminance_entity);
+          if (this._discovery && this._discovery.entities) {
+            Object.values(this._discovery.entities).forEach(meta => {
+              if (meta.area_id === r.id && meta.domain === 'sensor' && meta.device_class === 'illuminance') {
+                discoveredIllum.add(meta.entity_id);
+              }
+            });
+          }
+          illumIds = [...discoveredIllum];
+        }
+
         roomSensorsConfig[r.id] = {
           name: r.name || r.id,
           climate_entity: r.climate_entity || null,
           light_entity: r.light_entity || null,
           presence_entity: r.presence_entity || null,
-          temp_sensors: [...tempIds].map((id, i) => {
+          temp_sensors: tempIds.map((id, i) => {
             const friendly = this._hass.states[id]?.attributes?.friendly_name;
             const fallbackName = id.startsWith('climate.') ? `${r.name || r.id} Thermostat` : id;
             return {
@@ -1808,7 +1840,7 @@ export const modalMethods = {
               color: palette[i % palette.length]
             };
           }),
-          illum_sensors: [...illumIds].map((id, i) => ({
+          illum_sensors: illumIds.map((id, i) => ({
             id,
             name: this._hass.states[id]?.attributes?.friendly_name || id,
             color: palette[i % palette.length]
@@ -2022,37 +2054,6 @@ export const modalMethods = {
             </div>
           `;
         }
-      } else if (tab === 'occupancy_heating') {
-        const roomsList = roomKeys.map(k => roomSensorsConfig[k]).filter(r => r.presence_entity || r.climate_entity);
-        tabContent = `
-          <div style="font-size:14px;color:var(--text-secondary);margin-bottom:6px;">${this._t('live_occupancy_overview')}</div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
-            ${roomsList.map(r => {
-              const occObj = r.presence_entity ? this._hass.states[r.presence_entity] : null;
-              const isOcc = occObj && occObj.state === 'on';
-              const climObj = r.climate_entity ? this._hass.states[r.climate_entity] : null;
-              const isHeat = climObj && (climObj.state === 'heat' || climObj.attributes?.hvac_action === 'heating' || climObj.attributes?.call_for_heat === true);
-              return `
-                <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;">
-                    <span style="font-weight:700;font-size:15px;">${r.name}</span>
-                    <span class="toggle-pill ${isOcc ? 'active-green' : ''}" style="cursor:default;">
-                      ${isOcc ? this._icon('motion', { size: 12, style: 'margin-right:4px;' }) + ' ' + this._t('occupied') : this._icon('motion-idle', { size: 12, style: 'margin-right:4px;' }) + ' ' + this._t('idle')}
-                    </span>
-                  </div>
-                  <div style="display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--border-subtle);padding-top:8px;">
-                    <div>
-                      <div style="font-size:12px;color:var(--text-secondary);">${this._t('thermostat_status')}</div>
-                      <div style="font-size:14px;font-weight:600;color:${isHeat ? 'var(--accent-amber)' : 'var(--text-primary)'};">
-                        ${isHeat ? this._icon('flame', { size: 14, color: '#f59e0b', style: 'margin-right:4px;' }) + ' ' + this._t('heating_active_desc') : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' ' + this._t('heating_ready_desc')}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              `;
-            }).join('')}
-          </div>
-        `;
       } else if (tab === 'battery') {
         const battSum = this._summary?.batteries;
         const battPool = battSum
@@ -2104,7 +2105,6 @@ export const modalMethods = {
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             ${statsConf.show_temperature !== false ? `<button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} ${this._t('room_temperatures')}</button>` : ''}
             ${statsConf.show_illuminance !== false ? `<button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} ${this._t('illuminance_lux')}</button>` : ''}
-            ${statsConf.show_occupancy !== false ? `<button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} ${this._t('occupancy_heating')}</button>` : ''}
             ${statsConf.show_battery !== false ? `<button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} ${this._t('battery_curves')}</button>` : ''}
             ${customSections.map(cs => `
               <button class="btn-micro ${tab === 'custom_' + cs.id ? 'active' : ''}" data-custom-stat-tab="${cs.id}">
@@ -2125,8 +2125,6 @@ export const modalMethods = {
       if (btnTemp) btnTemp.onclick = () => { this._statsTab = 'temperature'; updateStatsUi(); };
       const btnIllum = body.querySelector('#btnStatsTabIllum');
       if (btnIllum) btnIllum.onclick = () => { this._statsTab = 'illuminance'; updateStatsUi(); };
-      const btnOcc = body.querySelector('#btnStatsTabOcc');
-      if (btnOcc) btnOcc.onclick = () => { this._statsTab = 'occupancy_heating'; updateStatsUi(); };
       const btnBat = body.querySelector('#btnStatsTabBat');
       if (btnBat) btnBat.onclick = () => { this._statsTab = 'battery'; updateStatsUi(); };
 

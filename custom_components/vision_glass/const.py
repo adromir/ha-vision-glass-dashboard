@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "vision_glass"
-VERSION = "3.0.4"
+VERSION = "3.0.5"
 
 PANEL_URL = "vision-glass"
 STATIC_URL = "/vision_glass_static"
@@ -37,6 +37,13 @@ DEFAULT_CONFIG: dict = {
     "bento_badges": [],
     "top_badges": [],
     "helper_controls": {},
+    "stats": {
+        "rooms": {},
+        "show_temperature": True,
+        "show_illuminance": True,
+        "show_battery": True,
+        "custom_sections": [],
+    },
     "dock": {
         "auto_detect": True,
         "items": [],

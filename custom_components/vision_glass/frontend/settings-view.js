@@ -1550,22 +1550,117 @@ export const settingsMethods = {
       <div id="stabContentStats" style="${activeTab === 'stats' ? '' : 'display:none;'}">
         <div class="card-box" style="margin-bottom:16px;">
           <div style="font-weight:700;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
-            <ha-icon icon="mdi:home-group" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Angezeigte Räume in der Statistik
+            <ha-icon icon="mdi:home-group" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Räume & Sensor-Auswahl für Standard-Verläufe
           </div>
-          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
-            Wähle, welche Räume in der Raumauswahl für Temperatur- und Helligkeitskurven angezeigt werden sollen.
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+            Wähle, welche Räume im Statistik-Verlauf angezeigt werden und welche Temperatur- bzw. Helligkeitssensoren in den 24h-Diagrammen dargestellt werden sollen.
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+          <div style="display:flex;flex-direction:column;gap:12px;">
             ${rooms.map(r => {
-              if (r.id === 'wohnung' || r.id === 'umwelt') return '';
               const statsConf = this._config.stats || {};
-              const enabledRoomIds = statsConf.enabled_rooms;
-              const isChecked = !Array.isArray(enabledRoomIds) || enabledRoomIds.includes(r.id);
+              const roomStatsConf = statsConf.rooms || {};
+              const roomStats = roomStatsConf[r.id] || {};
+
+              // Discover candidates for this room
+              const candTemp = new Set();
+              if (r.temp_entity) candTemp.add(r.temp_entity);
+              if (this._discovery?.entities) {
+                Object.values(this._discovery.entities).forEach(meta => {
+                  if (meta.area_id === r.id && meta.domain === 'sensor' && meta.device_class === 'temperature') {
+                    candTemp.add(meta.entity_id);
+                  }
+                });
+              }
+              if (candTemp.size === 0 && r.climate_entity && this._hass?.states[r.climate_entity]) {
+                candTemp.add(r.climate_entity);
+              }
+              (roomStats.temp_entities || []).forEach(e => { if (typeof e === 'string') candTemp.add(e); });
+
+              const candIllum = new Set();
+              if (r.illuminance_entity) candIllum.add(r.illuminance_entity);
+              if (this._discovery?.entities) {
+                Object.values(this._discovery.entities).forEach(meta => {
+                  if (meta.area_id === r.id && meta.domain === 'sensor' && meta.device_class === 'illuminance') {
+                    candIllum.add(meta.entity_id);
+                  }
+                });
+              }
+              (roomStats.illum_entities || []).forEach(e => { if (typeof e === 'string') candIllum.add(e); });
+
+              const candTempList = [...candTemp];
+              const candIllumList = [...candIllum];
+
+              let isRoomChecked = true;
+              if (typeof roomStats.enabled === 'boolean') {
+                isRoomChecked = roomStats.enabled;
+              } else if (Array.isArray(statsConf.enabled_rooms)) {
+                isRoomChecked = statsConf.enabled_rooms.includes(r.id);
+              } else {
+                isRoomChecked = (candTempList.length > 0 || candIllumList.length > 0 || !!r.climate_entity);
+              }
+
+              const selectedTemp = Array.isArray(roomStats.temp_entities)
+                ? roomStats.temp_entities
+                : (candTempList.length > 0 ? [candTempList[0]] : []);
+
+              const selectedIllum = Array.isArray(roomStats.illum_entities)
+                ? roomStats.illum_entities
+                : (candIllumList.length > 0 ? [candIllumList[0]] : []);
+
               return `
-                <label style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:10px;font-size:13px;cursor:pointer;">
-                  <input type="checkbox" class="chk-stat-room" data-room-id="${r.id}" ${isChecked ? 'checked' : ''}>
-                  <span style="font-weight:600;">${r.name || r.id}</span>
-                </label>
+                <div class="card-box stat-room-card" style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:14px;padding:12px 16px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                    <label style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;cursor:pointer;">
+                      <input type="checkbox" class="chk-stat-room" data-room-id="${r.id}" ${isRoomChecked ? 'checked' : ''}>
+                      <span>${r.name || r.id}</span>
+                    </label>
+                    <span style="font-size:11px;color:var(--text-secondary);">${selectedTemp.length} Temp-Sensor(en) • ${selectedIllum.length} Lux-Sensor(en)</span>
+                  </div>
+
+                  <div class="stat-room-entities-box" data-room-box="${r.id}" style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border-subtle);display:${isRoomChecked ? 'block' : 'none'};">
+                    <!-- Temp entities selection -->
+                    <div style="margin-bottom:10px;">
+                      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+                        <span>🌡️ Temperatur-Sensoren im Verlauf:</span>
+                        <button type="button" class="btn btn-micro btn-add-stat-temp" data-room-id="${r.id}" style="font-size:11px;padding:2px 8px;">+ Sensor wählen</button>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        ${candTempList.length === 0 ? `<span style="font-size:11px;color:var(--text-secondary);font-style:italic;">Keine Temperatursensoren erkannt</span>` : ''}
+                        ${candTempList.map(tId => {
+                          const fn = this._hass?.states[tId]?.attributes?.friendly_name || tId;
+                          const isTChecked = selectedTemp.includes(tId);
+                          return `
+                            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--bg-glass);padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);cursor:pointer;">
+                              <input type="checkbox" class="chk-stat-room-temp" data-room-id="${r.id}" data-eid="${tId}" ${isTChecked ? 'checked' : ''}>
+                              <span title="${tId}">${fn}</span>
+                            </label>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+
+                    <!-- Illuminance entities selection -->
+                    <div>
+                      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+                        <span>💡 Beleuchtungsstärke (Lux) im Verlauf:</span>
+                        <button type="button" class="btn btn-micro btn-add-stat-illum" data-room-id="${r.id}" style="font-size:11px;padding:2px 8px;">+ Sensor wählen</button>
+                      </div>
+                      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                        ${candIllumList.length === 0 ? `<span style="font-size:11px;color:var(--text-secondary);font-style:italic;">Keine Helligkeitssensoren erkannt</span>` : ''}
+                        ${candIllumList.map(iId => {
+                          const fn = this._hass?.states[iId]?.attributes?.friendly_name || iId;
+                          const isIChecked = selectedIllum.includes(iId);
+                          return `
+                            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--bg-glass);padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);cursor:pointer;">
+                              <input type="checkbox" class="chk-stat-room-illum" data-room-id="${r.id}" data-eid="${iId}" ${isIChecked ? 'checked' : ''}>
+                              <span title="${iId}">${fn}</span>
+                            </label>
+                          `;
+                        }).join('')}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               `;
             }).join('')}
           </div>
@@ -1583,10 +1678,6 @@ export const settingsMethods = {
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
               <input type="checkbox" id="chkStatShowIllum" ${(this._config.stats?.show_illuminance !== false) ? 'checked' : ''}>
               <span>Beleuchtungsstärke (Lux) & Beleuchtungsstatus (24h)</span>
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-              <input type="checkbox" id="chkStatShowOcc" ${(this._config.stats?.show_occupancy !== false) ? 'checked' : ''}>
-              <span>Raumbelegung & Thermostat-Status</span>
             </label>
             <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
               <input type="checkbox" id="chkStatShowBat" ${(this._config.stats?.show_battery !== false) ? 'checked' : ''}>
@@ -2657,6 +2748,85 @@ export const settingsMethods = {
       };
     });
 
+    // Room stats entity listeners
+    container.querySelectorAll('.chk-stat-room').forEach(chk => {
+      chk.addEventListener('change', (e) => {
+        const rId = e.target.getAttribute('data-room-id');
+        if (!this._config.stats) this._config.stats = {};
+        if (!this._config.stats.rooms) this._config.stats.rooms = {};
+        if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+        this._config.stats.rooms[rId].enabled = e.target.checked;
+        const box = container.querySelector(`.stat-room-entities-box[data-room-box="${rId}"]`);
+        if (box) box.style.display = e.target.checked ? 'block' : 'none';
+      });
+    });
+
+    container.querySelectorAll('.chk-stat-room-temp').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const rId = chk.getAttribute('data-room-id');
+        if (!this._config.stats) this._config.stats = {};
+        if (!this._config.stats.rooms) this._config.stats.rooms = {};
+        if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+        const checked = Array.from(container.querySelectorAll(`.chk-stat-room-temp[data-room-id="${rId}"]:checked`)).map(c => c.getAttribute('data-eid'));
+        this._config.stats.rooms[rId].temp_entities = checked;
+      });
+    });
+
+    container.querySelectorAll('.chk-stat-room-illum').forEach(chk => {
+      chk.addEventListener('change', () => {
+        const rId = chk.getAttribute('data-room-id');
+        if (!this._config.stats) this._config.stats = {};
+        if (!this._config.stats.rooms) this._config.stats.rooms = {};
+        if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+        const checked = Array.from(container.querySelectorAll(`.chk-stat-room-illum[data-room-id="${rId}"]:checked`)).map(c => c.getAttribute('data-eid'));
+        this._config.stats.rooms[rId].illum_entities = checked;
+      });
+    });
+
+    container.querySelectorAll('.btn-add-stat-temp').forEach(btn => {
+      btn.onclick = () => {
+        const rId = btn.getAttribute('data-room-id');
+        this._showEntityPicker({
+          defaultDomain: 'sensor',
+          onSelect: (chosenId) => {
+            if (!chosenId) return;
+            if (!this._config.stats) this._config.stats = {};
+            if (!this._config.stats.rooms) this._config.stats.rooms = {};
+            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+            if (!Array.isArray(this._config.stats.rooms[rId].temp_entities)) {
+              this._config.stats.rooms[rId].temp_entities = [];
+            }
+            if (!this._config.stats.rooms[rId].temp_entities.includes(chosenId)) {
+              this._config.stats.rooms[rId].temp_entities.push(chosenId);
+            }
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-add-stat-illum').forEach(btn => {
+      btn.onclick = () => {
+        const rId = btn.getAttribute('data-room-id');
+        this._showEntityPicker({
+          defaultDomain: 'sensor',
+          onSelect: (chosenId) => {
+            if (!chosenId) return;
+            if (!this._config.stats) this._config.stats = {};
+            if (!this._config.stats.rooms) this._config.stats.rooms = {};
+            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+            if (!Array.isArray(this._config.stats.rooms[rId].illum_entities)) {
+              this._config.stats.rooms[rId].illum_entities = [];
+            }
+            if (!this._config.stats.rooms[rId].illum_entities.includes(chosenId)) {
+              this._config.stats.rooms[rId].illum_entities.push(chosenId);
+            }
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
     // Save button
     const btnSave = container.querySelector('#btnSaveDashboardSettings');
     if (btnSave) {
@@ -2768,16 +2938,53 @@ export const settingsMethods = {
 
         // Collect stats settings
         if (!this._config.stats) this._config.stats = {};
-        const chkStatRooms = container.querySelectorAll('.chk-stat-room:checked');
-        if (chkStatRooms.length > 0 || container.querySelector('.chk-stat-room')) {
-          this._config.stats.enabled_rooms = Array.from(chkStatRooms).map(c => c.getAttribute('data-room-id'));
-        }
+        if (!this._config.stats.rooms) this._config.stats.rooms = {};
+
+        container.querySelectorAll('.chk-stat-room').forEach(chk => {
+          const rId = chk.getAttribute('data-room-id');
+          if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+          this._config.stats.rooms[rId].enabled = chk.checked;
+        });
+
+        // Collect checked temp entities
+        const tempByRoom = {};
+        container.querySelectorAll('.chk-stat-room-temp:checked').forEach(chk => {
+          const rId = chk.getAttribute('data-room-id');
+          const eId = chk.getAttribute('data-eid');
+          if (!tempByRoom[rId]) tempByRoom[rId] = [];
+          tempByRoom[rId].push(eId);
+        });
+        container.querySelectorAll('.chk-stat-room').forEach(chk => {
+          const rId = chk.getAttribute('data-room-id');
+          if (container.querySelector(`.chk-stat-room-temp[data-room-id="${rId}"]`)) {
+            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+            this._config.stats.rooms[rId].temp_entities = tempByRoom[rId] || [];
+          }
+        });
+
+        // Collect checked illum entities
+        const illumByRoom = {};
+        container.querySelectorAll('.chk-stat-room-illum:checked').forEach(chk => {
+          const rId = chk.getAttribute('data-room-id');
+          const eId = chk.getAttribute('data-eid');
+          if (!illumByRoom[rId]) illumByRoom[rId] = [];
+          illumByRoom[rId].push(eId);
+        });
+        container.querySelectorAll('.chk-stat-room').forEach(chk => {
+          const rId = chk.getAttribute('data-room-id');
+          if (container.querySelector(`.chk-stat-room-illum[data-room-id="${rId}"]`)) {
+            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+            this._config.stats.rooms[rId].illum_entities = illumByRoom[rId] || [];
+          }
+        });
+
+        const enabledList = Object.keys(this._config.stats.rooms).filter(rId => this._config.stats.rooms[rId].enabled !== false);
+        this._config.stats.enabled_rooms = enabledList;
+
         const chkStatT = container.querySelector('#chkStatShowTemp');
         if (chkStatT) this._config.stats.show_temperature = chkStatT.checked;
         const chkStatI = container.querySelector('#chkStatShowIllum');
         if (chkStatI) this._config.stats.show_illuminance = chkStatI.checked;
-        const chkStatO = container.querySelector('#chkStatShowOcc');
-        if (chkStatO) this._config.stats.show_occupancy = chkStatO.checked;
         const chkStatB = container.querySelector('#chkStatShowBat');
         if (chkStatB) this._config.stats.show_battery = chkStatB.checked;
 

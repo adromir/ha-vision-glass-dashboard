@@ -44,6 +44,13 @@ export function collectDashboardStatEntities(panel) {
     }
   });
 
+  const roomStats = panel?._config?.stats?.rooms || {};
+  Object.values(roomStats).forEach((rc) => {
+    if (!rc) return;
+    (rc.temp_entities || []).forEach((eId) => { if (typeof eId === 'string') ids.add(eId); });
+    (rc.illum_entities || []).forEach((eId) => { if (typeof eId === 'string') ids.add(eId); });
+  });
+
   const batteries = panel?._summary?.batteries;
   if (batteries) {
     [...(batteries.critical || []), ...(batteries.low || []), ...(batteries.good || [])].slice(0, 12).forEach((b) => {

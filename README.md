@@ -13,6 +13,18 @@ Starting with **v3.0.0**, Vision Glass installs cleanly as a single **HACS Integ
 
 ---
 
+## 🌟 The Full Experience Suite
+
+For the ultimate spatial glassmorphism experience across your entire Home Assistant setup, combine Vision Glass Panel with the companion theme and automatic theme switcher:
+
+| Component | Type | Description | Quick Install |
+| :--- | :--- | :--- | :--- |
+| **Vision Glass Smart Home Panel** | Integration | Spatial Glassmorphism panel, Bento cards, tactile controls, popups, and recorder stats | [![Install Panel](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration) |
+| **Vision Glass Theme** | Theme | Universal Home Assistant theme covering the sidebar, header bar, dialogs, and data tables with frosted glass | [![Install Theme](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-theme&category=theme) |
+| **Theme Switch Engine** | Companion | Seamless, automatic light/dark switching synced to daylight (`sun.sun`) or schedules | [![Install Theme Switcher](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-theme-switch-engine&category=integration) |
+
+---
+
 ## ✨ Why Use Vision Glass?
 
 - 🚀 **Single All-in-One Integration**: No manual Lovelace resources or separate dashboard YAML files required—install once via HACS, add the integration in Home Assistant, and open **Vision Glass** straight from your sidebar.

@@ -215,6 +215,27 @@ def build_initial_config(hass: HomeAssistant) -> dict[str, Any]:
     cfg["weather_entity"] = weather_entity
     cfg["lock_entity"] = lock_entity
     cfg["rooms"] = rooms
+
+    stats_rooms: dict[str, Any] = {}
+    for r in rooms:
+        r_id = r.get("id")
+        has_temp = bool(r.get("temp_entity") or r.get("climate_entity"))
+        has_illum = bool(r.get("illuminance_entity"))
+        has_sensors = has_temp or has_illum
+        stats_rooms[r_id] = {
+            "enabled": has_sensors,
+            "temp_entities": [r["temp_entity"]] if r.get("temp_entity") else ([r["climate_entity"]] if r.get("climate_entity") else []),
+            "illum_entities": [r["illuminance_entity"]] if r.get("illuminance_entity") else [],
+        }
+
+    cfg["stats"] = {
+        "rooms": stats_rooms,
+        "show_temperature": True,
+        "show_illuminance": True,
+        "show_battery": True,
+        "custom_sections": [],
+    }
+
     cfg["dock"] = {
         "auto_detect": True,
         "items": [
