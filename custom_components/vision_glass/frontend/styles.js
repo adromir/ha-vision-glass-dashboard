@@ -285,7 +285,7 @@ export const VISION_GLASS_STYLES = `
         /* Top Bar */
         .top-bar {
           position: relative;
-          z-index: 1;
+          z-index: 20;
           display: flex;
           justify-content: space-between;
           align-items: center;
@@ -362,10 +362,15 @@ export const VISION_GLASS_STYLES = `
 
         .chip-persons-cluster {
           position: relative;
+          z-index: 5;
           padding: 0;
           display: inline-flex;
           align-items: center;
           cursor: pointer;
+        }
+        .chip-persons-cluster:hover,
+        .chip-persons-cluster:focus-within {
+          z-index: 100 !important;
         }
         .cluster-anchor {
           display: inline-flex;
@@ -385,11 +390,11 @@ export const VISION_GLASS_STYLES = `
           gap: 8px;
           padding: 4px 12px 4px 6px;
           border-radius: 12px;
-          background: var(--dock-bg, rgba(16, 24, 38, 0.95));
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
+          background: var(--dock-bg, rgba(16, 24, 38, 0.98));
+          backdrop-filter: blur(28px) saturate(190%);
+          -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1px solid rgba(56, 189, 248, 0.5);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.22);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.3);
           z-index: 100;
           white-space: nowrap;
           pointer-events: none;
@@ -398,9 +403,11 @@ export const VISION_GLASS_STYLES = `
           transition: opacity 0.18s ease;
         }
         .theme-light .cluster-floating-overlay {
-          background: rgba(255, 255, 255, 0.95);
+          background: rgba(255, 255, 255, 0.98);
+          backdrop-filter: blur(28px) saturate(190%);
+          -webkit-backdrop-filter: blur(28px) saturate(190%);
           border-color: rgba(2, 132, 199, 0.6);
-          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15), 0 0 12px rgba(2, 132, 199, 0.2);
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18), 0 0 16px rgba(2, 132, 199, 0.25);
         }
         .chip-persons-cluster:hover .cluster-floating-overlay {
           opacity: 1;
