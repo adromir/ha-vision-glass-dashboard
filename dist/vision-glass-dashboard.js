@@ -4552,6 +4552,19 @@ class VisionGlassDashboard extends HTMLElement {
     }
   }
 
+  _getRoomBentoActions(room) {
+    if (Array.isArray(room.bento_actions) && room.bento_actions.length > 0) {
+      return room.bento_actions;
+    }
+    const def = [];
+    if (room.light_entity && room.light_entity.trim()) def.push({ type: 'light', enabled: true, title: this._t('toggle_light') });
+    if (room.climate_entity && room.climate_entity.trim()) def.push({ type: 'climate', enabled: true, title: this._t('open_climate') });
+    if ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim())) def.push({ type: 'media', enabled: true, title: this._t('toggle_media') });
+    if (room.lock_entity && room.lock_entity.trim()) def.push({ type: 'lock', enabled: true, title: this._t('toggle_lock') });
+    if (room.switch_entity && room.switch_entity.trim()) def.push({ type: 'switch', enabled: false, title: 'Steckdose' });
+    return def;
+  }
+
   _getEffectiveBentoBadges() {
     if (this._config && Array.isArray(this._config.bento_badges) && this._config.bento_badges.length > 0) {
       return this._config.bento_badges;
@@ -4752,21 +4765,18 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // Subtitle / Status
+    // Subtitle / Status (bereinigt: kein "Bereit", kein "Licht an", kein "Belegt")
     const subEl = card.querySelector('.room-sub');
     if (subEl) {
-      const isPres = room.presence_entity && this._hass.states[room.presence_entity] && this._hass.states[room.presence_entity].state === 'on';
-      const isLightOn = room.light_entity && this._hass.states[room.light_entity] && this._hass.states[room.light_entity].state === 'on';
       const isWindowOpen = room.window_entity && this._hass.states[room.window_entity] && this._hass.states[room.window_entity].state === 'on';
       const isLocked = room.lock_entity && this._hass.states[room.lock_entity] && this._hass.states[room.lock_entity].state === 'locked';
 
       let status = [];
       if (isWindowOpen) status.push('Fenster offen');
-      if (isLightOn) status.push('Licht an');
-      if (isPres) status.push('Belegt');
-      if (room.lock_entity) status.push(isLocked ? 'Verriegelt' : 'Entriegelt');
+      if (room.lock_entity && isLocked) status.push('Verriegelt');
 
-      subEl.textContent = status.length > 0 ? status.join(' • ') : 'Bereit';
+      subEl.textContent = status.join(' • ');
+      subEl.style.display = status.length > 0 ? 'block' : 'none';
     }
 
     // Action Circles
@@ -4777,11 +4787,13 @@ class VisionGlassDashboard extends HTMLElement {
       lightBtn.classList.toggle('active-amber', isOn);
     }
 
-    // Climate
+    // Climate (Heizung Farblogik: Heizen = Rot/Warm #ef4444, Aus/Idle = Cool Blue #38bdf8)
     const climateBtn = card.querySelector('.action-climate');
     if (climateBtn && room.climate_entity && this._hass.states[room.climate_entity]) {
-      const isHeat = this._hass.states[room.climate_entity].state === 'heat';
-      climateBtn.classList.toggle('active', isHeat);
+      const cObj = this._hass.states[room.climate_entity];
+      const isHeating = cObj.state === 'heat' || cObj.attributes?.hvac_action === 'heating' || cObj.attributes?.call_for_heat === true || (cObj.attributes?.heating_power && cObj.attributes.heating_power > 0.05);
+      climateBtn.classList.toggle('active-heat', isHeating);
+      climateBtn.classList.toggle('cool-idle', !isHeating);
     }
 
     // Media
@@ -6636,6 +6648,33 @@ class VisionGlassDashboard extends HTMLElement {
                     <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="media_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
                   </div>
                 </div>
+
+                <!-- Bento Card Action Icons Configuration -->
+                <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
+                  <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:6px;">Aktions-Icons auf Bento-Karte</label>
+                  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                    ${(() => {
+                      const acts = this._getRoomBentoActions(r);
+                      const allTypes = [
+                        { type: 'light', label: '💡 Licht', has: Boolean(r.light_entity) },
+                        { type: 'climate', label: '🌡️ Heizung', has: Boolean(r.climate_entity) },
+                        { type: 'media', label: '🎵 Medien', has: Boolean(r.media_entity || r.audio_entity || r.video_entity) },
+                        { type: 'lock', label: '🔒 Schloss', has: Boolean(r.lock_entity) },
+                        { type: 'switch', label: '🔌 Steckdose', has: Boolean(r.switch_entity) }
+                      ];
+                      return allTypes.map(at => {
+                        const configured = acts.find(a => a.type === at.type);
+                        const isChecked = configured ? configured.enabled !== false : at.has;
+                        return `
+                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                            <input type="checkbox" class="chk-bento-action" data-ridx="${rIdx}" data-act-type="${at.type}" ${isChecked ? 'checked' : ''}>
+                            <span>${at.label}</span>
+                          </label>
+                        `;
+                      }).join('');
+                    })()}
+                  </div>
+                </div>
               </div>
             </div>
           `).join('')}
@@ -7619,6 +7658,26 @@ class VisionGlassDashboard extends HTMLElement {
             else if (targetId === 'cfgAllLights') this._config.all_lights_entity = selectedId;
           }
         });
+      };
+    });
+
+    // Bento Actions Checkboxes
+    container.querySelectorAll('.chk-bento-action').forEach(chk => {
+      chk.onchange = () => {
+        const rIdx = parseInt(chk.getAttribute('data-ridx'));
+        const actType = chk.getAttribute('data-act-type');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = this._getRoomBentoActions(room);
+        }
+        let act = room.bento_actions.find(a => a.type === actType);
+        if (!act) {
+          act = { type: actType, enabled: chk.checked };
+          room.bento_actions.push(act);
+        } else {
+          act.enabled = chk.checked;
+        }
       };
     });
 
@@ -8895,6 +8954,17 @@ class VisionGlassDashboard extends HTMLElement {
           box-shadow: 0 0 14px rgba(245, 158, 11, 0.6);
           border-color: #fbbf24;
         }
+        .action-circle.active-heat {
+          background: #ef4444;
+          color: #fff;
+          box-shadow: 0 0 16px rgba(239, 68, 68, 0.7);
+          border-color: #f87171;
+        }
+        .action-circle.cool-idle {
+          background: rgba(56, 189, 248, 0.12);
+          color: #38bdf8;
+          border-color: rgba(56, 189, 248, 0.3);
+        }
         .action-circle.active {
           background: var(--accent);
           color: #fff;
@@ -9891,6 +9961,7 @@ class VisionGlassDashboard extends HTMLElement {
         }
 
         /* Active Action Circles override */
+        .action-circle.active-heat .vg-icon,
         .action-circle.active-amber .vg-icon,
         .action-circle.active .vg-icon,
         .action-circle.active-green .vg-icon,
@@ -10375,10 +10446,25 @@ class VisionGlassDashboard extends HTMLElement {
                   <!-- Bottom Row: Actions & Heating Quick Stepper -->
                   <div class="room-bottom-row">
                     <div class="room-actions">
-                      ${(room.light_entity && room.light_entity.trim()) ? `<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>` : ''}
-                      ${(room.climate_entity && room.climate_entity.trim()) ? `<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>` : ''}
-                      ${((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim())) ? `<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>` : ''}
-                      ${(room.lock_entity && room.lock_entity.trim()) ? `<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>` : ''}
+                      ${(() => {
+                        const acts = this._getRoomBentoActions(room);
+                        const out = [];
+                        acts.forEach(a => {
+                          if (a.enabled === false) return;
+                          if (a.type === 'light' && room.light_entity && room.light_entity.trim()) {
+                            out.push(`<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>`);
+                          } else if (a.type === 'climate' && room.climate_entity && room.climate_entity.trim()) {
+                            out.push(`<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>`);
+                          } else if (a.type === 'media' && ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim()))) {
+                            out.push(`<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>`);
+                          } else if (a.type === 'lock' && room.lock_entity && room.lock_entity.trim()) {
+                            out.push(`<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>`);
+                          } else if (a.type === 'switch' && room.switch_entity && room.switch_entity.trim()) {
+                            out.push(`<div class="action-circle action-switch" title="Steckdose" data-action="switch" data-idx="${idx}">${this._icon('power', { size: 16, cls: 'icon-switch' })}</div>`);
+                          }
+                        });
+                        return out.join('');
+                      })()}
                     </div>
 
                     ${(room.climate_entity && room.climate_entity.trim()) ? `
