@@ -351,24 +351,51 @@ export const VISION_GLASS_STYLES = `
           box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12), 0 0 14px rgba(2, 132, 199, 0.20), inset 0 1.5px 1px #ffffff;
         }
 
-        /* Presence Avatar Cluster with Fanning Animation */
+        /* Presence Avatar Cluster with Fanning Animation (Jitter-free, Crosshair-free) */
+        .chip.chip-persons-cluster,
+        .chip.chip-persons-cluster:hover,
+        .theme-light .chip.chip-persons-cluster,
+        .theme-light .chip.chip-persons-cluster:hover {
+          transform: none !important;
+        }
+
         .chip-persons-cluster {
           position: relative;
           padding: 4px 10px 4px 6px;
           display: inline-flex;
           align-items: center;
           gap: 8px;
+          cursor: pointer;
         }
+        .chip-persons-cluster:hover {
+          border-color: rgba(56, 189, 248, 0.5);
+          box-shadow: 0 6px 18px rgba(0, 0, 0, 0.32), 0 0 12px rgba(56, 189, 248, 0.20), inset 0 1px 1.5px rgba(255, 255, 255, 0.5);
+        }
+        .theme-light .chip-persons-cluster:hover {
+          border-color: rgba(2, 132, 199, 0.6);
+          box-shadow: 0 6px 18px rgba(15, 23, 42, 0.10), 0 0 12px rgba(2, 132, 199, 0.18), inset 0 1.5px 1px #ffffff;
+        }
+
         .cluster-stack {
           display: inline-flex;
           align-items: center;
-          transition: gap 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          flex-shrink: 0;
         }
         .cluster-avatar-wrap {
           position: relative;
           margin-right: -10px;
-          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), margin-right 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+          transition: margin-right 0.28s cubic-bezier(0.16, 1, 0.3, 1);
           cursor: pointer;
+          display: inline-flex;
+          align-items: center;
+          justify-content: center;
+          flex-shrink: 0;
+          border-radius: 50%;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          isolation: isolate;
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
         }
         .cluster-avatar-wrap:last-child {
           margin-right: 0;
@@ -379,17 +406,25 @@ export const VISION_GLASS_STYLES = `
           border-radius: 50%;
           object-fit: cover;
           display: block;
-          border: 1.5px solid rgba(255, 255, 255, 0.85);
-          box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-          transition: transform 0.25s ease, box-shadow 0.25s ease;
+          box-sizing: border-box;
+          border: 2px solid rgba(255, 255, 255, 0.9);
+          clip-path: circle(50% at 50% 50%);
+          -webkit-clip-path: circle(50% at 50% 50%);
+          filter: none !important;
+          -webkit-filter: none !important;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease;
         }
         .theme-light .cluster-avatar {
           border-color: #ffffff;
-          box-shadow: 0 2px 5px rgba(15, 23, 42, 0.15);
         }
         .cluster-avatar-initial {
           width: 22px;
           height: 22px;
+          border-radius: 50%;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -397,37 +432,63 @@ export const VISION_GLASS_STYLES = `
           font-size: 10px;
           color: #fff;
           background: linear-gradient(135deg, #0284c7, #818cf8);
+          box-sizing: border-box;
+          border: 2px solid rgba(255, 255, 255, 0.9);
+          clip-path: circle(50% at 50% 50%);
+          -webkit-clip-path: circle(50% at 50% 50%);
+          filter: none !important;
+          -webkit-filter: none !important;
+          transform: translateZ(0);
+          -webkit-transform: translateZ(0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+        }
+        .avatar-online {
+          border-color: #10b981 !important;
+        }
+        .avatar-offline {
+          border-color: #94a3b8 !important;
+          opacity: 0.8;
         }
         .cluster-status-dot {
           position: absolute;
-          bottom: -1px;
-          right: -1px;
+          bottom: 0px;
+          right: 0px;
           width: 7px;
           height: 7px;
           border-radius: 50%;
-          border: 1.5px solid var(--bg-card, #101826);
+          border: 1px solid var(--ha-card-background, #101826);
+          filter: none !important;
+          -webkit-filter: none !important;
+          z-index: 2;
         }
         .theme-light .cluster-status-dot {
           border-color: #ffffff;
         }
 
         .cluster-collapsed-label {
-          font-size: 11px;
+          font-size: 11.5px;
           font-weight: 600;
           color: var(--text-secondary, #94a3b8);
-          transition: opacity 0.2s, max-width 0.3s;
           white-space: nowrap;
+          max-width: 140px;
+          opacity: 1;
+          overflow: hidden;
+          display: inline-block;
+          transition: max-width 0.28s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, margin 0.28s ease;
+          pointer-events: none;
         }
 
         .cluster-expanded-list {
-          display: none;
+          display: inline-flex;
           align-items: center;
-          gap: 10px;
-          animation: clusterFadeIn 0.25s ease-out;
-        }
-        @keyframes clusterFadeIn {
-          from { opacity: 0; transform: translateX(-4px); }
-          to { opacity: 1; transform: translateX(0); }
+          gap: 8px;
+          max-width: 0;
+          opacity: 0;
+          overflow: hidden;
+          white-space: nowrap;
+          transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+          pointer-events: none;
         }
         .cluster-expanded-item {
           display: inline-flex;
@@ -461,18 +522,28 @@ export const VISION_GLASS_STYLES = `
 
         /* Hover expansion: Fan out avatars! */
         .chip-persons-cluster:hover .cluster-avatar-wrap {
-          margin-right: 4px;
-          transform: scale(1.08);
+          margin-right: 6px;
+        }
+        .chip-persons-cluster:hover .cluster-avatar-wrap:last-child {
+          margin-right: 0;
         }
         .chip-persons-cluster:hover .cluster-avatar-wrap:hover {
-          transform: scale(1.22) translateY(-2px);
-          z-index: 10 !important;
+          z-index: 5 !important;
+        }
+        .chip-persons-cluster:hover .cluster-avatar-wrap:hover .cluster-avatar {
+          border-color: #38bdf8 !important;
+          box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
         }
         .chip-persons-cluster:hover .cluster-collapsed-label {
-          display: none;
+          max-width: 0;
+          opacity: 0;
+          margin: 0;
+          padding: 0;
         }
         .chip-persons-cluster:hover .cluster-expanded-list {
-          display: inline-flex;
+          max-width: 480px;
+          opacity: 1;
+          pointer-events: auto;
         }
 
         .chip-avatar {
