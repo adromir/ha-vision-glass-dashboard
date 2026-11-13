@@ -3929,12 +3929,20 @@ class VisionGlassDashboard extends HTMLElement {
         <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;${windowsOpen > 0 ? 'color:#f59e0b;font-weight:700;' : ''}" id="glanceWindows" title="${this._t('security')}">${windowsOpen > 0 ? `${this._icon('window-open', { size: 13, cls: 'icon-climate' })} ${windowsOpen} ${this._t('windows_open_count')}` : `${this._icon('window', { size: 13, cls: 'icon-security' })} ${this._t('windows_all_closed')}`}</span>
         <span class="sidebar-mini-pill" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;" id="glanceLock" title="${this._t('lock')}">${isLocked ? `${this._icon('lock-closed', { size: 13, cls: 'icon-security' })} ${this._t('door_locked_short')}` : `${this._icon('lock-open', { size: 13, cls: 'icon-light' })} ${this._t('door_unlocked_short')}`}</span>
       `;
+      const openDockOrModal = (id) => {
+        const item = (this._config?.dock?.items || []).find(i => i.id === id);
+        if (item && item.entities && item.entities.length > 0) {
+          this._openCustomDockModal(item);
+        } else {
+          this._openModal(id);
+        }
+      };
       const gL = glanceEl.querySelector('#glanceLights');
-      if (gL) gL.onclick = (e) => { e.stopPropagation(); this._openModal('lighting'); };
+      if (gL) gL.onclick = (e) => { e.stopPropagation(); openDockOrModal('lighting'); };
       const gW = glanceEl.querySelector('#glanceWindows');
-      if (gW) gW.onclick = (e) => { e.stopPropagation(); this._openModal('security'); };
+      if (gW) gW.onclick = (e) => { e.stopPropagation(); openDockOrModal('security'); };
       const gLo = glanceEl.querySelector('#glanceLock');
-      if (gLo) gLo.onclick = (e) => { e.stopPropagation(); this._openModal('security'); };
+      if (gLo) gLo.onclick = (e) => { e.stopPropagation(); openDockOrModal('security'); };
     }
 
     // 3. Update Chips
@@ -4394,6 +4402,41 @@ class VisionGlassDashboard extends HTMLElement {
         `).join('')}
       `;
     }
+
+    this._updateDockVisibility();
+  }
+
+  _updateDockVisibility() {
+    if (!this._hass) return;
+    const dockCfg = this._config?.dock || { auto_detect: true, items: [] };
+    const states = this._hass.states || {};
+    const hasAlarmo = Object.keys(states).some(e => e.startsWith('alarm_control_panel.'));
+    const hasLights = Object.keys(states).some(e => e.startsWith('light.'));
+    const hasClimate = Object.keys(states).some(e => e.startsWith('climate.'));
+    const hasSwitches = Object.keys(states).some(e => e.startsWith('switch.'));
+    const hasBatteries = Object.keys(states).some(e => e.includes('battery') || states[e]?.attributes?.device_class === 'battery');
+
+    this.shadowRoot?.querySelectorAll('.dock-item[data-dock-id]').forEach(el => {
+      const dockId = el.getAttribute('data-dock-id');
+      if (dockId === 'settings') return;
+      if (dockCfg.auto_detect === false) {
+        el.style.display = 'flex';
+        return;
+      }
+      const items = dockCfg.items || [];
+      const item = items.find(i => i.id === dockId);
+      let show = true;
+      if (item && item.entities && item.entities.length > 0) {
+        show = true;
+      } else if (item?.auto_hide) {
+        if (dockId === 'alarmo') show = hasAlarmo;
+        else if (dockId === 'lighting') show = hasLights;
+        else if (dockId === 'climate') show = hasClimate;
+        else if (dockId === 'switches') show = hasSwitches;
+        else if (dockId === 'battery') show = hasBatteries;
+      }
+      el.style.display = show ? 'flex' : 'none';
+    });
   }
 
   _translateWeather(state) {
@@ -6188,56 +6231,38 @@ class VisionGlassDashboard extends HTMLElement {
           ${(dock.items || []).map((item, dIdx) => {
             const isCustom = !['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(item.id);
             const iconHtml = item.icon ? this._icon(item.icon, { size: 18 }) : this._getBuiltinDockIcon(item.id, 18);
-            if (!isCustom) {
-              return `
-                <div class="card-box" style="display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:12px;padding:12px 16px;">
-                  <div style="display:flex;align-items:center;gap:12px;">
-                    <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
-                    <div style="display:flex;align-items:center;gap:8px;">
-                      <div style="width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,0.06);display:flex;align-items:center;justify-content:center;">
-                        ${iconHtml}
-                      </div>
-                      <div>
-                        <div style="font-weight:600;font-size:14px;">${item.title || item.id}</div>
-                        <div style="font-size:11px;color:var(--text-secondary);font-family:monospace;">${item.id} • Standard</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div style="display:flex;gap:4px;">
-                    <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
-                    <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
-                  </div>
-                </div>
-              `;
-            }
-
             return `
               <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
                   <div style="display:flex;align-items:center;gap:10px;">
                     <input type="checkbox" class="chk-dock-enable" data-didx="${dIdx}" ${item.enabled !== false ? 'checked' : ''} style="width:18px;height:18px;cursor:pointer;">
-                    <div style="width:32px;height:32px;border-radius:8px;background:rgba(56,189,248,0.15);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+                    <div style="width:32px;height:32px;border-radius:8px;background:${isCustom ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.06)'};display:flex;align-items:center;justify-content:center;color:var(--accent);">
                       ${iconHtml}
                     </div>
-                    <span style="font-weight:700;font-size:14px;">${item.title || 'Eigener Menüpunkt'}</span>
-                    <span style="font-size:11px;padding:2px 6px;border-radius:6px;background:rgba(56,189,248,0.15);color:var(--accent);font-weight:600;">Eigener Punkt</span>
+                    <div>
+                      <span style="font-weight:700;font-size:14px;">${item.title || item.id}</span>
+                      <span style="font-size:11px;padding:2px 6px;border-radius:6px;background:${isCustom ? 'rgba(56,189,248,0.15)' : 'rgba(255,255,255,0.08)'};color:${isCustom ? 'var(--accent)' : 'var(--text-secondary)'};font-weight:600;margin-left:6px;">
+                        ${isCustom ? 'Eigener Bereich' : 'Standard'}
+                      </span>
+                    </div>
                   </div>
                   <div style="display:flex;gap:4px;align-items:center;">
-                    <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''}>▲</button>
-                    <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''}>▼</button>
-                    <button type="button" class="btn btn-sm btn-danger btn-del-dock-item" data-didx="${dIdx}" style="padding:4px 8px;margin-left:4px;">✕</button>
+                    <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
+                    <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''} title="Nach unten">▼</button>
+                    ${isCustom ? `<button type="button" class="btn btn-sm btn-danger btn-del-dock-item" data-didx="${dIdx}" style="padding:4px 8px;margin-left:4px;" title="Löschen">✕</button>` : ''}
                   </div>
                 </div>
 
                 <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;margin-bottom:12px;">
                   <div>
                     <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Titel im Dock</label>
-                    <input type="text" class="inp-custom-dock-title" data-didx="${dIdx}" value="${item.title || ''}" placeholder="z.B. Kameras, Musik..." style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
+                    <input type="text" class="inp-custom-dock-title" data-didx="${dIdx}" value="${item.title || ''}" placeholder="${item.id}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
                   </div>
                   <div>
                     <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Icon</label>
                     <select class="sel-custom-dock-icon" data-didx="${dIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
-                      ${['star', 'camera', 'fan', 'vacuum', 'music', 'tv', 'blinds', 'bell', 'lock-closed', 'zap', 'eye', 'flame', 'clock', 'robot', 'sliders', 'speaker', 'light'].map(ic => `
+                      <option value="" ${!item.icon ? 'selected' : ''}>Standard (${item.id})</option>
+                      ${['light', 'climate', 'stats', 'lock-closed', 'shield', 'zap', 'battery', 'weather', 'star', 'camera', 'fan', 'vacuum', 'music', 'tv', 'blinds', 'bell', 'eye', 'flame', 'clock', 'robot', 'sliders', 'speaker'].map(ic => `
                         <option value="${ic}" ${item.icon === ic ? 'selected' : ''}>${ic}</option>
                       `).join('')}
                     </select>
@@ -6245,7 +6270,12 @@ class VisionGlassDashboard extends HTMLElement {
                 </div>
 
                 <div>
-                  <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:6px;">Zugeordnete Entitäten im Modal (${(item.entities || []).length})</div>
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <div style="font-size:12px;font-weight:600;color:var(--text-secondary);">Zugeordnete Entitäten im Modal (${(item.entities || []).length})</div>
+                    ${(!isCustom && (!item.entities || item.entities.length === 0)) ? `
+                      <span style="font-size:11px;color:var(--accent);">⚡ Standard: Automatische System-Erkennung</span>
+                    ` : ''}
+                  </div>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
                     ${(item.entities || []).map((entId, eIdx) => `
                       <span class="badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:4px 8px;border-radius:6px;font-size:12px;font-family:monospace;">
@@ -6254,10 +6284,14 @@ class VisionGlassDashboard extends HTMLElement {
                         <button type="button" class="btn-micro btn-del-cust-entity" data-didx="${dIdx}" data-eidx="${eIdx}" style="padding:0 4px;font-size:12px;cursor:pointer;color:#ef4444;background:none;border:none;">&times;</button>
                       </span>
                     `).join('')}
-                    ${(!item.entities || item.entities.length === 0) ? `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">Noch keine Entitäten zugeordnet</span>` : ''}
+                    ${(!item.entities || item.entities.length === 0) ? `
+                      <span style="font-size:12px;color:var(--text-secondary);font-style:italic;">
+                        ${isCustom ? 'Noch keine Entitäten zugeordnet' : 'Keine manuellen Entitäten definiert – nutzt automatisches System-Modal. Klicke auf „+ Entität hinzufügen“, um gezielt eigene Entitäten festzulegen.'}
+                      </span>
+                    ` : ''}
                   </div>
                   <button type="button" class="btn btn-sm btn-add-cust-entity" data-didx="${dIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
-                    🔍 + Entität hinzufügen
+                    🔍 + Entität zu diesem Modal hinzufügen
                   </button>
                 </div>
               </div>
@@ -9241,22 +9275,9 @@ class VisionGlassDashboard extends HTMLElement {
               { id: 'weather', title: this._t('weather'), enabled: true, auto_hide: false }
             ];
             const effItems = (dockCfg.items && dockCfg.items.length > 0) ? dockCfg.items : defaultDockItems;
-            const states = this._hass ? this._hass.states : {};
-            const hasAlarmo = Object.keys(states).some(e => e.startsWith('alarm_control_panel.'));
-            const hasLights = Object.keys(states).some(e => e.startsWith('light.'));
-            const hasClimate = Object.keys(states).some(e => e.startsWith('climate.'));
-            const hasSwitches = Object.keys(states).some(e => e.startsWith('switch.'));
-            const hasBatteries = Object.keys(states).some(e => e.includes('battery') || states[e]?.attributes?.device_class === 'battery');
 
             return effItems.map(item => {
               if (item.enabled === false) return '';
-              if (dockCfg.auto_detect !== false && item.auto_hide) {
-                if (item.id === 'alarmo' && !hasAlarmo) return '';
-                if (item.id === 'lighting' && !hasLights) return '';
-                if (item.id === 'climate' && !hasClimate) return '';
-                if (item.id === 'switches' && !hasSwitches) return '';
-                if (item.id === 'battery' && !hasBatteries) return '';
-              }
               const iconHtml = item.icon ? this._icon(item.icon, { size: 19 }) : this._getBuiltinDockIcon(item.id, 19);
               return `<div class="dock-item" data-dock-id="${item.id}" title="${item.title || item.id}">${iconHtml}</div>`;
             }).join('');
@@ -9317,12 +9338,16 @@ class VisionGlassDashboard extends HTMLElement {
         const dockId = itemEl.getAttribute('data-dock-id');
         if (dockId === 'settings') {
           navigateToSettings();
-        } else if (['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
-          this._openModal(dockId);
         } else {
-          const customItem = (this._config.dock?.items || []).find(i => i.id === dockId);
-          if (customItem) {
-            this._openCustomDockModal(customItem);
+          const dockCfg = this._config?.dock || {};
+          const items = dockCfg.items || [];
+          const item = items.find(i => i.id === dockId);
+          if (item && item.entities && item.entities.length > 0) {
+            this._openCustomDockModal(item);
+          } else if (['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
+            this._openModal(dockId);
+          } else if (item) {
+            this._openCustomDockModal(item);
           }
         }
       };
