@@ -1,6 +1,6 @@
 {
   "name": "ha-vision-glass-dashboard",
-  "version": "3.0.11",
+  "version": "3.0.12",
   "type": "module",
   "description": "All-in-one Spatial Glassmorphism Custom Panel & Home Assistant Integration with Python backend storage, dynamic area discovery, Recorder downsampling, and modular ES frontend",
   "scripts": {

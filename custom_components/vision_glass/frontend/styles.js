@@ -84,6 +84,17 @@ export const VISION_GLASS_STYLES = `
           transition: background 0.5s ease, color 0.3s ease;
         }
 
+        /* --- DEFAULT HOME ASSISTANT THEME OVERRIDE --- */
+        .dashboard-root.theme-default {
+          background: var(--lovelace-background, var(--primary-background-color, #fafafa)) !important;
+        }
+        .dashboard-root.theme-default.theme-dark {
+          background: var(--lovelace-background, var(--primary-background-color, #111111)) !important;
+        }
+        .dashboard-root.theme-default .liquid-backdrop {
+          display: none !important;
+        }
+
         /* --- BACKGROUND STYLE PRESETS --- */
         .dashboard-root.bg-aurora .liquid-backdrop {
           display: block;

@@ -390,6 +390,18 @@ class VisionGlassPanel extends HTMLElement {
                         (this._hass && this._hass.states && this._hass.states['sensor.active_theme'] && this._hass.states['sensor.active_theme'].state) || '';
     if (typeof activeTheme === 'string' && activeTheme) {
       const lower = activeTheme.toLowerCase();
+      if (lower === 'default' || lower === 'home assistant') {
+        const sensorVariant = this._hass && this._hass.states && this._hass.states['sensor.active_theme'] && (
+          this._hass.states['sensor.active_theme'].attributes?.variant ||
+          this._hass.states['sensor.active_theme'].attributes?.day_night_variant
+        );
+        if (sensorVariant === 'light') return 'light';
+        if (sensorVariant === 'dark') return 'dark';
+        if (this._hass && this._hass.themes && typeof this._hass.themes.darkMode === 'boolean') {
+          return this._hass.themes.darkMode ? 'dark' : 'light';
+        }
+        return this._isDaytime() ? 'light' : 'dark';
+      }
       if (lower.includes('light') || lower.includes('hell') || lower.includes('day') || lower.includes('tag')) {
         return 'light';
       }
@@ -444,6 +456,17 @@ class VisionGlassPanel extends HTMLElement {
     } else {
       root.classList.remove('theme-light');
       root.classList.add('theme-dark');
+    }
+
+    // Default Home Assistant Theme detection
+    const activeTheme = (this._hass && this._hass.themes && this._hass.themes.theme) ||
+                        (this._hass && this._hass.selectedTheme && this._hass.selectedTheme.theme) ||
+                        (this._hass && this._hass.states && this._hass.states['sensor.active_theme'] && this._hass.states['sensor.active_theme'].state) || '';
+    const isDefaultTheme = String(activeTheme).toLowerCase() === 'default' || String(activeTheme).toLowerCase() === 'home assistant';
+    if (isDefaultTheme) {
+      root.classList.add('theme-default');
+    } else {
+      root.classList.remove('theme-default');
     }
 
     // Apply Background Style Preset

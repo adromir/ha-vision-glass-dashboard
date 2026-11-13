@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 DOMAIN = "vision_glass"
-VERSION = "3.0.11"
+VERSION = "3.0.12"
 
 PANEL_URL = "vision-glass"
 STATIC_URL = "/vision_glass_static"
