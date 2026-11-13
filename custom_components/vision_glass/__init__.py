@@ -41,7 +41,6 @@ _LOGGER = logging.getLogger(__name__)
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 FRONTEND_DIR = Path(__file__).parent / "frontend"
-BUNDLED_THEME_FILE = Path(__file__).parent / "themes" / "vision_glass.yaml"
 
 SAFE_AREA = (
     {"handle_safe_area": True}
@@ -59,55 +58,6 @@ def _compute_build_id() -> str:
     return digest.hexdigest()[:10] or VERSION
 
 
-def _sync_theme_file_sync(target_path: Path, source_path: Path) -> bool:
-    """Copy bundled Vision Glass theme YAML into HA themes directory if missing or outdated."""
-    if not source_path.exists():
-        return False
-    source_bytes = source_path.read_bytes()
-    if target_path.exists() and target_path.read_bytes() == source_bytes:
-        return False
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    target_path.write_bytes(source_bytes)
-    return True
-
-
-async def _async_apply_ha_theme_mode(hass: HomeAssistant, theme_mode: str) -> None:
-    """Synchronize HA frontend default themes for both light and dark modes."""
-    if not hass.services.has_service("frontend", "set_theme"):
-        return
-
-    mode = (theme_mode or "auto").lower()
-    if mode == "light":
-        calls = [("Vision Glass Light", "light"), ("Vision Glass Light", "dark")]
-    elif mode == "dark":
-        calls = [("Vision Glass Dark", "light"), ("Vision Glass Dark", "dark")]
-    else:
-        calls = [("Vision Glass Light", "light"), ("Vision Glass Dark", "dark")]
-
-    for theme_name, target_mode in calls:
-        try:
-            await hass.services.async_call(
-                "frontend",
-                "set_theme",
-                {"name": theme_name, "mode": target_mode},
-                blocking=False,
-            )
-        except Exception as err:  # noqa: BLE001
-            _LOGGER.debug("Theme sync skipped (%s/%s): %s", theme_name, target_mode, err)
-
-
-async def _async_install_theme_if_needed(hass: HomeAssistant) -> None:
-    """Deploy bundled themes/vision_glass.yaml and reload frontend themes when changed."""
-    target_path = Path(hass.config.path("themes", "vision_glass.yaml"))
-    try:
-        updated = await hass.async_add_executor_job(_sync_theme_file_sync, target_path, BUNDLED_THEME_FILE)
-        if updated and hass.services.has_service("frontend", "reload_themes"):
-            await hass.services.async_call("frontend", "reload_themes", blocking=True)
-            _LOGGER.info("Installed/updated bundled Vision Glass theme at %s", target_path)
-    except Exception as err:  # noqa: BLE001
-        _LOGGER.debug("Bundled theme install skipped: %s", err)
-
-
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register WebSocket commands for the Vision Glass integration."""
     websocket_api.async_register_command(hass, ws_config_get)
@@ -116,7 +66,6 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     websocket_api.async_register_command(hass, ws_discovery_sync)
     websocket_api.async_register_command(hass, ws_summary_get)
     websocket_api.async_register_command(hass, ws_stats_history)
-    websocket_api.async_register_command(hass, ws_theme_sync)
     return True
 
 
@@ -158,8 +107,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
 
     entry.async_on_unload(entry.add_update_listener(_options_changed))
-
-    await _async_install_theme_if_needed(hass)
 
     await panel_custom.async_register_panel(
         hass,
@@ -293,19 +240,3 @@ async def ws_stats_history(
         max_points=msg.get("max_points", 120),
     )
     connection.send_result(msg["id"], data)
-
-
-@websocket_api.websocket_command(
-    {
-        vol.Required("type"): "vision_glass/theme/sync",
-        vol.Optional("theme_mode", default="auto"): str,
-    }
-)
-@websocket_api.async_response
-async def ws_theme_sync(
-    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
-) -> None:
-    """Install/reload bundled theme YAML if needed and sync HA default theme modes."""
-    await _async_install_theme_if_needed(hass)
-    await _async_apply_ha_theme_mode(hass, msg.get("theme_mode", "auto"))
-    connection.send_result(msg["id"], {"ok": True})

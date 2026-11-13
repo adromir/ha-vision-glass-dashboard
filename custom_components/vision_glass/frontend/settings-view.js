@@ -1488,6 +1488,10 @@ export const settingsMethods = {
               <input type="checkbox" id="chkTopMedia" ${(this._config.top_bar_show_media !== false) ? 'checked' : ''}>
               <span>Aktive Medien</span>
             </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopTheme" ${(this._config.hide_theme_chip !== true) ? 'checked' : ''}>
+              <span>Theme Switch Status</span>
+            </label>
           </div>
 
           <div style="border-top:1px solid var(--border-subtle);padding-top:12px;margin-bottom:14px;">
@@ -2919,6 +2923,8 @@ export const settingsMethods = {
         if (chkTWarn) this._config.top_bar_show_warnings = chkTWarn.checked;
         const chkTMedia = container.querySelector('#chkTopMedia');
         if (chkTMedia) this._config.top_bar_show_media = chkTMedia.checked;
+        const chkTTheme = container.querySelector('#chkTopTheme');
+        if (chkTTheme) this._config.hide_theme_chip = !chkTTheme.checked;
 
         const selPersons = [];
         container.querySelectorAll('.chk-person-select:checked').forEach(c => {

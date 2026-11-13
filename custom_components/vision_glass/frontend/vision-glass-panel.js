@@ -295,133 +295,22 @@ class VisionGlassPanel extends HTMLElement {
 
   connectedCallback() {
     this._startClock();
-    try {
-      this._applyHeaderStyles();
-    } catch (e) {}
-  }
-
-  _applyHeaderStyles(force = false) {
-    const isLight = this._resolveEffectiveThemeMode() === 'light';
-    const bgShell = isLight ? 'rgba(238, 246, 255, 0.85)' : 'rgba(15, 23, 42, 0.84)';
-    const textPrimary = isLight ? '#0f172a' : '#f8fafc';
-    const textSecondary = isLight ? '#475569' : '#94a3b8';
-    const accentColor = isLight ? '#0284c7' : '#38bdf8';
-    const dividerColor = isLight ? 'rgba(148, 163, 184, 0.35)' : 'rgba(255, 255, 255, 0.12)';
-    const hoverBg = isLight ? 'rgba(255, 255, 255, 0.55)' : 'rgba(255, 255, 255, 0.08)';
-    const activeBg = isLight ? 'rgba(2, 132, 199, 0.16)' : 'rgba(56, 189, 248, 0.18)';
-    const activeBorder = isLight ? 'rgba(2, 132, 199, 0.35)' : 'rgba(56, 189, 248, 0.35)';
-
-    const shellVars = {
-      '--sidebar-background-color': bgShell,
-      '--sidebar-text-color': textPrimary,
-      '--sidebar-icon-color': textSecondary,
-      '--sidebar-selected-text-color': accentColor,
-      '--sidebar-selected-icon-color': accentColor,
-      '--divider-color': dividerColor,
-      '--wa-color-text-normal': textPrimary,
-      '--wa-color-text-quiet': textSecondary,
-      '--md-list-item-label-text-color': textPrimary,
-      '--md-list-item-leading-icon-color': textSecondary
-    };
-
-    try {
-      const ha = document.querySelector('home-assistant');
-      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
-      const sidebar = main?.shadowRoot?.querySelector('ha-sidebar');
-
-      const targetMode = isLight ? 'light' : 'dark';
-      if (!force && this._lastShellMode === targetMode && sidebar?.shadowRoot?.getElementById('vg-shell-sidebar-style')) {
-        return;
-      }
-      this._lastShellMode = targetMode;
-
-      // Apply variables ONLY to the sidebar element so global HA pages (calendar, etc.) are never polluted
-      if (sidebar) {
-        Object.entries(shellVars).forEach(([k, v]) => sidebar.style.setProperty(k, v));
-      }
-
-      if (sidebar && sidebar.shadowRoot) {
-        let sbStyle = sidebar.shadowRoot.getElementById('vg-shell-sidebar-style');
-        if (!sbStyle) {
-          sbStyle = document.createElement('style');
-          sbStyle.id = 'vg-shell-sidebar-style';
-          sidebar.shadowRoot.appendChild(sbStyle);
-        }
-        const sbCss = `
-          :host {
-            background: ${bgShell} !important;
-            background-color: ${bgShell} !important;
-            backdrop-filter: blur(30px) saturate(190%) !important;
-            -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
-            color: ${textPrimary} !important;
-            border-right: 1px solid ${dividerColor} !important;
-          }
-          .menu, .menu .title, .menu ha-icon-button, .notifications, .profile, .item-text {
-            background: transparent !important;
-            color: ${textPrimary} !important;
-          }
-          .menu { border-bottom: 1px solid ${dividerColor} !important; }
-          paper-listbox, ha-md-list { background: transparent !important; }
-          ha-md-list-item, paper-icon-item, a[role="listitem"] {
-            border-radius: 14px !important;
-            margin: 2px 8px !important;
-            color: ${textPrimary} !important;
-            transition: background 0.2s ease, border-color 0.2s ease !important;
-          }
-          ha-md-list-item:hover, paper-icon-item:hover, a[role="listitem"]:hover { background: ${hoverBg} !important; }
-          ha-md-list-item.iron-selected, paper-icon-item.iron-selected, a.iron-selected, [aria-current="page"] {
-            background: ${activeBg} !important;
-            border: 1px solid ${activeBorder} !important;
-            color: ${accentColor} !important;
-            --md-list-item-label-text-color: ${accentColor} !important;
-            --md-list-item-leading-icon-color: ${accentColor} !important;
-          }
-          .divider { border-color: ${dividerColor} !important; }
-        `;
-        if (force || sbStyle.textContent !== sbCss) sbStyle.textContent = sbCss;
-      }
-
-      if (!sidebar?.shadowRoot && !this._shellRetryTimer) {
-        this._shellRetryTimer = setTimeout(() => {
-          this._shellRetryTimer = null;
-          this._applyHeaderStyles(true);
-        }, 250);
-      }
-    } catch (e) {}
-  }
-
-  _cleanupShellStyles() {
-    try {
-      const ha = document.querySelector('home-assistant');
-      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
-      const sidebar = main?.shadowRoot?.querySelector('ha-sidebar');
-      const varKeys = [
-        '--sidebar-background-color', '--sidebar-text-color', '--sidebar-icon-color',
-        '--sidebar-selected-text-color', '--sidebar-selected-icon-color', '--divider-color',
-        '--primary-text-color', '--secondary-text-color', '--text-primary-color', '--primary-color',
-        '--ha-color-text-primary', '--ha-color-text-secondary', '--wa-color-text-normal', '--wa-color-text-quiet',
-        '--md-list-item-label-text-color', '--md-list-item-leading-icon-color'
-      ];
-      [document.documentElement, ha, main, sidebar].filter(Boolean).forEach(el => {
-        varKeys.forEach(k => el.style.removeProperty(k));
-      });
-      sidebar?.shadowRoot?.getElementById('vg-shell-sidebar-style')?.remove();
-      this._lastShellMode = null;
-    } catch (e) {}
   }
 
   disconnectedCallback() {
     if (this._timer) clearInterval(this._timer);
-    if (this._shellRetryTimer) {
-      clearTimeout(this._shellRetryTimer);
-      this._shellRetryTimer = null;
-    }
     if (this._routeChangeHandler && typeof window !== 'undefined') {
       window.removeEventListener('location-changed', this._routeChangeHandler);
       window.removeEventListener('popstate', this._routeChangeHandler);
       this._routeChangeHandler = null;
     }
-    // Do not tear down shell styles on unmount - preserve theme across HA navigation
+    // Clean up any legacy shell styles if previously injected
+    try {
+      const ha = document.querySelector('home-assistant');
+      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
+      const sidebar = main?.shadowRoot?.querySelector('ha-sidebar');
+      sidebar?.shadowRoot?.getElementById('vg-shell-sidebar-style')?.remove();
+    } catch (e) {}
   }
 
   _getLang() {
@@ -582,10 +471,6 @@ class VisionGlassPanel extends HTMLElement {
       root.style.removeProperty('--text-primary');
       root.style.removeProperty('--text-secondary');
     }
-
-    try {
-      this._applyHeaderStyles();
-    } catch (e) {}
   }
 
   _callService(domain, service, data) {
@@ -1090,6 +975,30 @@ class VisionGlassPanel extends HTMLElement {
         chipWeather.style.display = 'none';
       } else {
         chipWeather.style.display = 'inline-flex';
+      }
+    }
+
+    // Theme Switch Engine Chip
+    const chipTheme = this.shadowRoot.getElementById('chipTheme');
+    if (chipTheme) {
+      if (this._config.hide_theme_chip === true) {
+        chipTheme.style.display = 'none';
+      } else {
+        const activeThemeState = this._hass?.states['sensor.active_theme'] || this._hass?.states['sensor.theme_switch_engine_active_theme'];
+        const activeModeState = this._hass?.states['select.theme_mode'] || this._hass?.states['select.theme_switch_engine_mode'];
+        const effMode = this._resolveEffectiveThemeMode();
+
+        let themeLabel = activeThemeState?.state || (effMode === 'light' ? 'Vision Glass Light' : 'Vision Glass Dark');
+        const mode = activeModeState?.state || (effMode === 'light' ? 'Day' : 'Night');
+        let iconName = 'palette';
+        if (mode === 'Day' || effMode === 'light') {
+          iconName = 'weather-sunny';
+        } else if (mode === 'Night' || effMode === 'dark') {
+          iconName = 'weather-night';
+        }
+        const dotColor = (effMode === 'light') ? 'dot-amber' : 'dot-blue';
+        chipTheme.style.display = 'inline-flex';
+        chipTheme.innerHTML = `<span class="chip-dot ${dotColor}"></span> ${this._icon(iconName, { size: 14, style: 'margin-right:4px;' })} ${themeLabel}`;
       }
     }
 
@@ -1711,6 +1620,7 @@ class VisionGlassPanel extends HTMLElement {
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
             <div id="chipsCustomList" style="display:contents;"></div>
+            <div class="chip" id="chipTheme" style="display:none;cursor:pointer;" title="Theme Switch Engine"></div>
             <button class="chip chip-stats" id="chipStatsNav" title="${this._t('stats')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
               ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} ${this._t('stats')}
             </button>
@@ -1952,6 +1862,26 @@ class VisionGlassPanel extends HTMLElement {
     this.shadowRoot.getElementById('chipLock').addEventListener('click', () => this._openModal('security'));
     this.shadowRoot.getElementById('chipAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('chipWeather').addEventListener('click', () => this._openModal('weather'));
+
+    const chipTheme = this.shadowRoot.getElementById('chipTheme');
+    if (chipTheme) {
+      chipTheme.addEventListener('click', () => {
+        const selState = this._hass?.states['select.theme_mode'] || this._hass?.states['select.theme_switch_engine_mode'];
+        if (selState) {
+          const current = selState.state;
+          const options = selState.attributes?.options || ['Auto', 'Day', 'Night', 'Cinema', 'Paused'];
+          const idx = options.indexOf(current);
+          const next = options[(idx + 1) % options.length];
+          this._callService('select', 'select_option', { entity_id: selState.entity_id, option: next });
+        } else {
+          const currentMode = this._resolveEffectiveThemeMode();
+          const nextMode = (currentMode === 'light') ? 'dark' : 'light';
+          this._config.theme_mode = nextMode;
+          this._applyThemeClass();
+          this._saveDashboardConfig(this._config);
+        }
+      });
+    }
 
     // Dock Items (Dynamic click binding)
     const navigateToSettings = () => {

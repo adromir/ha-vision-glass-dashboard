@@ -15,17 +15,17 @@ export const VISION_GLASS_STYLES = `
           background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%),
                       radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.55) 0%, transparent 50%),
                       linear-gradient(135deg, #dbeafe 0%, #eff6ff 35%, #f8fafc 70%, #ede9fe 100%);
-          --bg-surface: rgba(255, 255, 255, 0.92);
-          --bg-surface-hover: #ffffff;
-          --bg-card: rgba(255, 255, 255, 0.90);
-          --border-glass: rgba(148, 163, 184, 0.42);
-          --border-subtle: rgba(203, 213, 225, 0.88);
-          --text-primary: #0f172a;
-          --text-secondary: #334155;
-          --accent: #0284c7;
+          --bg-surface: var(--ha-card-background, rgba(255, 255, 255, 0.92));
+          --bg-surface-hover: var(--secondary-background-color, #ffffff);
+          --bg-card: var(--ha-card-background, rgba(255, 255, 255, 0.90));
+          --border-glass: var(--divider-color, rgba(148, 163, 184, 0.42));
+          --border-subtle: var(--divider-color, rgba(203, 213, 225, 0.88));
+          --text-primary: var(--primary-text-color, #0f172a);
+          --text-secondary: var(--secondary-text-color, #334155);
+          --accent: var(--primary-color, #0284c7);
           --accent-amber: #ea580c;
           --accent-green: #10b981;
-          --dock-bg: rgba(255, 255, 255, 0.96);
+          --dock-bg: var(--ha-card-background, rgba(255, 255, 255, 0.96));
           --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.06);
           --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 100%);
           --glass-refraction:
@@ -39,17 +39,17 @@ export const VISION_GLASS_STYLES = `
           background: radial-gradient(circle at 85% 15%, rgba(56, 189, 248, 0.14) 0%, transparent 45%),
                       radial-gradient(circle at 15% 85%, rgba(30, 58, 138, 0.22) 0%, transparent 50%),
                       linear-gradient(135deg, #090e18 0%, #0f172a 35%, #162032 70%, #0a101b 100%);
-          --bg-surface: rgba(24, 32, 48, 0.70);
-          --bg-surface-hover: rgba(30, 41, 59, 0.85);
-          --bg-card: rgba(18, 25, 38, 0.62);
-          --border-glass: rgba(255, 255, 255, 0.18);
-          --border-subtle: rgba(255, 255, 255, 0.08);
-          --text-primary: #f8fafc;
-          --text-secondary: #94a3b8;
-          --accent: #38bdf8;
+          --bg-surface: var(--ha-card-background, rgba(24, 32, 48, 0.70));
+          --bg-surface-hover: var(--secondary-background-color, rgba(30, 41, 59, 0.85));
+          --bg-card: var(--ha-card-background, rgba(18, 25, 38, 0.62));
+          --border-glass: var(--divider-color, rgba(255, 255, 255, 0.18));
+          --border-subtle: var(--divider-color, rgba(255, 255, 255, 0.08));
+          --text-primary: var(--primary-text-color, #f8fafc);
+          --text-secondary: var(--secondary-text-color, #94a3b8);
+          --accent: var(--primary-color, #38bdf8);
           --accent-amber: #f59e0b;
           --accent-green: #10b981;
-          --dock-bg: rgba(16, 22, 34, 0.72);
+          --dock-bg: var(--ha-card-background, rgba(16, 22, 34, 0.72));
           --shadow-ambient: 0 16px 36px rgba(0, 0, 0, 0.38);
           --card-overlay: linear-gradient(180deg, rgba(20,27,42,0.7) 0%, rgba(12,16,24,0.5) 100%);
           --glass-refraction:
@@ -67,7 +67,19 @@ export const VISION_GLASS_STYLES = `
           box-sizing: border-box;
           position: relative;
           overflow: hidden;
-          color: var(--text-primary);
+          color: var(--text-primary, var(--primary-text-color, #f8fafc));
+          background: var(--lovelace-background, var(--primary-background-color, #0f172a));
+          --bg-surface: var(--ha-card-background, var(--card-background-color, rgba(24, 32, 48, 0.70)));
+          --bg-surface-hover: var(--secondary-background-color, rgba(30, 41, 59, 0.85));
+          --bg-card: var(--ha-card-background, var(--card-background-color, rgba(18, 25, 38, 0.62)));
+          --border-glass: var(--divider-color, rgba(255, 255, 255, 0.18));
+          --border-subtle: var(--divider-color, rgba(255, 255, 255, 0.08));
+          --text-primary: var(--primary-text-color, #f8fafc);
+          --text-secondary: var(--secondary-text-color, #94a3b8);
+          --accent: var(--primary-color, #38bdf8);
+          --accent-amber: #f59e0b;
+          --accent-green: #10b981;
+          --dock-bg: var(--ha-card-background, rgba(16, 22, 34, 0.72));
           transition: background 0.5s ease, color 0.3s ease;
         }
 
