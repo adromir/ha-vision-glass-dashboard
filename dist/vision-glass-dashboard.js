@@ -4552,64 +4552,139 @@ class VisionGlassDashboard extends HTMLElement {
     }
   }
 
+  _getEffectiveBentoBadges() {
+    if (this._config && Array.isArray(this._config.bento_badges) && this._config.bento_badges.length > 0) {
+      return this._config.bento_badges;
+    }
+    return [
+      {
+        id: 'badge_temp',
+        name: 'Temperatur',
+        entity_prop: 'temp_entity',
+        icon: 'thermometer',
+        icon_color_light: '#ea580c',
+        icon_color_dark: '#fb923c',
+        bg_light: 'rgba(234, 88, 12, 0.10)',
+        border_light: 'rgba(234, 88, 12, 0.25)',
+        hover_light: 'rgba(234, 88, 12, 0.22)',
+        bg_dark: 'rgba(251, 146, 60, 0.15)',
+        border_dark: 'rgba(251, 146, 60, 0.35)',
+        hover_dark: 'rgba(251, 146, 60, 0.30)',
+        rooms: ['all']
+      },
+      {
+        id: 'badge_humidity',
+        name: 'Luftfeuchtigkeit',
+        entity_prop: 'humidity_entity',
+        icon: 'droplet',
+        icon_color_light: '#0284c7',
+        icon_color_dark: '#38bdf8',
+        bg_light: 'rgba(2, 132, 199, 0.10)',
+        border_light: 'rgba(2, 132, 199, 0.25)',
+        hover_light: 'rgba(2, 132, 199, 0.22)',
+        bg_dark: 'rgba(56, 189, 248, 0.15)',
+        border_dark: 'rgba(56, 189, 248, 0.35)',
+        hover_dark: 'rgba(56, 189, 248, 0.30)',
+        rooms: ['all']
+      },
+      {
+        id: 'badge_lux',
+        name: 'Helligkeit',
+        entity_prop: 'illuminance_entity',
+        icon: 'lux',
+        icon_color_light: '#d97706',
+        icon_color_dark: '#f59e0b',
+        bg_light: 'rgba(217, 119, 6, 0.10)',
+        border_light: 'rgba(217, 119, 6, 0.25)',
+        hover_light: 'rgba(217, 119, 6, 0.22)',
+        bg_dark: 'rgba(245, 158, 11, 0.15)',
+        border_dark: 'rgba(245, 158, 11, 0.35)',
+        hover_dark: 'rgba(245, 158, 11, 0.30)',
+        rooms: ['all']
+      }
+    ];
+  }
+
+  _resolveBentoBadgeValue(badge, room) {
+    if (!this._hass) return null;
+    let entityId = null;
+    if (badge.entity_prop && badge.entity_prop !== 'custom') {
+      entityId = room[badge.entity_prop];
+      if (!entityId && badge.entity_prop === 'temp_entity' && room.climate_entity && this._hass.states[room.climate_entity]) {
+        const cObj = this._hass.states[room.climate_entity];
+        const curTemp = cObj.attributes?.current_temperature ?? cObj.attributes?.temperature;
+        if (curTemp != null && !isNaN(parseFloat(curTemp))) {
+          return { text: `${parseFloat(curTemp).toFixed(1)}°C`, entityId: room.climate_entity };
+        }
+      }
+    } else {
+      entityId = badge.entity_id;
+    }
+    if (!entityId || typeof entityId !== 'string' || !entityId.trim()) return null;
+    const s = this._hass.states[entityId.trim()];
+    if (!s || s.state === 'unavailable' || s.state === 'unknown') return null;
+
+    let displayVal = s.state;
+    const unit = s.attributes?.unit_of_measurement || '';
+    if (!isNaN(parseFloat(s.state))) {
+      const num = parseFloat(s.state);
+      if (unit === '°C' || unit === '°F' || badge.entity_prop === 'temp_entity') {
+        displayVal = `${num.toFixed(1)}${unit || '°C'}`;
+      } else if (unit === '%' || badge.entity_prop === 'humidity_entity') {
+        displayVal = `${Math.round(num)}%`;
+      } else if (unit === 'lx' || badge.entity_prop === 'illuminance_entity') {
+        displayVal = `${Math.round(num)} lx`;
+      } else {
+        displayVal = `${num} ${unit}`.trim();
+      }
+    } else if (s.state === 'on') {
+      displayVal = 'An';
+    } else if (s.state === 'off') {
+      displayVal = 'Aus';
+    }
+    return { text: displayVal, entityId: entityId.trim() };
+  }
+
   _updateRoomCard(room, idx) {
     const card = this.shadowRoot.getElementById(`roomCard_${idx}`);
     if (!card) return;
 
-    // Environmental Badges: Temperature, Humidity, Illuminance
-    // 1. Temperature
-    const tempEl = card.querySelector('.env-temp');
-    if (tempEl) {
-      let tVal = null;
-      let isHeating = false;
-      if (room.climate_entity && this._hass.states[room.climate_entity]) {
-        const c = this._hass.states[room.climate_entity];
-        tVal = c.attributes.current_temperature || c.attributes.temperature;
-        isHeating = c.attributes.hvac_action === 'heating' || c.attributes.call_for_heat === true || (c.attributes.heating_power && c.attributes.heating_power > 0.05);
-      }
-      if (!tVal && room.temp_entity && this._hass.states[room.temp_entity]) {
-        tVal = this._hass.states[room.temp_entity].state;
-      }
-      if (tVal && !isNaN(parseFloat(tVal))) {
-        if (isHeating) {
-          tempEl.innerHTML = `${this._icon('flame', { size: 11, cls: 'pulsing-flame', color: '#f59e0b', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
-          tempEl.style.border = '1px solid rgba(245,158,11,0.6)';
-          tempEl.style.background = 'rgba(245,158,11,0.18)';
-        } else {
-          tempEl.innerHTML = `${this._icon('thermometer', { size: 11, cls: 'icon-temp', style: 'margin-right:3px;' })} ${parseFloat(tVal).toFixed(1)}°C`;
-          tempEl.style.border = '';
-          tempEl.style.background = '';
+    // Configurable Bento Badges
+    const bentoBadges = this._getEffectiveBentoBadges();
+    const isLight = this._resolveEffectiveThemeMode() === 'light';
+    const badgesForRoom = bentoBadges.filter(b => (!b.rooms || b.rooms.includes('all') || b.rooms.includes(room.id)));
+    const envBar = card.querySelector('.room-env-bar');
+
+    if (envBar) {
+      badgesForRoom.forEach(b => {
+        let bEl = card.querySelector(`#badge_${idx}_${b.id}`);
+        if (!bEl) {
+          bEl = document.createElement('span');
+          bEl.className = 'env-pill bento-badge-pill';
+          bEl.id = `badge_${idx}_${b.id}`;
+          const battWarn = envBar.querySelector('.env-batt-warn');
+          if (battWarn) envBar.insertBefore(bEl, battWarn);
+          else envBar.appendChild(bEl);
         }
-        tempEl.style.display = 'inline-flex';
-      } else {
-        tempEl.style.display = 'none';
-      }
-    }
+        if (bEl) {
+          const valObj = this._resolveBentoBadgeValue(b, room);
+          if (valObj && valObj.text) {
+            const iconColor = isLight ? (b.icon_color_light || '#ea580c') : (b.icon_color_dark || '#fb923c');
+            const bgColor = isLight ? (b.bg_light || 'rgba(234,88,12,0.1)') : (b.bg_dark || 'rgba(251,146,60,0.15)');
+            const borderColor = isLight ? (b.border_light || 'rgba(234,88,12,0.25)') : (b.border_dark || 'rgba(251,146,60,0.35)');
+            const hoverColor = isLight ? (b.hover_light || 'rgba(234,88,12,0.22)') : (b.hover_dark || 'rgba(251,146,60,0.3)');
 
-    // 2. Humidity
-    const humEl = card.querySelector('.env-humidity');
-    if (humEl) {
-      const hEntity = (room.humidity_entity && room.humidity_entity.trim()) ? room.humidity_entity.trim() : null;
-      const hState = hEntity && this._hass.states[hEntity];
-      if (hState && hState.state && !isNaN(parseFloat(hState.state))) {
-        humEl.innerHTML = `${this._icon('droplet', { size: 11, cls: 'icon-humidity', style: 'margin-right:3px;' })} ${Math.round(parseFloat(hState.state))}%`;
-        humEl.style.display = 'inline-flex';
-      } else {
-        humEl.style.display = 'none';
-      }
-    }
-
-    // 3. Illuminance / Lux
-    const luxEl = card.querySelector('.env-lux');
-    if (luxEl) {
-      const luxEntity = (room.illuminance_entity && room.illuminance_entity.trim()) ? room.illuminance_entity.trim() : null;
-      const luxState = luxEntity && this._hass.states[luxEntity];
-      if (luxState && luxState.state && !isNaN(parseFloat(luxState.state))) {
-        luxEl.innerHTML = `${this._icon('lux', { size: 11, cls: 'icon-lux', style: 'margin-right:3px;' })} ${Math.round(parseFloat(luxState.state))} lx`;
-        luxEl.style.display = 'inline-flex';
-      } else {
-        luxEl.style.display = 'none';
-      }
+            bEl.innerHTML = `${this._icon(b.icon || 'thermometer', { size: 11, color: iconColor, style: 'margin-right:3px;' })} <span>${valObj.text}</span>`;
+            bEl.style.display = 'inline-flex';
+            bEl.style.background = bgColor;
+            bEl.style.borderColor = borderColor;
+            bEl.style.setProperty('--pill-hover-bg', hoverColor);
+            bEl.title = `${b.name || 'Badge'}: ${valObj.text}`;
+          } else {
+            bEl.style.display = 'none';
+          }
+        }
+      });
     }
 
     // 4. Battery warning (< 10%) on Bento Card
@@ -6395,6 +6470,10 @@ class VisionGlassDashboard extends HTMLElement {
     }
     const dock = this._config.dock;
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
+    if (!this._config.bento_badges) {
+      this._config.bento_badges = this._getEffectiveBentoBadges();
+    }
+    const bentoBadges = this._config.bento_badges;
 
     const bgStyle = this._config.background_style || 'aurora';
     const bgMode = this._config.background_mode || 'auto';
@@ -6425,6 +6504,7 @@ class VisionGlassDashboard extends HTMLElement {
       <!-- Settings Navigation Tabs -->
       <div class="nav-tabs" style="display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px;margin-bottom:16px;">
         <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms">🏠 ${this._t('rooms_and_cards')} (${rooms.length})</button>
+        <button class="nav-tab ${activeTab === 'badges' ? 'active' : ''}" data-stab="badges">🏷️ Bento-Badges (${bentoBadges.length})</button>
         <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays">📂 Raum-Overlays</button>
         <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock">⚓ ${this._t('dock_navigation')}</button>
         <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls">🎛️ Helfer-Kontrollen</button>
@@ -6560,6 +6640,146 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
           `).join('')}
         </div>
+      </div>
+
+      <!-- TAB: BENTO-BADGES -->
+      <div id="stabContentBadges" style="${activeTab === 'badges' ? '' : 'display:none;'}">
+        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
+          Hier konfigurierst du die Sensor-Badges für deine 3x3 Bento-Karten zentral. Jede Badge besitzt ein Icon, Iconfarbe, Hintergrund-, Rahmen- und Hover-Farben (getrennt für helles und dunkles Theme). Mit den Raum-Checkboxen wählst du direkt aus, auf welchen Bento-Karten die Badge erscheinen soll.
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;" id="bentoBadgesList">
+          ${(bentoBadges || []).map((b, bIdx) => {
+            const isAll = !b.rooms || b.rooms.includes('all');
+            return `
+              <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;">
+                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px;">
+                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+                      ${this._icon(b.icon || 'star', { size: 18 })}
+                    </div>
+                    <input type="text" class="in-badge-name" data-bidx="${bIdx}" value="${b.name || ''}" placeholder="Badge Name (z.B. Temperatur)" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:14px;font-weight:700;flex:1;min-width:140px;">
+                  </div>
+                  <button type="button" class="btn btn-sm btn-del-bento-badge" data-bidx="${bIdx}" style="color:#ef4444;border-color:rgba(239,68,68,0.4);cursor:pointer;padding:6px 12px;">
+                    ✕ Badge löschen
+                  </button>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;">
+                  <div class="form-group">
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Entitäts-Zuordnung</label>
+                    <select class="sel-badge-entity-type" data-bidx="${bIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-weight:600;cursor:pointer;">
+                      <option value="temp_entity" ${b.entity_prop === 'temp_entity' ? 'selected' : ''}>Raum-Temperatur (temp_entity)</option>
+                      <option value="humidity_entity" ${b.entity_prop === 'humidity_entity' ? 'selected' : ''}>Raum-Luftfeuchtigkeit (humidity_entity)</option>
+                      <option value="illuminance_entity" ${b.entity_prop === 'illuminance_entity' ? 'selected' : ''}>Raum-Helligkeit / Lux (illuminance_entity)</option>
+                      <option value="target_temp_entity" ${b.entity_prop === 'target_temp_entity' ? 'selected' : ''}>Raum-Zieltemperatur (target_temp_entity)</option>
+                      <option value="window_entity" ${b.entity_prop === 'window_entity' ? 'selected' : ''}>Raum-Fensterkontakt (window_entity)</option>
+                      <option value="presence_entity" ${b.entity_prop === 'presence_entity' ? 'selected' : ''}>Raum-Präsenzmelder (presence_entity)</option>
+                      <option value="custom" ${b.entity_prop === 'custom' ? 'selected' : ''}>Feste / Spezifische Entität</option>
+                    </select>
+                  </div>
+
+                  ${b.entity_prop === 'custom' ? `
+                    <div class="form-group">
+                      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Spezifische Entität</label>
+                      <div style="display:flex;gap:6px;">
+                        <input type="text" class="in-badge-custom-entity" data-bidx="${bIdx}" value="${b.entity_id || ''}" placeholder="sensor.xyz" style="flex:1;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
+                        <button type="button" class="btn btn-sm btn-pick-badge-entity" data-bidx="${bIdx}" style="padding:6px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;">🔍</button>
+                      </div>
+                    </div>
+                  ` : ''}
+
+                  <div class="form-group">
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Icon</label>
+                    <select class="sel-badge-icon" data-bidx="${bIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-weight:600;cursor:pointer;">
+                      ${['thermometer', 'droplet', 'lux', 'light', 'wind', 'sun', 'flame', 'leaf', 'battery-good', 'shield', 'plug', 'star', 'music', 'lock-closed', 'clock', 'eye'].map(ic => `
+                        <option value="${ic}" ${b.icon === ic ? 'selected' : ''}>${ic}</option>
+                      `).join('')}
+                    </select>
+                  </div>
+                </div>
+
+                <!-- Colors Configuration: Light & Dark Mode -->
+                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px;">
+                  <!-- Light Mode Colors -->
+                  <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
+                    <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                      ☀️ Helles Theme
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_light" value="${b.icon_color_light || '#ea580c'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_light" value="${b.bg_light || 'rgba(234,88,12,0.1)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_light" value="${b.border_light || 'rgba(234,88,12,0.25)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_light" value="${b.hover_light || 'rgba(234,88,12,0.22)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Dark Mode Colors -->
+                  <div style="background:rgba(0,0,0,0.14);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
+                    <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+                      🌙 Dunkles Theme
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${b.icon_color_dark || '#fb923c'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_dark" value="${b.bg_dark || 'rgba(251,146,60,0.15)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_dark" value="${b.border_dark || 'rgba(251,146,60,0.35)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                      <div>
+                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
+                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_dark" value="${b.hover_dark || 'rgba(251,146,60,0.30)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Room Assignment Checkboxes -->
+                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);">
+                      📍 Auf welchen Bento-Karten anzeigen?
+                    </div>
+                    <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--accent);">
+                      <input type="checkbox" class="chk-badge-room-all" data-bidx="${bIdx}" ${isAll ? 'checked' : ''}>
+                      <span>Auf allen Räumen</span>
+                    </label>
+                  </div>
+                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;">
+                    ${rooms.map(r => `
+                      <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,0.02);">
+                        <input type="checkbox" class="chk-badge-room-one" data-bidx="${bIdx}" data-rid="${r.id}" ${(isAll || (b.rooms && b.rooms.includes(r.id))) ? 'checked' : ''} ${isAll ? 'disabled' : ''}>
+                        <span>${r.name || r.id}</span>
+                      </label>
+                    `).join('')}
+                  </div>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+
+        <button type="button" class="btn btn-sm btn-primary" id="btnAddBentoBadge" style="margin-top:14px;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          + Neue Bento-Badge anlegen
+        </button>
       </div>
 
       <!-- TAB 2: RAUM-OVERLAYS (KATEGORIEN) -->
@@ -7399,6 +7619,135 @@ class VisionGlassDashboard extends HTMLElement {
             else if (targetId === 'cfgAllLights') this._config.all_lights_entity = selectedId;
           }
         });
+      };
+    });
+
+    // Bento-Badges Handlers
+    const btnAddBadge = container.querySelector('#btnAddBentoBadge');
+    if (btnAddBadge) {
+      btnAddBadge.onclick = () => {
+        if (!this._config.bento_badges) this._config.bento_badges = this._getEffectiveBentoBadges();
+        this._config.bento_badges.push({
+          id: 'badge_' + Date.now(),
+          name: 'Neue Badge',
+          entity_prop: 'temp_entity',
+          icon: 'star',
+          icon_color_light: '#0284c7',
+          icon_color_dark: '#38bdf8',
+          bg_light: 'rgba(2, 132, 199, 0.10)',
+          border_light: 'rgba(2, 132, 199, 0.25)',
+          hover_light: 'rgba(2, 132, 199, 0.22)',
+          bg_dark: 'rgba(56, 189, 248, 0.15)',
+          border_dark: 'rgba(56, 189, 248, 0.35)',
+          hover_dark: 'rgba(56, 189, 248, 0.30)',
+          rooms: ['all']
+        });
+        this._renderSettingsContent(container, isModal);
+      };
+    }
+
+    container.querySelectorAll('.btn-del-bento-badge').forEach(btn => {
+      btn.onclick = () => {
+        const bIdx = parseInt(btn.getAttribute('data-bidx'));
+        if (this._config.bento_badges && this._config.bento_badges[bIdx]) {
+          this._config.bento_badges.splice(bIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-badge-name').forEach(inp => {
+      inp.oninput = () => {
+        const bIdx = parseInt(inp.getAttribute('data-bidx'));
+        if (this._config.bento_badges?.[bIdx]) {
+          this._config.bento_badges[bIdx].name = inp.value;
+        }
+      };
+    });
+
+    container.querySelectorAll('.sel-badge-entity-type').forEach(sel => {
+      sel.onchange = () => {
+        const bIdx = parseInt(sel.getAttribute('data-bidx'));
+        if (this._config.bento_badges?.[bIdx]) {
+          this._config.bento_badges[bIdx].entity_prop = sel.value;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-badge-custom-entity').forEach(inp => {
+      inp.oninput = () => {
+        const bIdx = parseInt(inp.getAttribute('data-bidx'));
+        if (this._config.bento_badges?.[bIdx]) {
+          this._config.bento_badges[bIdx].entity_id = inp.value.trim();
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-badge-entity').forEach(btn => {
+      btn.onclick = () => {
+        const bIdx = parseInt(btn.getAttribute('data-bidx'));
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        this._showEntityPicker({
+          currentValue: badge.entity_id || '',
+          defaultDomain: 'sensor',
+          onSelect: (selectedId) => {
+            badge.entity_id = selectedId;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.sel-badge-icon').forEach(sel => {
+      sel.onchange = () => {
+        const bIdx = parseInt(sel.getAttribute('data-bidx'));
+        if (this._config.bento_badges?.[bIdx]) {
+          this._config.bento_badges[bIdx].icon = sel.value;
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-badge-color').forEach(inp => {
+      inp.oninput = () => {
+        const bIdx = parseInt(inp.getAttribute('data-bidx'));
+        const prop = inp.getAttribute('data-prop');
+        if (this._config.bento_badges?.[bIdx]) {
+          this._config.bento_badges[bIdx][prop] = inp.value;
+        }
+      };
+    });
+
+    container.querySelectorAll('.chk-badge-room-all').forEach(chk => {
+      chk.onchange = () => {
+        const bIdx = parseInt(chk.getAttribute('data-bidx'));
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        if (chk.checked) {
+          badge.rooms = ['all'];
+        } else {
+          badge.rooms = (this._config.rooms || []).map(r => r.id);
+        }
+        this._renderSettingsContent(container, isModal);
+      };
+    });
+
+    container.querySelectorAll('.chk-badge-room-one').forEach(chk => {
+      chk.onchange = () => {
+        const bIdx = parseInt(chk.getAttribute('data-bidx'));
+        const rId = chk.getAttribute('data-rid');
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        if (!Array.isArray(badge.rooms) || badge.rooms.includes('all')) {
+          badge.rooms = (this._config.rooms || []).map(r => r.id);
+        }
+        if (chk.checked) {
+          if (!badge.rooms.includes(rId)) badge.rooms.push(rId);
+        } else {
+          badge.rooms = badge.rooms.filter(id => id !== rId);
+        }
       };
     });
 
