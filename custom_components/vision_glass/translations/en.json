@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Vision Glass",
+        "description": "Configure the Vision Glass sidebar panel and optionally migrate your existing Lovelace dashboard configuration.",
+        "data": {
+          "sidebar_title": "Sidebar Title",
+          "sidebar_icon": "Sidebar Icon",
+          "require_admin": "Admin Access Only",
+          "migrate_lovelace": "Migrate existing 'vision-glass' Lovelace configuration"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Vision Glass is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Vision Glass Panel Options",
+        "description": "Adjust sidebar visibility and appearance for Vision Glass.",
+        "data": {
+          "sidebar_title": "Sidebar Title",
+          "sidebar_icon": "Sidebar Icon",
+          "require_admin": "Admin Access Only"
+        }
+      }
+    }
+  }
+}

@@ -1,107 +1,78 @@
-# 🪟 Vision Glass Dashboard for Home Assistant (v2.1)
+# 🪟 Vision Glass for Home Assistant (v3.0.0)
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=plugin)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/default)
 [![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-vision-glass-dashboard?style=for-the-badge&color=blue)](https://github.com/adromir/ha-vision-glass-dashboard/releases)
+[![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.7%2B-18BCF2?style=for-the-badge&logo=home-assistant)](https://www.home-assistant.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](LICENSE)
 [![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg?style=for-the-badge)](https://github.com/adromir/ha-vision-glass-dashboard)
 
-A groundbreaking, turnkey **Spatial Glassmorphism Smart Home Dashboard** for Home Assistant inspired by Apple VisionOS and macOS Sequoia design languages.
+An all-in-one **Home Assistant Integration & Spatial Glassmorphism Custom Panel** inspired by Apple VisionOS and macOS Sequoia design languages.
 
-Delivers a complete, tactile command center with live weather, room cards, interactive popups, day/night transitions, a floating glass dock, and now in **v2.1**: **Full Multilingual Localization (including Bahasa Indonesia)**, **Dedicated Configuration Page & Center**, **Tactile TV Remote & Media Player Tiles**, and **Soft Animated Ambient Lights (wabernde Lichter)**!
+Starting with **v3.0.0**, Vision Glass installs cleanly as a single **HACS Integration** (`custom_components/vision_glass`) combining a Python backend (`.storage` persistence, native area/device/entity discovery, summary aggregation, and Recorder downsampling) with a modular zero-dependency ES frontend served as a dedicated sidebar Custom Panel (`/vision-glass`).
 
 ---
 
-## ✨ What's New in v2.1
+## ✨ Why Use Vision Glass?
 
-- 🌐 **100% Multilingual Localization & Zero Hardcoded Strings**:
-  - Full native translations in **German (`de`)**, **English (`en`)**, and **Bahasa Indonesia (`id`)**!
-  - 100% automated profile language resolution: seamlessly follows your Home Assistant user profile locale without any clutter or manual dropdowns in the UI.
-  - Dynamically formats dates, times, days, and greetings according to your account's locale.
-- ⚙️ **Dedicated Configuration Center & Settings View**:
-  - Accessible directly in the dashboard via the **⚙️ Settings Gear button** in the top header, in the bottom floating dock, and as a dedicated Lovelace view (`path: settings`).
-  - Seamlessly configure **Theme Modes** (Auto Day/Night via `sun.sun`, Always Light, Always Dark), **Background Style Presets**, **Ambient Animation Speed**, **Bento Room Cards (Reorder `[▲]` / `[▼]`, Add, Edit, Delete)**, **Room Overlays (Categories)**, and **Dock Buttons**.
-  - Persists directly into Home Assistant storage via the native Lovelace WebSocket API with instant UI refresh and confirmation toast!
-- 📺 **Tactile TV Remote Tile & 🎵 Media Player Tile**:
-  - **Mini TV Remote Tile**: Dedicated TV tile for television media players (`device_class: tv`), featuring power toggle, input source selector (HDMI, Apps, TV), volume up/down, and mute controls.
-  - **Strict Switch Isolation**: Smart plugs and power outlets are strictly isolated to socket control rows with on/off toggles, ensuring smartplugs are never conflated with TV remotes.
-  - **Mini Media Player Tile**: Beautiful audio player tile for music systems with album art, track title, artist, volume stepper, play/pause, and track skip buttons.
-- 🌌 **6 Selectable Background Presets & Tactile Physics**:
-  - **Aurora (Wabernde Lichter)**: Soft, diffuse fluid caustics smoothly drifting behind the frosted glass panels.
-  - **Spatial Vision Mesh**: Frosted geometric grid refraction with subtle depth.
-  - **Deep Space**: Cosmic midnight starfield with nebula glow.
-  - **Sunset Glow**: Warm twilight amber, violet, and peach gradients.
-  - **Minimal Frosted Glass**: Clean, neutral frosted glass.
-  - **Custom Image URL**: Supports any custom image URL or local path (`/local/...`).
-  - **Tactile 3D Hover & Sheen**: Bento room cards and sidebar feature smooth 3D elevation, luminous border glow highlight, and a 45-degree specular sheen sweep (`:hover::after`).
-- 🛠️ **Seamless Lovelace Edit Mode Integration & Card Editor Fix**:
-  - Fixed Lovelace card editor (`vision-glass-dashboard-editor`) so clicking the edit pencil on panel views opens the visual configurator cleanly without errors.
-  - Surfaces a direct configuration banner when in panel edit mode.
-
+- 🚀 **Single All-in-One Integration**: No manual Lovelace resources or separate dashboard YAML files required—install once via HACS, add the integration in Home Assistant, and open **Vision Glass** straight from your sidebar.
+- 🧠 **Python-Offloaded Performance**:
+  - **Exact Area/Device Registry Discovery**: Resolves area-to-entity mappings server-side (`vision_glass/discovery/rooms`) instead of brute-forcing entity lists in the browser.
+  - **Server-Side Aggregation & Recorder Downsampling**: Computes active lights, heating counts, battery tiers, and downsampled SVG chart series (`vision_glass/stats/history`) in Python before sending compact payloads over WebSocket.
+  - **Dedicated Storage (`vision_glass.config`)**: Persists your layout cleanly in `.storage/vision_glass.config` with zero dependency on Lovelace view/card editors.
+- 🔄 **Seamless One-Time Lovelace Migration**: Upgrading from v2.x? Setup automatically detects an existing `vision-glass` Lovelace dashboard config and offers a 1-click migration into integration storage.
+- 📦 **Modular ES Frontend & Lazy Loading**: Splits panel core, styles, icons, i18n (`de` / `en` / `id`), tactile controls, modals, settings view, and stats charts with content-hash cache busting (`?v=<build_id>`).
 
 ---
 
 ## 💎 Core Features
 
-- 💎 **Authentic Spatial Glassmorphism**: Cards and docks render hardware-accelerated translucent acrylic (`backdrop-filter: blur(28px)`), specular edge lighting, and ambient colored glows.
-- 🌓 **Dynamic Day & Night Transitions**: Automatically detects sun elevation (`sun.sun`) or system time to transition smoothly between a bright daylight glass atmosphere and an obsidian midnight glass atmosphere. Includes a manual one-click toggle.
-- 🎛️ **Bento Room Grid**: Rich room panels featuring live status indicators, temperatures, **humidity** (💧), **illuminance** (💡 lx), and a direct **heating quick-stepper** (`[-]` / `[+]`) to adjust target temperatures instantly without opening overlays.
-- 👤 **Resident Profile Badges**: Real avatar photos and status indicators for home residents (`person.*`).
-- 🧭 **Glanceable Left Sidebar**: High-contrast spatial widget in both Light and Dark themes with bold typography, live clock, date, clickable weather capsule with mini-stats, and whole-home status pills.
-- 🛥️ **Floating VisionOS Dock**: Pinned frosted dock bar at the bottom for quick access to whole-home lighting, climate, shading, and weather.
-- 📑 **Interactive Popups**:
-  - 💡 **Lighting & Scenes**: Whole-home on/off toggles, circadian daylight presets, and per-room sliders.
-  - 🌡️ **Climate & Curves**: Smooth SVG temperature history charts, domestic hot water (DHW) status, and target steppers.
-  - 📊 **Multi-Sensor Statistics**: Interactive multi-line SVG charts combining all temperature sensors of each room into one graph, 24h Lux curves, occupancy & heating cycles, and battery discharge trends.
-  - 🌦️ **Atmospheric Weather & Radar**: RainViewer HD precipitation radar with Windy toggle (persistent iframe, no flickering), smooth kinetic 24h hourly forecast without rubberbanding, and 7-day weather trend.
-  - 🛡️ **Alarmanlage & Sicherheit**: Full Alarmo panel with mode switching and numeric keypad, plus 3-state front door lock (Door Open, Unlocked, Locked).
-  - 🔋 **Battery & Maintenance Monitor**: Filterable battery monitor (Critical, Low, Good) with animated level bars.
-- 🎨 **Modern Dual-Theme Vector Icon Library**: 60+ bespoke, hand-crafted vector SVG icons supporting both MDI and Custom Icons (`ci:*`).
-- ⚡ **Zero-Dependency Vanilla Web Component**: Built entirely with standards-based Web Components and CSS3. Requires no heavy frameworks.
+- 🪟 **Spatial Glassmorphism & Sidebar Theme Sync**: Translucent frosted acrylic surfaces with synchronized Home Assistant sidebar styling and automatic Day/Night switching (`sun.sun`).
+- 🎛️ **Configurable Bento Room Cards**: Drag/reorder rooms, customize icon slots and reusable multi-room Bento badges (dark & light color themes), humidity/lux chips, and instant heating quick-steppers (`-` / `+`).
+- 🛥️ **Customizable Floating Bottom Dock & Top Header Chips**: Built-in and custom dock modals/links/services, multi-row responsive settings/header chips, multi-person profile badges, Alarmo status, and dynamic dock visibility.
+- 📑 **Rich Interactive Popups**:
+  - 💡 **Lighting & Scenes**
+  - 🌡️ **Climate & Heater Controls**
+  - 📊 **Multi-Sensor Recorder Statistics**
+  - 🌦️ **Atmospheric Weather & RainViewer / Windy Radar**
+  - 🛡️ **Alarmo Keypad & Door Lock Status**
+  - 🔋 **Critical / Low / Good Battery Monitor**
+  - 🔌 **Smart Switches, Media/TV Remote & Helper Controls**
 
 ---
 
 ## 📦 Installation via HACS
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=plugin)
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration)
 
 1. Make sure [HACS](https://hacs.xyz/) is installed.
-2. In Home Assistant, open **HACS** > **Frontend**.
-3. Click the three dots (top right) and select **Custom repositories**.
-4. Enter repository URL:
-   ```
+2. Open **HACS → Integrations → ⋮ → Custom repositories**.
+3. Add repository URL:
+   ```text
    https://github.com/adromir/ha-vision-glass-dashboard
    ```
-5. Select category: **Lovelace** (Dashboard Plugin).
-6. Click **Add**, find **Vision Glass Dashboard**, and click **Download**.
+4. Choose category: **Integration** and click **Add**.
+5. Search for **Vision Glass** in HACS, click **Download**, and **restart Home Assistant**.
+6. Go to **Settings → Devices & Services → Add Integration → Vision Glass**.
+   - Configure sidebar title, icon, admin restriction, and (if present) enable **Migrate existing `vision-glass` Lovelace configuration**.
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Usage & Configuration
 
-Create a new Dashboard (or View) in Home Assistant. For the optimal full-screen spatial experience, set the view to **Panel Mode**:
-
-```yaml
-title: Vision Glass
-views:
-  - title: Home
-    path: home
-    panel: true
-    cards:
-      - type: custom:vision-glass-dashboard
-```
-
-Upon first launch, the dashboard **automatically detects your rooms and entities** and creates your Bento cards. Open the visual card editor anytime to customize or reorder them!
+1. Open **Vision Glass** from the Home Assistant sidebar (`/vision-glass`).
+2. Click **⚙️ Settings** in the top-right header bar or bottom dock to customize:
+   - **Rooms & Bento Content** (order, primary entities, reusable badges, icon colors)
+   - **Room Overlays & Helper Controls**
+   - **Top Header Chips & Bottom Dock Items**
+   - **Theme Mode, Background Presets & Sync to Home Assistant Areas**
+3. Changes save directly to Home Assistant `.storage/vision_glass.config` over WebSocket (`vision_glass/config/save`).
 
 ---
 
-## 🛠️ Visual GUI Card Editor
+## ⚠️ Disclaimer
 
-Click **Edit Card** in Lovelace to open the visual configurator:
-- **🏠 Rooms Tab**: Add, delete, or reorder rooms using `[▲]` and `[▼]`. Assign primary light, climate, motion, and window sensors.
-- **📂 Overlays Tab**: Choose any room and define custom category blocks (e.g. *Ambience*, *Home Theater*, *Power Plugs*). Reorder entities with `[▲]` and `[▼]`.
-- **⚓ Bottom Dock Tab**: Toggle automatic dead-button hiding, reorder dock tabs, or add custom dock sections (with custom modal overlays, dashboard URLs, or service calls).
-- **⚙️ General Tab**: Configure title, weather entity, all-lights group, lock entity, and trigger global theme / automation synchronization.
+This custom integration interacts directly with your Home Assistant configuration storage and entities. Always keep regular Home Assistant backups before upgrading major versions. Provided "as is" without warranty of any kind.
 
 ---
 
@@ -110,4 +81,4 @@ Click **Edit Card** in Lovelace to open the visual configurator:
 Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for more details.
 
 **Author**: [Adromir](https://github.com/adromir)  
-**Website**: [https://github.com/adromir](https://github.com/adromir)
+**Website**: <https://github.com/adromir>

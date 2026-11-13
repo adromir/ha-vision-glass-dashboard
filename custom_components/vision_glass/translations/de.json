@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Vision Glass einrichten",
+        "description": "Konfiguriere das Vision Glass Seitenleisten-Panel und übernimm auf Wunsch deine bestehende Lovelace-Konfiguration.",
+        "data": {
+          "sidebar_title": "Titel in der Seitenleiste",
+          "sidebar_icon": "Icon in der Seitenleiste",
+          "require_admin": "Nur für Administratoren sichtbar",
+          "migrate_lovelace": "Bestehende 'vision-glass' Lovelace-Konfiguration automatisch migrieren"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Vision Glass ist bereits eingerichtet."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Vision Glass Panel-Optionen",
+        "description": "Passe Sichtbarkeit und Darstellung in der Seitenleiste an.",
+        "data": {
+          "sidebar_title": "Titel in der Seitenleiste",
+          "sidebar_icon": "Icon in der Seitenleiste",
+          "require_admin": "Nur für Administratoren sichtbar"
+        }
+      }
+    }
+  }
+}

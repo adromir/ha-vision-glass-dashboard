@@ -1,10 +1,10 @@
 {
   "name": "ha-vision-glass-dashboard",
-  "version": "2.4.1",
+  "version": "3.0.0",
   "type": "module",
-  "description": "Turnkey spatial glassmorphism smart home dashboard for Home Assistant with initial auto-provisioning, visual configurator, custom dock sections, and custom overlay categories",
-  "main": "dist/vision-glass-dashboard.js",
+  "description": "All-in-one Spatial Glassmorphism Custom Panel & Home Assistant Integration with Python backend storage, dynamic area discovery, Recorder downsampling, and modular ES frontend",
   "scripts": {
+    "test": "python -m unittest -v tests/test_python_backend.py && node tests/test_frontend_modules.mjs",
     "release": "node scripts/release.js"
   },
   "keywords": [
