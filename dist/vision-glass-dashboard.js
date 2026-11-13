@@ -3557,22 +3557,39 @@ class VisionGlassDashboard extends HTMLElement {
 
     title.textContent = `${room.name} – ${this._t('overview_devices')}`;
 
-    const lightObj = room.light_entity ? this._hass.states[room.light_entity] : null;
-    const climateObj = room.climate_entity ? this._hass.states[room.climate_entity] : null;
-    const presObj = room.presence_entity ? this._hass.states[room.presence_entity] : null;
-    const winObj = room.window_entity ? this._hass.states[room.window_entity] : null;
-    const switchObj = room.switch_entity ? this._hass.states[room.switch_entity] : null;
-    const mediaObj = room.media_entity ? this._hass.states[room.media_entity] : null;
-    const tempObj = room.temp_entity ? this._hass.states[room.temp_entity] : null;
+    const lightObj = (room.light_entity && room.light_entity.trim()) ? this._hass.states[room.light_entity.trim()] : null;
+    const climateObj = (room.climate_entity && room.climate_entity.trim()) ? this._hass.states[room.climate_entity.trim()] : null;
+    const presObj = (room.presence_entity && room.presence_entity.trim()) ? this._hass.states[room.presence_entity.trim()] : null;
+    const winObj = (room.window_entity && room.window_entity.trim()) ? this._hass.states[room.window_entity.trim()] : null;
+    const switchObj = (room.switch_entity && room.switch_entity.trim()) ? this._hass.states[room.switch_entity.trim()] : null;
+    const mediaObj = (room.media_entity && room.media_entity.trim()) ? this._hass.states[room.media_entity.trim()] : null;
+    const tempObj = (room.temp_entity && room.temp_entity.trim()) ? this._hass.states[room.temp_entity.trim()] : null;
+    const doorObj = (room.door_entity && room.door_entity.trim()) ? this._hass.states[room.door_entity.trim()] : null;
 
-    const curTemp = climateObj && climateObj.attributes.current_temperature
+    const hasTemp = Boolean((climateObj && climateObj.attributes && climateObj.attributes.current_temperature != null) || (tempObj && tempObj.state && !isNaN(parseFloat(tempObj.state))));
+    const curTemp = (climateObj && climateObj.attributes && climateObj.attributes.current_temperature != null)
       ? climateObj.attributes.current_temperature
-      : (tempObj ? tempObj.state : '--');
+      : (tempObj && tempObj.state && !isNaN(parseFloat(tempObj.state)) ? parseFloat(tempObj.state).toFixed(1) : null);
+
+    const hasPres = Boolean(presObj && presObj.state != null);
+    const hasWin = Boolean(winObj && winObj.state != null);
+    const hasDoor = Boolean(doorObj && doorObj.state != null);
 
     const isLightOn = lightObj && lightObj.state === 'on';
     const isHeat = climateObj && climateObj.state === 'heat';
     const isPres = presObj && presObj.state === 'on';
     const isWinOpen = winObj && winObj.state === 'on';
+    const isDoorOpen = doorObj && doorObj.state === 'on';
+
+    const statusPills = [];
+    if (hasPres) {
+      statusPills.push(isPres ? (this._icon('motion', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('person_present')) : (this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' ' + this._t('no_motion')));
+    }
+    if (hasWin) {
+      statusPills.push(isWinOpen ? (this._icon('window-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' ' + this._t('window_open')) : (this._icon('window', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('window_closed')));
+    } else if (hasDoor) {
+      statusPills.push(isDoorOpen ? (this._icon('door-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' ' + this._t('door_open')) : (this._icon('door', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('door_closed')));
+    }
 
     const roomSlug = room.id.toLowerCase();
     const slugAliases = {
@@ -3691,15 +3708,19 @@ class VisionGlassDashboard extends HTMLElement {
         <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 20px;flex-wrap:wrap;gap:12px;">
           <div>
             <div style="font-size:22px;font-weight:700;">${room.name}</div>
-            <div style="font-size:13px;color:var(--text-secondary);margin-top:3px;">
-              ${isPres ? this._icon('motion', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('person_present') : this._icon('motion-idle', { size: 14, style: 'margin-right:4px;' }) + ' ' + this._t('no_motion')} • ${isWinOpen ? this._icon('window-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' }) + ' ' + this._t('window_open') : this._icon('window', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' }) + ' ' + this._t('window_closed')}
-            </div>
+            ${statusPills.length > 0 ? `
+              <div style="font-size:13px;color:var(--text-secondary);margin-top:3px;">
+                ${statusPills.join(' • ')}
+              </div>
+            ` : ''}
           </div>
           <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
-              <div style="font-size:19px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
-              <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('thermometer', { size: 11, cls: 'icon-temp' })} ${this._t('temp')}</div>
-            </div>
+            ${(hasTemp && curTemp != null) ? `
+              <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
+                <div style="font-size:19px;font-weight:700;color:var(--accent);">${curTemp}°C</div>
+                <div style="font-size:11px;color:var(--text-secondary);display:flex;align-items:center;justify-content:center;gap:3px;margin-top:1px;">${this._icon('thermometer', { size: 11, cls: 'icon-temp' })} ${this._t('temp')}</div>
+              </div>
+            ` : ''}
             ${curHum != null ? `
               <div style="text-align:center;padding:6px 12px;background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:14px;">
                 <div style="font-size:19px;font-weight:700;color:#0284c7;">${curHum}%</div>
