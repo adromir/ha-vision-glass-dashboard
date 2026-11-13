@@ -2750,6 +2750,49 @@ class VisionGlassDashboard extends HTMLElement {
     if (prefCtrl === 'badge') {
       return this._renderSensorBadgeHtml(entityId, stateObj);
     }
+    if (prefCtrl === 'rocker-switch') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:50px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;gap:4px;" title="${name}">
+                <span>${name}</span>
+                ${battWarningHtml}
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);">${isOn ? `${this._t('on')}${pwrDisplay}` : this._t('off')}</div>
+            </div>
+          </div>
+          <div class="rocker-container ${isOn ? 'is-on' : ''}" data-rocker-entity="${entityId}">
+            <div class="rocker-pill"></div>
+            <div class="rocker-half half-off">AUS</div>
+            <div class="rocker-half half-on">AN</div>
+          </div>
+        </div>
+      `;
+    }
+    if (prefCtrl === 'hold-action') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:58px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;line-height:1.3;word-break:break-word;white-space:normal;color:var(--text-primary);display:flex;align-items:center;flex-wrap:wrap;gap:4px;" title="${name}">
+                <span>${name}</span>
+                ${battWarningHtml}
+              </div>
+              <div style="font-size:11px;color:var(--text-secondary);">${isOn ? `${this._t('on')}${pwrDisplay}` : this._t('off')}</div>
+            </div>
+          </div>
+          <div class="hold-btn-container" data-hold-entity="${entityId}">
+            <svg viewBox="0 0 100 100" style="position:absolute;inset:0;width:100%;height:100%;transform:rotate(-90deg);">
+              <circle class="hold-ring" cx="50" cy="50" r="44" fill="none" stroke="var(--accent)" stroke-width="7" stroke-dasharray="276.4" stroke-dashoffset="276.4"/>
+            </svg>
+            <div class="hold-btn-bg">${isOn ? 'AUS' : 'AN'}</div>
+          </div>
+        </div>
+      `;
+    }
     if (prefCtrl === 'push_button') {
       return `
         <div class="control-row" style="padding:10px 14px;min-height:48px;display:flex;align-items:center;justify-content:space-between;">
@@ -2890,6 +2933,169 @@ class VisionGlassDashboard extends HTMLElement {
         return this._renderSensorBadgeHtml(entityId, stateObj);
       }
 
+      if (prefCtrl === 'rotary-knob') {
+        const pct = max > min ? Math.max(0, Math.min(1, (numVal - min) / (max - min))) : 0;
+        const offset = 251.2 * (1 - pct);
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);">${min} - ${max} ${unit}</div>
+              </div>
+            </div>
+            <div class="rotary-container" data-rotary-entity="${entityId}" data-min="${min}" data-max="${max}" data-step="${step}">
+              <svg class="rotary-svg" viewBox="0 0 100 100">
+                <circle class="rotary-bg-arc" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="0"></circle>
+                <circle class="rotary-val-arc" cx="50" cy="50" r="40" stroke-dasharray="251.2" stroke-dashoffset="${offset}"></circle>
+              </svg>
+              <div class="rotary-center-val">
+                <span class="rotary-num">${numVal}</span>
+                <span class="rotary-unit">${unit}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (prefCtrl === 'open-arc') {
+        const pct = max > min ? Math.max(0, Math.min(1, (numVal - min) / (max - min))) : 0;
+        const offset = 188.5 * (1 - pct);
+        const angleRad = (135 + pct * 270) * (Math.PI / 180);
+        const handleX = 50 + 40 * Math.cos(angleRad);
+        const handleY = 50 + 40 * Math.sin(angleRad);
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);">${min} - ${max} ${unit}</div>
+              </div>
+            </div>
+            <div class="openarc-container" data-openarc-entity="${entityId}" data-min="${min}" data-max="${max}" data-step="${step}">
+              <svg viewBox="0 0 100 100" style="width:100%;height:100%;">
+                <path d="M 21.7 78.3 A 40 40 0 1 1 78.3 78.3" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+                <path class="openarc-val-path" d="M 21.7 78.3 A 40 40 0 1 1 78.3 78.3" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="188.5" stroke-dashoffset="${offset}"/>
+                <circle class="openarc-handle" cx="${handleX}" cy="${handleY}" r="6" fill="#ffffff" stroke="var(--accent)" stroke-width="2" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3)); pointer-events:none;"/>
+              </svg>
+              <div class="openarc-center">
+                <span class="rotary-num">${numVal}</span>
+                <span class="rotary-unit">${unit}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (prefCtrl === 'half-circle') {
+        const pct = max > min ? Math.max(0, Math.min(1, (numVal - min) / (max - min))) : 0;
+        const offset = 125.6 * (1 - pct);
+        const angleRad = (180 - pct * 180) * (Math.PI / 180);
+        const handleX = 50 + 40 * Math.cos(angleRad);
+        const handleY = 50 - 40 * Math.sin(angleRad);
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);">${numVal} ${unit}</div>
+              </div>
+            </div>
+            <div class="halfcircle-container" data-halfcircle-entity="${entityId}" data-min="${min}" data-max="${max}" data-step="${step}">
+              <svg viewBox="0 0 100 55" style="width:100%;height:100%;">
+                <path d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="8" stroke-linecap="round"/>
+                <path class="halfcircle-val-path" d="M 10 50 A 40 40 0 0 1 90 50" fill="none" stroke="var(--accent)" stroke-width="8" stroke-linecap="round" stroke-dasharray="125.6" stroke-dashoffset="${offset}"/>
+                <circle class="halfcircle-handle" cx="${handleX}" cy="${handleY}" r="5.5" fill="#ffffff" stroke="var(--accent)" stroke-width="2" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,0.3)); pointer-events:none;"/>
+              </svg>
+            </div>
+          </div>
+        `;
+      }
+
+      if (prefCtrl === 'wedge-slider') {
+        const pct = max > min ? Math.max(0, Math.min(1, (numVal - min) / (max - min))) : 0;
+        const cleanId = entityId.replace(/[^a-zA-Z0-9_]/g, '_');
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);">${numVal} ${unit}</div>
+              </div>
+            </div>
+            <div class="wedge-container" data-wedge-entity="${entityId}" data-min="${min}" data-max="${max}" data-step="${step}">
+              <svg class="wedge-svg" viewBox="0 0 200 60" preserveAspectRatio="none">
+                <defs>
+                  <clipPath id="wedge-clip-${cleanId}">
+                    <polygon points="0,55 200,5 200,55" />
+                  </clipPath>
+                  <linearGradient id="wedge-grad-${cleanId}" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#38bdf8"/>
+                    <stop offset="50%" stop-color="#f59e0b"/>
+                    <stop offset="100%" stop-color="#ef4444"/>
+                  </linearGradient>
+                </defs>
+                <polygon points="0,55 200,5 200,55" fill="rgba(255,255,255,0.12)" />
+                <rect class="wedge-val-rect" x="0" y="0" width="${pct * 200}" height="60" fill="url(#wedge-grad-${cleanId})" clip-path="url(#wedge-clip-${cleanId})" />
+              </svg>
+            </div>
+          </div>
+        `;
+      }
+
+      if (prefCtrl === 'vertical-slider') {
+        const pct = max > min ? Math.max(0, Math.min(1, (numVal - min) / (max - min))) : 0;
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+              <div style="flex-shrink:0;">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+                <div style="font-size:11px;color:var(--text-secondary);">${numVal} ${unit}</div>
+              </div>
+            </div>
+            <div class="vslider-container" data-vslider-entity="${entityId}" data-min="${min}" data-max="${max}" data-step="${step}">
+              <div class="vslider-fill" style="height:${pct * 100}%;"></div>
+              <div class="vslider-handle" style="bottom:calc(${pct * 100}% - 4px);"></div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (prefCtrl === 'stepper-presets') {
+        const span = max - min;
+        const presets = [
+          min + span * 0.2,
+          min + span * 0.4,
+          min + span * 0.6,
+          min + span * 0.8
+        ].map(v => Math.round(v / step) * step);
+        return `
+          <div class="control-row" style="padding:10px 14px;display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="flex-shrink:0;">${icon}</div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:6px;">
+                <span style="font-weight:700;font-size:13px;color:var(--accent);">${numVal} ${unit}</span>
+                <button class="btn-step" data-helper="${entityId}" data-delta="-${step}">-</button>
+                <button class="btn-step" data-helper="${entityId}" data-delta="${step}">+</button>
+              </div>
+            </div>
+            <div class="presets-row">
+              ${presets.map(p => `
+                <button type="button" class="preset-pill ${Math.abs(p - numVal) < (step / 2) ? 'active' : ''}" data-preset-entity="${entityId}" data-preset-val="${p}">${p}${unit}</button>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }
+
       if (prefCtrl === 'slider') {
         const cleanId = entityId.replace(/[^a-zA-Z0-9_]/g, '_');
         return `
@@ -2969,6 +3175,35 @@ class VisionGlassDashboard extends HTMLElement {
             ${battWarningHtml}
           </div>
           <input type="time" class="vg-time-input" data-time-entity="${entityId}" value="${val.slice(0, 5)}">
+        </div>
+      `;
+    }
+
+    if (domain === 'timer') {
+      const remaining = stateObj.attributes?.remaining || stateObj.state;
+      return `
+        <div class="control-row" style="padding:10px 14px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${this._icon('clock', { size: 16, cls: 'icon-calendar' })}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+              <div style="font-size:11px;color:var(--text-secondary);">${stateObj.state}</div>
+            </div>
+          </div>
+          <div class="timer-container" data-timer-entity="${entityId}">
+            <svg viewBox="0 0 100 100" style="width:100%;height:100%;transform:rotate(-90deg);">
+              <circle cx="50" cy="50" r="42" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="7"/>
+              <circle class="timer-val-arc" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="7" stroke-dasharray="263.8" stroke-dashoffset="${stateObj.state === 'active' ? '60' : '0'}"/>
+            </svg>
+            <div class="timer-center">
+              <span class="rotary-num" style="font-size:13px;">${remaining}</span>
+              <div class="timer-btns">
+                <button class="timer-micro-btn" data-timer-action="start" data-timer-entity="${entityId}">Start</button>
+                <button class="timer-micro-btn" data-timer-action="pause" data-timer-entity="${entityId}">Pause</button>
+                <button class="timer-micro-btn" data-timer-action="cancel" data-timer-entity="${entityId}">Reset</button>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     }
@@ -3117,6 +3352,129 @@ class VisionGlassDashboard extends HTMLElement {
         const service = b.getAttribute('data-dyn-service') || 'turn_on';
         this._callService(domain, service, { entity_id: entityId });
       };
+    });
+
+    // Tactile Controls from ha-advanced-helper-controls-card
+    rootEl.querySelectorAll('.rocker-container[data-rocker-entity]').forEach(r => {
+      r.onclick = (e) => {
+        e.stopPropagation();
+        const entityId = r.getAttribute('data-rocker-entity');
+        const domain = entityId.split('.')[0];
+        const wasOn = r.classList.contains('is-on');
+        r.classList.toggle('is-on', !wasOn);
+        this._callService(domain, 'toggle', { entity_id: entityId });
+      };
+    });
+
+    rootEl.querySelectorAll('.hold-btn-container[data-hold-entity]').forEach(btn => {
+      const entityId = btn.getAttribute('data-hold-entity');
+      const domain = entityId.split('.')[0];
+      const ring = btn.querySelector('.hold-ring');
+      let holdTimer = null;
+      const cancelHold = () => {
+        if (holdTimer) { clearInterval(holdTimer); holdTimer = null; }
+        if (ring) ring.style.strokeDashoffset = '276.4';
+      };
+      btn.addEventListener('pointerdown', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        if (ring) ring.style.strokeDashoffset = '276.4';
+        const totalSteps = 45;
+        let step = 0;
+        holdTimer = setInterval(() => {
+          step++;
+          const progress = step / totalSteps;
+          if (ring) ring.style.strokeDashoffset = `${276.4 * (1 - Math.min(1, progress))}`;
+          if (step >= totalSteps) {
+            cancelHold();
+            this._callService(domain, 'toggle', { entity_id: entityId });
+          }
+        }, 30);
+      });
+      btn.addEventListener('pointerup', cancelHold);
+      btn.addEventListener('pointerleave', cancelHold);
+      btn.addEventListener('pointercancel', cancelHold);
+    });
+
+    rootEl.querySelectorAll('.preset-pill[data-preset-entity]').forEach(pill => {
+      pill.onclick = (e) => {
+        e.stopPropagation();
+        const eId = pill.getAttribute('data-preset-entity');
+        const val = parseFloat(pill.getAttribute('data-preset-val') || pill.getAttribute('data-val'));
+        pill.parentElement.querySelectorAll('.preset-pill').forEach(p => p.classList.remove('active'));
+        pill.classList.add('active');
+        this._callService('input_number', 'set_value', { entity_id: eId, value: val });
+      };
+    });
+
+    rootEl.querySelectorAll('.timer-micro-btn[data-timer-action]').forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const eId = btn.getAttribute('data-timer-entity');
+        const act = btn.getAttribute('data-timer-action');
+        this._callService('timer', act, { entity_id: eId });
+      };
+    });
+
+    const startTactileDrag = (e, type, el, min, max, step, eId) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const rect = el.getBoundingClientRect();
+      const onMove = (moveEv) => {
+        let pct = 0;
+        if (type === 'rotary') {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          let angle = Math.atan2(moveEv.clientY - cy, moveEv.clientX - cx) * (180 / Math.PI) + 90;
+          if (angle < 0) angle += 360;
+          pct = angle / 360;
+        } else if (type === 'vslider') {
+          const relY = Math.max(0, Math.min(rect.height, rect.bottom - moveEv.clientY));
+          pct = relY / rect.height;
+        } else if (type === 'wedge') {
+          const relX = Math.max(0, Math.min(rect.width, moveEv.clientX - rect.left));
+          pct = relX / rect.width;
+        } else if (type === 'openarc') {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height / 2;
+          let angle = Math.atan2(moveEv.clientY - cy, moveEv.clientX - cx) * (180 / Math.PI);
+          if (angle < 0) angle += 360;
+          if (angle >= 45 && angle <= 135) return;
+          let normAngle = angle - 135;
+          if (normAngle < 0) normAngle += 360;
+          pct = Math.max(0, Math.min(1, normAngle / 270));
+        } else if (type === 'halfcircle') {
+          const cx = rect.left + rect.width / 2;
+          const cy = rect.top + rect.height;
+          let angle = Math.atan2(cy - moveEv.clientY, cx - moveEv.clientX) * (180 / Math.PI);
+          if (angle < 0 || angle > 180) return;
+          pct = Math.max(0, Math.min(1, 1 - angle / 180));
+        }
+        let rawVal = min + pct * (max - min);
+        rawVal = Math.round(rawVal / step) * step;
+        const domain = eId.split('.')[0];
+        this._callService(domain, 'set_value', { entity_id: eId, value: rawVal });
+      };
+      const onUp = () => {
+        window.removeEventListener('pointermove', onMove);
+        window.removeEventListener('pointerup', onUp);
+        window.removeEventListener('pointercancel', onUp);
+      };
+      window.addEventListener('pointermove', onMove);
+      window.addEventListener('pointerup', onUp);
+      window.addEventListener('pointercancel', onUp);
+    };
+
+    ['rotary', 'vslider', 'wedge', 'openarc', 'halfcircle'].forEach(type => {
+      rootEl.querySelectorAll(`.${type}-container[data-${type}-entity]`).forEach(el => {
+        el.onpointerdown = (e) => {
+          const eId = el.getAttribute(`data-${type}-entity`);
+          const min = parseFloat(el.getAttribute('data-min')) || 0;
+          const max = parseFloat(el.getAttribute('data-max')) || 100;
+          const step = parseFloat(el.getAttribute('data-step')) || 1;
+          startTactileDrag(e, type, el, min, max, step, eId);
+        };
+      });
     });
   }
 
@@ -6357,7 +6715,7 @@ class VisionGlassDashboard extends HTMLElement {
       <!-- TAB 4: HELFER-KONTROLLEN -->
       <div id="stabContentControls" style="${activeTab === 'controls' ? '' : 'display:none;'}">
         <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
-          Konfiguriere hier die visuelle Darstellung deiner Home Assistant Helfer (<code style="color:var(--accent);">input_boolean</code>, <code style="color:var(--accent);">input_number</code>, <code style="color:var(--accent);">input_select</code>, <code style="color:var(--accent);">input_datetime</code>) in den Raum-Overlays und Bento-Karten.
+          Konfiguriere hier die visuelle Darstellung deiner Home Assistant Helfer (<code style="color:var(--accent);">input_boolean</code>, <code style="color:var(--accent);">input_number</code>, <code style="color:var(--accent);">input_select</code>, <code style="color:var(--accent);">input_datetime</code>, <code style="color:var(--accent);">timer</code>, <code style="color:var(--accent);">counter</code>, etc.) mit den taktil-animierten Kontrollen aus <code style="color:var(--accent);">ha-advanced-helper-controls-card</code>.
         </div>
 
         <div style="display:flex;flex-direction:column;gap:10px;" id="helperControlsList">
@@ -6365,8 +6723,9 @@ class VisionGlassDashboard extends HTMLElement {
             const helperControls = this._config.helper_controls || {};
             const helperEntities = new Set(Object.keys(helperControls));
             if (this._hass && this._hass.states) {
+              const helperPrefixes = ['input_boolean.', 'input_number.', 'input_select.', 'input_datetime.', 'input_text.', 'input_button.', 'timer.', 'counter.', 'schedule.'];
               Object.keys(this._hass.states).forEach(eId => {
-                if (eId.startsWith('input_boolean.') || eId.startsWith('input_number.') || eId.startsWith('input_select.') || eId.startsWith('input_datetime.')) {
+                if (helperPrefixes.some(p => eId.startsWith(p))) {
                   helperEntities.add(eId);
                 }
               });
@@ -6380,31 +6739,51 @@ class VisionGlassDashboard extends HTMLElement {
               const s = this._hass && this._hass.states[eId];
               const fname = s?.attributes?.friendly_name || eId;
               const domain = eId.split('.')[0];
-              const curType = helperControls[eId] || (domain === 'input_number' ? 'slider' : (domain === 'input_select' ? 'segmented' : (domain === 'input_datetime' ? 'time_input' : 'switch')));
+              const curType = helperControls[eId] || (domain === 'input_number' ? 'slider' : (domain === 'input_select' ? 'segmented' : (domain === 'input_datetime' ? 'time_input' : (domain === 'timer' ? 'circular-timer' : 'switch'))));
 
               let options = [];
               if (domain === 'input_boolean' || domain === 'switch') {
                 options = [
                   { value: 'switch', label: 'Schalter (Glass Switch)' },
+                  { value: 'rocker-switch', label: 'Wippschalter (VisionOS Rocker)' },
+                  { value: 'hold-action', label: 'Hold-Button (1.4s Ring-Animation)' },
                   { value: 'push_button', label: 'Taster (Push-Button)' },
                   { value: 'icon_button', label: 'Icon-Button (Kreis)' },
                   { value: 'badge', label: 'Status-Badge' }
                 ];
-              } else if (domain === 'input_number') {
+              } else if (domain === 'input_number' || domain === 'counter') {
                 options = [
                   { value: 'slider', label: 'Schieberegler (Slider mit Live-Wert)' },
+                  { value: 'rotary-knob', label: 'Rotary Knob (360° Drehregler)' },
+                  { value: 'open-arc', label: 'Open Arc (270° Hufeisen-Bogen)' },
+                  { value: 'half-circle', label: 'Half Circle (180° Halbkreis)' },
+                  { value: 'wedge-slider', label: 'Wedge Slider (Farbkeil-Schieber)' },
+                  { value: 'vertical-slider', label: 'Vertical Slider (Vertikalbalken)' },
+                  { value: 'stepper-presets', label: 'Stepper & Schnellwahltasten' },
                   { value: 'stepper', label: '+ / - Stepper' },
                   { value: 'badge', label: 'Status-Badge' }
                 ];
               } else if (domain === 'input_select') {
                 options = [
                   { value: 'segmented', label: 'Segmentierte Tabs (Pills)' },
-                  { value: 'dropdown', label: 'Dropdown-Auswahl' }
+                  { value: 'dropdown', label: 'Dropdown-Auswahl' },
+                  { value: 'badge', label: 'Status-Badge' }
+                ];
+              } else if (domain === 'timer') {
+                options = [
+                  { value: 'circular-timer', label: 'Kreisförmiger Timer (mit Controls)' },
+                  { value: 'badge', label: 'Status-Badge' }
                 ];
               } else if (domain === 'input_datetime') {
                 options = [
                   { value: 'time_input', label: 'Uhrzeit-Picker' },
                   { value: 'badge', label: 'Status-Badge' }
+                ];
+              } else if (domain === 'input_button' || domain === 'button') {
+                options = [
+                  { value: 'push_button', label: 'Taster (Push-Button)' },
+                  { value: 'hold-action', label: 'Hold-Button (1.4s Ring-Animation)' },
+                  { value: 'icon_button', label: 'Icon-Button (Kreis)' }
                 ];
               } else {
                 options = [
@@ -8799,6 +9178,229 @@ class VisionGlassDashboard extends HTMLElement {
           background: var(--accent);
           color: #ffffff;
           border-color: var(--accent);
+        }
+
+        /* ================================================================
+           ADVANCED HELPER CONTROLS - TACTILE SUITE
+           ================================================================ */
+        /* 1. ROTARY KNOB */
+        .rotary-container {
+          position: relative;
+          width: 80px;
+          height: 80px;
+          touch-action: none;
+          cursor: grab;
+          flex-shrink: 0;
+        }
+        .rotary-container:active { cursor: grabbing; }
+        .rotary-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+        .rotary-bg-arc { fill: none; stroke: rgba(255, 255, 255, 0.12); stroke-width: 8; stroke-linecap: round; }
+        .theme-light .rotary-bg-arc { stroke: rgba(0, 0, 0, 0.1); }
+        .rotary-val-arc { fill: none; stroke: var(--accent); stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.08s ease; }
+        .rotary-center-val {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          pointer-events: none;
+        }
+        .rotary-num { font-size: 15px; font-weight: 800; line-height: 1.1; color: var(--text-primary); }
+        .rotary-unit { font-size: 10px; font-weight: 600; color: var(--text-secondary); }
+
+        /* 2. VERTICAL SLIDER */
+        .vslider-container {
+          position: relative;
+          width: 36px;
+          height: 100px;
+          background: rgba(255, 255, 255, 0.1);
+          border-radius: 18px;
+          overflow: hidden;
+          touch-action: none;
+          cursor: pointer;
+          box-shadow: inset 0 2px 5px rgba(0,0,0,0.2);
+          border: 1px solid var(--border-subtle);
+          flex-shrink: 0;
+        }
+        .theme-light .vslider-container { background: rgba(0, 0, 0, 0.08); }
+        .vslider-fill { position: absolute; bottom: 0; left: 0; right: 0; border-radius: 18px; background: var(--accent); transition: height 0.06s ease; }
+        .vslider-handle { position: absolute; width: 28px; height: 8px; left: 3px; border-radius: 4px; background: #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.4); pointer-events: none; }
+
+        /* 3. WEDGE SLIDER */
+        .wedge-container {
+          width: 140px;
+          height: 44px;
+          position: relative;
+          touch-action: none;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .wedge-svg { width: 100%; height: 100%; }
+
+        /* 4. OPEN THERMOSTAT ARC (270°) */
+        .openarc-container {
+          position: relative;
+          width: 85px;
+          height: 85px;
+          touch-action: none;
+          cursor: grab;
+          flex-shrink: 0;
+        }
+        .openarc-container:active { cursor: grabbing; }
+        .openarc-center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; pointer-events: none; }
+
+        /* 5. HALF-CIRCLE (180°) */
+        .halfcircle-container {
+          position: relative;
+          width: 100px;
+          height: 55px;
+          touch-action: none;
+          cursor: grab;
+          flex-shrink: 0;
+        }
+        .halfcircle-container:active { cursor: grabbing; }
+
+        /* 6. STEPPER PRESETS */
+        .presets-row { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+        .preset-pill {
+          padding: 3px 8px;
+          border-radius: 10px;
+          font-size: 11px;
+          font-weight: 600;
+          border: 1px solid var(--border-subtle);
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          cursor: pointer;
+          transition: all 0.15s ease;
+        }
+        .preset-pill.active { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+
+        /* 7. SEGMENTED PILLS */
+        .segmented-container {
+          display: flex;
+          background: rgba(255, 255, 255, 0.08);
+          padding: 3px;
+          border-radius: 12px;
+          gap: 4px;
+          width: 100%;
+          box-sizing: border-box;
+          border: 1px solid var(--border-subtle);
+        }
+        .theme-light .segmented-container { background: rgba(0, 0, 0, 0.06); }
+        .seg-item {
+          flex: 1;
+          min-width: 44px;
+          padding: 5px 10px;
+          border-radius: 9px;
+          text-align: center;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          color: var(--text-secondary);
+          transition: all 0.15s ease;
+          white-space: nowrap;
+        }
+        .seg-item.active {
+          background: var(--bg-surface);
+          color: var(--accent);
+          box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+
+        /* 8. CIRCULAR TIMER */
+        .timer-container {
+          position: relative;
+          width: 85px;
+          height: 85px;
+          flex-shrink: 0;
+        }
+        .timer-center {
+          position: absolute;
+          inset: 0;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+        }
+        .timer-btns { display: flex; gap: 4px; margin-top: 4px; }
+        .timer-micro-btn {
+          padding: 2px 6px;
+          border-radius: 6px;
+          font-size: 9px;
+          font-weight: 700;
+          border: 1px solid var(--border-subtle);
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          cursor: pointer;
+        }
+
+        /* 9. ROCKER SWITCH */
+        .rocker-container {
+          display: flex;
+          width: 84px;
+          height: 34px;
+          background: rgba(255, 255, 255, 0.12);
+          border: 1px solid var(--border-glass);
+          border-radius: 17px;
+          padding: 2px;
+          box-sizing: border-box;
+          cursor: pointer;
+          position: relative;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+          flex-shrink: 0;
+        }
+        .theme-light .rocker-container {
+          background: rgba(0, 0, 0, 0.1);
+        }
+        .rocker-half {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: 800;
+          color: var(--text-secondary);
+          z-index: 2;
+          letter-spacing: 0.5px;
+        }
+        .rocker-pill {
+          position: absolute;
+          width: 38px;
+          height: 28px;
+          top: 2px;
+          left: 2px;
+          background: #ffffff;
+          border-radius: 14px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+          transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .rocker-container.is-on .rocker-pill {
+          transform: translateX(40px);
+          background: var(--accent);
+        }
+        .rocker-container.is-on .rocker-half.half-on { color: #ffffff; }
+
+        /* 10. HOLD BUTTON */
+        .hold-btn-container {
+          position: relative;
+          width: 50px;
+          height: 50px;
+          touch-action: none;
+          cursor: pointer;
+          flex-shrink: 0;
+        }
+        .hold-btn-bg {
+          position: absolute;
+          inset: 4px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid var(--border-glass);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 10px;
+          font-weight: 800;
+          color: var(--text-primary);
         }
 
         /* ================================================================
