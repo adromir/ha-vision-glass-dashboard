@@ -841,57 +841,61 @@ class VisionGlassPanel extends HTMLElement {
             summaryLabel = `${homeCount}/${personData.length} daheim`;
           }
 
-          personsContainer.innerHTML = `
-            <div class="chip chip-persons-cluster" id="chipPersonsCluster" title="Anwesenheit (${summaryLabel})">
-              <!-- Inline layout anchor: flex width never changes -->
-              <div class="cluster-anchor">
-                <div class="cluster-stack">
-                  ${personData.map((p, idx) => `
-                    <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
-                      ${p.pic
-                        ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
-                        : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
-                      }
-                      <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
-                    </div>
-                  `).join('')}
+          const personsKey = personData.map(p => `${p.id}:${p.isHome}:${p.statusText}:${p.pic || ''}`).join('|') + `|${summaryLabel}`;
+          if (this._lastPersonsKey !== personsKey || !personsContainer.querySelector('#chipPersonsCluster')) {
+            this._lastPersonsKey = personsKey;
+            personsContainer.innerHTML = `
+              <div class="chip chip-persons-cluster" id="chipPersonsCluster" title="Anwesenheit (${summaryLabel})">
+                <!-- Inline layout anchor: flex width never changes -->
+                <div class="cluster-anchor">
+                  <div class="cluster-stack">
+                    ${personData.map((p, idx) => `
+                      <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
+                        ${p.pic
+                          ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
+                          : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
+                        }
+                        <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="cluster-collapsed-label">${summaryLabel}</div>
                 </div>
-                <div class="cluster-collapsed-label">${summaryLabel}</div>
-              </div>
 
-              <!-- Floating overlay flyout: absolute, zero footprint in flex flow, ZERO jitter -->
-              <div class="cluster-floating-overlay">
-                <div class="cluster-stack cluster-stack-fanned">
-                  ${personData.map((p, idx) => `
-                    <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
-                      ${p.pic
-                        ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
-                        : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
-                      }
-                      <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
-                    </div>
-                  `).join('')}
-                </div>
-                <div class="cluster-expanded-list">
-                  ${personData.map(p => `
-                    <div class="cluster-expanded-item" data-person-id="${p.id}" title="${p.name} Details öffnen">
-                      <span class="cluster-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
-                      <span class="cluster-user-name">${p.name}</span>
-                      <span class="cluster-user-status">(${p.statusText})</span>
-                    </div>
-                  `).join('')}
+                <!-- Floating overlay flyout: absolute, zero footprint in flex flow, ZERO jitter -->
+                <div class="cluster-floating-overlay">
+                  <div class="cluster-stack cluster-stack-fanned">
+                    ${personData.map((p, idx) => `
+                      <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
+                        ${p.pic
+                          ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
+                          : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
+                        }
+                        <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                      </div>
+                    `).join('')}
+                  </div>
+                  <div class="cluster-expanded-list">
+                    ${personData.map(p => `
+                      <div class="cluster-expanded-item" data-person-id="${p.id}" title="${p.name} Details öffnen">
+                        <span class="cluster-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                        <span class="cluster-user-name">${p.name}</span>
+                        <span class="cluster-user-status">(${p.statusText})</span>
+                      </div>
+                    `).join('')}
+                  </div>
                 </div>
               </div>
-            </div>
-          `;
+            `;
 
-          personsContainer.querySelectorAll('[data-person-id]').forEach(el => {
-            el.onclick = (e) => {
-              e.stopPropagation();
-              const pId = el.getAttribute('data-person-id');
-              if (pId) this._openPersonModal(pId);
-            };
-          });
+            personsContainer.querySelectorAll('[data-person-id]').forEach(el => {
+              el.onclick = (e) => {
+                e.stopPropagation();
+                const pId = el.getAttribute('data-person-id');
+                if (pId) this._openPersonModal(pId);
+              };
+            });
+          }
         }
       }
     }

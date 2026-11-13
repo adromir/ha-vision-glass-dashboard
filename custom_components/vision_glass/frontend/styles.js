@@ -384,7 +384,7 @@ export const VISION_GLASS_STYLES = `
           align-items: center;
           gap: 8px;
           padding: 4px 12px 4px 6px;
-          border-radius: 9999px;
+          border-radius: 12px;
           background: var(--dock-bg, rgba(16, 24, 38, 0.95));
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -394,8 +394,8 @@ export const VISION_GLASS_STYLES = `
           white-space: nowrap;
           pointer-events: none;
           opacity: 0;
-          transform: scale(0.97);
-          transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+          transform: none !important;
+          transition: opacity 0.18s ease;
         }
         .theme-light .cluster-floating-overlay {
           background: rgba(255, 255, 255, 0.95);
@@ -405,7 +405,6 @@ export const VISION_GLASS_STYLES = `
         .chip-persons-cluster:hover .cluster-floating-overlay {
           opacity: 1;
           pointer-events: auto;
-          transform: scale(1);
         }
         .cluster-stack-fanned .cluster-avatar-wrap {
           margin-right: 6px !important;
