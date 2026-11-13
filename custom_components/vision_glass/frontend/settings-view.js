@@ -665,6 +665,7 @@ export const settingsMethods = {
         <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:folder-outline" style="--mdc-icon-size:16px;"></ha-icon> Raum-Overlays</button>
         <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:dock-bottom" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('dock_navigation')}</button>
         <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:tune" style="--mdc-icon-size:16px;"></ha-icon> Helfer-Kontrollen</button>
+        <button class="nav-tab ${activeTab === 'stats' ? 'active' : ''}" data-stab="stats" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:chart-timeline-variant" style="--mdc-icon-size:16px;"></ha-icon> Statistiken</button>
         <button class="nav-tab ${activeTab === 'general' ? 'active' : ''}" data-stab="general" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:cog-outline" style="--mdc-icon-size:16px;"></ha-icon> Design & Allgemein</button>
       </div>
 
@@ -1526,6 +1527,170 @@ export const settingsMethods = {
               ${(!this._config.top_bar_custom_chips || this._config.top_bar_custom_chips.length === 0) ? `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">Keine zusätzlichen Badges angelegt</span>` : ''}
             </div>
           </div>
+
+          <!-- Standard-Startseite (Default Dashboard) -->
+          <div style="border-top:1px solid var(--border-subtle);padding-top:14px;margin-top:16px;">
+            <div style="font-weight:700;font-size:14px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+              <ha-icon icon="mdi:home-export-outline" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Standard-Startseite
+            </div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
+              Lege fest, ob Vision Glass beim Aufrufen von Home Assistant automatisch als primäres Dashboard geöffnet werden soll.
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+              <button type="button" class="btn btn-sm btn-primary" id="btnSetAsDefaultDashboard" style="display:inline-flex;align-items:center;gap:6px;">
+                <ha-icon icon="mdi:check-circle-outline" style="--mdc-icon-size:16px;"></ha-icon> Vision Glass als Standard festlegen
+              </button>
+              <span id="lblDefaultDashboardStatus" style="font-size:12px;font-weight:600;"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: STATISTIKEN -->
+      <div id="stabContentStats" style="${activeTab === 'stats' ? '' : 'display:none;'}">
+        <div class="card-box" style="margin-bottom:16px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <ha-icon icon="mdi:home-group" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Angezeigte Räume in der Statistik
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:12px;">
+            Wähle, welche Räume in der Raumauswahl für Temperatur- und Helligkeitskurven angezeigt werden sollen.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px;">
+            ${rooms.map(r => {
+              if (r.id === 'wohnung' || r.id === 'umwelt') return '';
+              const statsConf = this._config.stats || {};
+              const enabledRoomIds = statsConf.enabled_rooms;
+              const isChecked = !Array.isArray(enabledRoomIds) || enabledRoomIds.includes(r.id);
+              return `
+                <label style="display:inline-flex;align-items:center;gap:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:8px 12px;border-radius:10px;font-size:13px;cursor:pointer;">
+                  <input type="checkbox" class="chk-stat-room" data-room-id="${r.id}" ${isChecked ? 'checked' : ''}>
+                  <span style="font-weight:600;">${r.name || r.id}</span>
+                </label>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <div class="card-box" style="margin-bottom:16px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+            <ha-icon icon="mdi:chart-box-outline" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Standard-Verläufe
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;margin-top:10px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkStatShowTemp" ${(this._config.stats?.show_temperature !== false) ? 'checked' : ''}>
+              <span>Temperaturkurven & Heizstatus (24h)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkStatShowIllum" ${(this._config.stats?.show_illuminance !== false) ? 'checked' : ''}>
+              <span>Beleuchtungsstärke (Lux) & Beleuchtungsstatus (24h)</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkStatShowOcc" ${(this._config.stats?.show_occupancy !== false) ? 'checked' : ''}>
+              <span>Raumbelegung & Thermostat-Status</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkStatShowBat" ${(this._config.stats?.show_battery !== false) ? 'checked' : ''}>
+              <span>Batterie-Entladungskurven</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="card-box">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
+            <div>
+              <div style="font-weight:700;font-size:15px;display:flex;align-items:center;gap:6px;">
+                <ha-icon icon="mdi:chart-timeline-variant-shimmer" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Eigene Statistikbereiche (z. B. Solar, Energie, etc.)
+              </div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">
+                Erstelle eigene Verlaufsdiagramme mit beliebigen Home-Assistant-Entitäten.
+              </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-primary" id="btnAddCustomStatSection" style="display:inline-flex;align-items:center;gap:6px;">
+              <ha-icon icon="mdi:plus" style="--mdc-icon-size:16px;"></ha-icon> Bereich hinzufügen
+            </button>
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:14px;" id="customStatSectionsList">
+            ${((this._config.stats?.custom_sections) || []).map((sec, sIdx) => `
+              <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;border:1px solid var(--border-glass);border-radius:12px;" data-sec-idx="${sIdx}">
+                <div style="display:flex;justify-content:space-between;align-items:center;">
+                  <div style="display:flex;align-items:center;gap:10px;">
+                    <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,0.15);display:flex;align-items:center;justify-content:center;">
+                      ${sec.icon ? `<ha-icon icon="${sec.icon}" style="--mdc-icon-size:20px;color:var(--accent);"></ha-icon>` : `<ha-icon icon="mdi:chart-bell-curve" style="--mdc-icon-size:20px;color:var(--accent);"></ha-icon>`}
+                    </div>
+                    <div>
+                      <div style="font-weight:700;font-size:15px;">${sec.title || 'Neuer Bereich'}</div>
+                      <div style="font-size:11px;color:var(--text-secondary);">Einheit: <code style="color:var(--accent);">${sec.unit || 'keine'}</code> • Entitäten: ${(sec.entities || []).length}</div>
+                    </div>
+                  </div>
+                  <div style="display:flex;gap:6px;">
+                    <button type="button" class="btn-micro btn-del-custom-stat-sec" data-sidx="${sIdx}" style="color:#ef4444;" title="Bereich löschen">
+                      <ha-icon icon="mdi:delete-outline" style="--mdc-icon-size:16px;"></ha-icon>
+                    </button>
+                  </div>
+                </div>
+
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;border-top:1px solid var(--border-subtle);padding-top:10px;">
+                  <div>
+                    <label style="font-size:11px;color:var(--text-secondary);">Titel des Bereichs</label>
+                    <input type="text" class="input input-sm txt-stat-sec-title" data-sidx="${sIdx}" value="${sec.title || ''}" style="width:100%;box-sizing:border-box;">
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:var(--text-secondary);">Einheit (z. B. W, kW, kWh, %, ppm)</label>
+                    <input type="text" class="input input-sm txt-stat-sec-unit" data-sidx="${sIdx}" value="${sec.unit || ''}" style="width:100%;box-sizing:border-box;">
+                  </div>
+                  <div>
+                    <label style="font-size:11px;color:var(--text-secondary);">Icon</label>
+                    <div style="display:flex;gap:4px;">
+                      <input type="text" class="input input-sm txt-stat-sec-icon" data-sidx="${sIdx}" value="${sec.icon || 'mdi:chart-timeline-variant'}" style="flex:1;box-sizing:border-box;">
+                      <button type="button" class="btn btn-sm btn-pick-stat-sec-icon" data-sidx="${sIdx}" title="Icon wählen">
+                        <ha-icon icon="mdi:magnify" style="--mdc-icon-size:16px;"></ha-icon>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                <div style="border-top:1px solid var(--border-subtle);padding-top:8px;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                    <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">Entitäten im Diagramm</span>
+                    <button type="button" class="btn btn-sm btn-add-stat-sec-entity" data-sidx="${sIdx}" style="font-size:11px;padding:3px 8px;">
+                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:14px;"></ha-icon> Entität hinzufügen
+                    </button>
+                  </div>
+                  <div style="display:flex;flex-direction:column;gap:6px;">
+                    ${(sec.entities || []).map((ent, eIdx) => {
+                      const eId = typeof ent === 'string' ? ent : ent.id;
+                      const eName = typeof ent === 'object' && ent.name ? ent.name : '';
+                      const eColor = typeof ent === 'object' && ent.color ? ent.color : '#38bdf8';
+                      return `
+                        <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
+                          <input type="color" class="color-picker-input cp-stat-ent-color" data-sidx="${sIdx}" data-eidx="${eIdx}" value="${eColor}" style="width:28px;height:28px;border-radius:6px;border:none;cursor:pointer;padding:0;">
+                          <div style="flex:1;min-width:180px;">
+                            <input type="text" class="input input-sm txt-stat-ent-name" data-sidx="${sIdx}" data-eidx="${eIdx}" placeholder="Bezeichnung (z. B. Solar-Produktion)" value="${eName}" style="width:100%;box-sizing:border-box;">
+                          </div>
+                          <div style="flex:1;min-width:180px;display:flex;gap:4px;">
+                            <input type="text" class="input input-sm txt-stat-ent-id" data-sidx="${sIdx}" data-eidx="${eIdx}" placeholder="sensor.solar_power" value="${eId || ''}" style="flex:1;font-family:monospace;box-sizing:border-box;">
+                            <button type="button" class="btn btn-sm btn-pick-stat-ent-id" data-sidx="${sIdx}" data-eidx="${eIdx}" title="Entität suchen">
+                              <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                            </button>
+                          </div>
+                          <button type="button" class="btn-micro btn-del-stat-sec-ent" data-sidx="${sIdx}" data-eidx="${eIdx}" style="color:#ef4444;" title="Entität entfernen">
+                            <ha-icon icon="mdi:close" style="--mdc-icon-size:16px;"></ha-icon>
+                          </button>
+                        </div>
+                      `;
+                    }).join('')}
+                    ${(!sec.entities || sec.entities.length === 0) ? `<div style="font-size:12px;color:var(--text-secondary);font-style:italic;">Noch keine Entitäten hinzugefügt. Klicke auf „+ Entität hinzufügen“.</div>` : ''}
+                  </div>
+                </div>
+              </div>
+            `).join('')}
+            ${(!this._config.stats?.custom_sections || this._config.stats.custom_sections.length === 0) ? `
+              <div style="padding:20px;text-align:center;color:var(--text-secondary);border:1px dashed var(--border-subtle);border-radius:12px;">
+                Keine eigenen Statistikbereiche angelegt. Klicke auf „+ Bereich hinzufügen“, um z. B. PV-Erzeugung, Stromverbrauch oder Temperaturvergleiche anzulegen.
+              </div>
+            ` : ''}
+          </div>
         </div>
       </div>
 
@@ -2366,6 +2531,132 @@ export const settingsMethods = {
       };
     }
 
+    // Set as Default Dashboard button handler
+    const btnSetDefault = container.querySelector('#btnSetAsDefaultDashboard');
+    const lblDefaultStatus = container.querySelector('#lblDefaultDashboardStatus');
+    if (btnSetDefault && this._hass) {
+      btnSetDefault.onclick = async () => {
+        try {
+          await this._hass.callWS({ type: 'frontend/set_user_data', key: 'core', value: { default_panel: 'vision-glass' } });
+          await this._hass.callWS({ type: 'frontend/set_system_data', key: 'core', value: { default_panel: 'vision-glass' } });
+          if (lblDefaultStatus) {
+            lblDefaultStatus.textContent = '✓ Gespeichert! Vision Glass öffnet sich nun automatisch beim Start.';
+            lblDefaultStatus.style.color = '#10b981';
+          }
+        } catch (e) {
+          console.warn('Set default dashboard failed', e);
+          if (lblDefaultStatus) {
+            lblDefaultStatus.textContent = 'Fehler beim Speichern: ' + (e.message || e);
+            lblDefaultStatus.style.color = '#ef4444';
+          }
+        }
+      };
+    }
+
+    // Custom Stat Sections Handlers
+    const btnAddStatSec = container.querySelector('#btnAddCustomStatSection');
+    if (btnAddStatSec) {
+      btnAddStatSec.onclick = () => {
+        if (!this._config.stats) this._config.stats = {};
+        if (!Array.isArray(this._config.stats.custom_sections)) this._config.stats.custom_sections = [];
+        const newId = 'sec_' + Date.now().toString(36);
+        this._config.stats.custom_sections.push({
+          id: newId,
+          title: 'Neuer Bereich',
+          icon: 'mdi:chart-timeline-variant',
+          unit: 'W',
+          entities: []
+        });
+        this._renderSettingsContent(container, isModal);
+      };
+    }
+
+    container.querySelectorAll('.btn-del-custom-stat-sec').forEach(btn => {
+      btn.onclick = () => {
+        const sIdx = parseInt(btn.getAttribute('data-sidx'));
+        if (this._config.stats?.custom_sections) {
+          this._config.stats.custom_sections.splice(sIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-stat-sec-icon').forEach(btn => {
+      btn.onclick = () => {
+        const sIdx = parseInt(btn.getAttribute('data-sidx'));
+        const sec = this._config.stats?.custom_sections?.[sIdx];
+        if (!sec) return;
+        this._showIconPicker({
+          currentValue: sec.icon || 'mdi:chart-timeline-variant',
+          onSelect: (chosenIcon) => {
+            sec.icon = chosenIcon;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-add-stat-sec-entity').forEach(btn => {
+      btn.onclick = () => {
+        const sIdx = parseInt(btn.getAttribute('data-sidx'));
+        const sec = this._config.stats?.custom_sections?.[sIdx];
+        if (!sec) return;
+        this._showEntityPicker({
+          defaultDomain: 'sensor',
+          onSelect: (selectedId) => {
+            if (selectedId) {
+              if (!Array.isArray(sec.entities)) sec.entities = [];
+              const s = this._hass?.states[selectedId];
+              const friendly = s?.attributes?.friendly_name || selectedId;
+              const palette = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#a855f7'];
+              sec.entities.push({
+                id: selectedId,
+                name: friendly,
+                color: palette[sec.entities.length % palette.length]
+              });
+              this._renderSettingsContent(container, isModal);
+            }
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-del-stat-sec-ent').forEach(btn => {
+      btn.onclick = () => {
+        const sIdx = parseInt(btn.getAttribute('data-sidx'));
+        const eIdx = parseInt(btn.getAttribute('data-eidx'));
+        const sec = this._config.stats?.custom_sections?.[sIdx];
+        if (sec && Array.isArray(sec.entities)) {
+          sec.entities.splice(eIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-stat-ent-id').forEach(btn => {
+      btn.onclick = () => {
+        const sIdx = parseInt(btn.getAttribute('data-sidx'));
+        const eIdx = parseInt(btn.getAttribute('data-eidx'));
+        const sec = this._config.stats?.custom_sections?.[sIdx];
+        if (!sec || !sec.entities || !sec.entities[eIdx]) return;
+        this._showEntityPicker({
+          defaultDomain: 'sensor',
+          onSelect: (selectedId) => {
+            if (selectedId) {
+              const s = this._hass?.states[selectedId];
+              if (typeof sec.entities[eIdx] === 'string') {
+                sec.entities[eIdx] = { id: selectedId, name: s?.attributes?.friendly_name || selectedId, color: '#38bdf8' };
+              } else {
+                sec.entities[eIdx].id = selectedId;
+                if (!sec.entities[eIdx].name) sec.entities[eIdx].name = s?.attributes?.friendly_name || selectedId;
+              }
+              this._renderSettingsContent(container, isModal);
+            }
+          }
+        });
+      };
+    });
+
     // Save button
     const btnSave = container.querySelector('#btnSaveDashboardSettings');
     if (btnSave) {
@@ -2474,6 +2765,77 @@ export const settingsMethods = {
           if (eId) helperCtrls[eId] = sel.value;
         });
         this._config.helper_controls = helperCtrls;
+
+        // Collect stats settings
+        if (!this._config.stats) this._config.stats = {};
+        const chkStatRooms = container.querySelectorAll('.chk-stat-room:checked');
+        if (chkStatRooms.length > 0 || container.querySelector('.chk-stat-room')) {
+          this._config.stats.enabled_rooms = Array.from(chkStatRooms).map(c => c.getAttribute('data-room-id'));
+        }
+        const chkStatT = container.querySelector('#chkStatShowTemp');
+        if (chkStatT) this._config.stats.show_temperature = chkStatT.checked;
+        const chkStatI = container.querySelector('#chkStatShowIllum');
+        if (chkStatI) this._config.stats.show_illuminance = chkStatI.checked;
+        const chkStatO = container.querySelector('#chkStatShowOcc');
+        if (chkStatO) this._config.stats.show_occupancy = chkStatO.checked;
+        const chkStatB = container.querySelector('#chkStatShowBat');
+        if (chkStatB) this._config.stats.show_battery = chkStatB.checked;
+
+        // Custom stat sections inputs
+        container.querySelectorAll('.txt-stat-sec-title').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+            this._config.stats.custom_sections[sIdx].title = inp.value.trim();
+          }
+        });
+        container.querySelectorAll('.txt-stat-sec-unit').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+            this._config.stats.custom_sections[sIdx].unit = inp.value.trim();
+          }
+        });
+        container.querySelectorAll('.txt-stat-sec-icon').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+            this._config.stats.custom_sections[sIdx].icon = inp.value.trim();
+          }
+        });
+        container.querySelectorAll('.txt-stat-ent-name').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          const eIdx = parseInt(inp.getAttribute('data-eidx'));
+          const sec = this._config.stats.custom_sections?.[sIdx];
+          if (sec && sec.entities && sec.entities[eIdx]) {
+            if (typeof sec.entities[eIdx] === 'string') {
+              sec.entities[eIdx] = { id: sec.entities[eIdx], name: inp.value.trim(), color: '#38bdf8' };
+            } else {
+              sec.entities[eIdx].name = inp.value.trim();
+            }
+          }
+        });
+        container.querySelectorAll('.txt-stat-ent-id').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          const eIdx = parseInt(inp.getAttribute('data-eidx'));
+          const sec = this._config.stats.custom_sections?.[sIdx];
+          if (sec && sec.entities && sec.entities[eIdx]) {
+            if (typeof sec.entities[eIdx] === 'string') {
+              sec.entities[eIdx] = { id: inp.value.trim(), name: '', color: '#38bdf8' };
+            } else {
+              sec.entities[eIdx].id = inp.value.trim();
+            }
+          }
+        });
+        container.querySelectorAll('.cp-stat-ent-color').forEach(inp => {
+          const sIdx = parseInt(inp.getAttribute('data-sidx'));
+          const eIdx = parseInt(inp.getAttribute('data-eidx'));
+          const sec = this._config.stats.custom_sections?.[sIdx];
+          if (sec && sec.entities && sec.entities[eIdx]) {
+            if (typeof sec.entities[eIdx] === 'string') {
+              sec.entities[eIdx] = { id: sec.entities[eIdx], name: '', color: inp.value };
+            } else {
+              sec.entities[eIdx].color = inp.value;
+            }
+          }
+        });
 
         // Persist via WebSocket to Lovelace
         await this._saveDashboardConfig(this._config);

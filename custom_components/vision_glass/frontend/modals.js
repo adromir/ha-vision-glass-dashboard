@@ -1756,11 +1756,28 @@ export const modalMethods = {
         });
       }
 
-      const tab = this._statsTab || 'temperature';
+      const statsConf = this._config.stats || {};
+      const enabledRoomIds = statsConf.enabled_rooms;
+      const customSections = Array.isArray(statsConf.custom_sections) ? statsConf.custom_sections : [];
+
+      let tab = this._statsTab || 'temperature';
+      // Ensure tab is valid
+      const validTabs = [];
+      if (statsConf.show_temperature !== false) validTabs.push('temperature');
+      if (statsConf.show_illuminance !== false) validTabs.push('illuminance');
+      if (statsConf.show_occupancy !== false) validTabs.push('occupancy_heating');
+      if (statsConf.show_battery !== false) validTabs.push('battery');
+      customSections.forEach(cs => validTabs.push(`custom_${cs.id}`));
+      if (validTabs.length > 0 && !validTabs.includes(tab)) {
+        tab = validTabs[0];
+        this._statsTab = tab;
+      }
+
       const palette = ['#38bdf8', '#10b981', '#f59e0b', '#ec4899', '#a855f7'];
       const roomSensorsConfig = {};
       (this._config.rooms || []).forEach(r => {
         if (!r || r.id === 'wohnung' || r.id === 'umwelt') return;
+        if (Array.isArray(enabledRoomIds) && enabledRoomIds.length > 0 && !enabledRoomIds.includes(r.id)) return;
         const tempIds = new Set();
         const illumIds = new Set();
         if (r.temp_entity) tempIds.add(r.temp_entity);
@@ -1772,17 +1789,25 @@ export const modalMethods = {
             if (meta.device_class === 'illuminance') illumIds.add(meta.entity_id);
           });
         }
+        // Fallback: If no standalone temperature sensor, fall back to climate entity
+        if (tempIds.size === 0 && r.climate_entity && this._hass.states[r.climate_entity]) {
+          tempIds.add(r.climate_entity);
+        }
         if (tempIds.size === 0 && illumIds.size === 0 && !r.climate_entity && !r.light_entity && !r.presence_entity) return;
         roomSensorsConfig[r.id] = {
           name: r.name || r.id,
           climate_entity: r.climate_entity || null,
           light_entity: r.light_entity || null,
           presence_entity: r.presence_entity || null,
-          temp_sensors: [...tempIds].map((id, i) => ({
-            id,
-            name: this._hass.states[id]?.attributes?.friendly_name || id,
-            color: palette[i % palette.length]
-          })),
+          temp_sensors: [...tempIds].map((id, i) => {
+            const friendly = this._hass.states[id]?.attributes?.friendly_name;
+            const fallbackName = id.startsWith('climate.') ? `${r.name || r.id} Thermostat` : id;
+            return {
+              id,
+              name: friendly || fallbackName,
+              color: palette[i % palette.length]
+            };
+          }),
           illum_sensors: [...illumIds].map((id, i) => ({
             id,
             name: this._hass.states[id]?.attributes?.friendly_name || id,
@@ -1795,132 +1820,208 @@ export const modalMethods = {
       const selectedRoom = (this._statsRoom && roomSensorsConfig[this._statsRoom]) ? this._statsRoom : (roomKeys[0] || null);
       let tabContent = '';
 
-      if (roomKeys.length === 0 && (tab === 'temperature' || tab === 'illuminance')) {
+      if (tab.startsWith('custom_')) {
+        const customId = tab.replace('custom_', '');
+        const customSec = customSections.find(s => s.id === customId);
+        if (!customSec) {
+          tabContent = `<div style="padding:18px;color:var(--text-secondary);">${this._t('no_data_available')}</div>`;
+        } else {
+          const seriesData = (customSec.entities || []).map((ent, i) => {
+            const eId = typeof ent === 'string' ? ent : ent?.id;
+            const customName = (typeof ent === 'object' && ent.name) ? ent.name : (this._hass.states[eId]?.attributes?.friendly_name || eId);
+            const customColor = (typeof ent === 'object' && ent.color) ? ent.color : palette[i % palette.length];
+            return {
+              id: eId,
+              name: customName,
+              color: customColor,
+              currentVal: this._hass.states[eId]?.state ?? null
+            };
+          });
+          const chart = this._statsChartsMod.renderMultiLineSvgChart(this, {
+            series: seriesData,
+            width: 780,
+            height: 320,
+            unit: customSec.unit || '',
+            timeSpanHours: 24
+          });
+          tabContent = `
+            <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <span style="font-weight:700;font-size:16px;display:flex;align-items:center;gap:6px;">
+                    ${customSec.icon ? `<ha-icon icon="${customSec.icon}" style="--mdc-icon-size:18px;"></ha-icon>` : ''} ${customSec.title}
+                  </span>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">24h Verlauf (${customSec.unit || 'Werte'})</div>
+                </div>
+                <div style="text-align:right;">
+                  <div style="font-size:11px;color:var(--text-secondary);">Min: ${chart.min}${customSec.unit || ''} • Max: ${chart.max}${customSec.unit || ''}</div>
+                </div>
+              </div>
+              <div style="width:100%;overflow-x:auto;">${chart.svg}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+              ${seriesData.map(s => `
+                <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+                      <span style="font-weight:600;font-size:13px;white-space:normal;line-height:1.3;word-break:break-word;">${s.name}</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+                    <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal}${customSec.unit || ''}` : '--'}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
+      } else if (roomKeys.length === 0 && (tab === 'temperature' || tab === 'illuminance')) {
         tabContent = `<div style="padding:18px;color:var(--text-secondary);">${this._t('no_data_available')}</div>`;
       } else if (tab === 'temperature') {
         const currentRoomConf = roomSensorsConfig[selectedRoom];
-        const seriesData = currentRoomConf.temp_sensors.map(s => ({
-          ...s,
-          currentVal: this._hass.states[s.id]?.state ?? null
-        }));
-        const climObj = currentRoomConf.climate_entity ? this._hass.states[currentRoomConf.climate_entity] : null;
-        const isHeating = climObj && (climObj.state === 'heat' || climObj.attributes?.hvac_action === 'heating');
-        const chart = this._statsChartsMod.renderMultiLineSvgChart(this, {
-          series: seriesData,
-          stateOverlay: {
-            entity_id: currentRoomConf.climate_entity,
-            label: this._t('climate'),
-            type: 'climate',
-            activeColor: '#ef4444',
-            activeLabel: this._t('heating_active'),
-            idleLabel: this._t('heating_idle')
-          },
-          width: 780,
-          height: 320,
-          unit: '°C',
-          timeSpanHours: 24
-        });
-
-        tabContent = `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-            ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
-          </div>
-          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-              <div>
-                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('temp_curve_heating')}</span>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${this._t('all_sensors_24h')}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isHeating ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isHeating ? 'rgba(239,68,68,0.3)' : 'var(--border-subtle)'};">
-                  <span style="font-size:12.5px;font-weight:700;color:${isHeating ? '#ef4444' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
-                    ${isHeating ? this._icon('flame', { size: 13, color: '#ef4444' }) + ' ' + this._t('heating_active') : this._icon('motion-idle', { size: 13 }) + ' ' + this._t('heating_idle')}
-                  </span>
-                </div>
-                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
-              </div>
+        if (!currentRoomConf || !currentRoomConf.temp_sensors || currentRoomConf.temp_sensors.length === 0) {
+          tabContent = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
             </div>
-            <div style="width:100%;overflow-x:auto;">${chart.svg}</div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-            ${seriesData.map(s => `
-              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
-                <div style="flex:1;min-width:0;">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
-                    <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
-                  </div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.id}">${s.id}</div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:32px;text-align:center;color:var(--text-secondary);">
+              Keine Temperatur-Sensoren in diesem Raum konfiguriert.
+            </div>
+          `;
+        } else {
+          const seriesData = currentRoomConf.temp_sensors.map(s => ({
+            ...s,
+            currentVal: this._hass.states[s.id]?.state ?? null
+          }));
+          const climObj = currentRoomConf.climate_entity ? this._hass.states[currentRoomConf.climate_entity] : null;
+          const isHeating = climObj && (climObj.state === 'heat' || climObj.attributes?.hvac_action === 'heating' || climObj.attributes?.call_for_heat === true);
+          const chart = this._statsChartsMod.renderMultiLineSvgChart(this, {
+            series: seriesData,
+            stateOverlay: {
+              entity_id: currentRoomConf.climate_entity,
+              label: this._t('climate'),
+              type: 'climate',
+              activeColor: '#ef4444',
+              activeLabel: this._t('heating_active'),
+              idleLabel: this._t('heating_idle')
+            },
+            width: 780,
+            height: 320,
+            unit: '°C',
+            timeSpanHours: 24
+          });
+
+          tabContent = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('temp_curve_heating')}</span>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${this._t('all_sensors_24h')}</div>
                 </div>
-                <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-                  <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
+                <div style="text-align:right;">
+                  <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isHeating ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isHeating ? 'rgba(239,68,68,0.3)' : 'var(--border-subtle)'};">
+                    <span style="font-size:12.5px;font-weight:700;color:${isHeating ? '#ef4444' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
+                      ${isHeating ? this._icon('flame', { size: 13, color: '#ef4444' }) + ' ' + this._t('heating_active') : this._icon('motion-idle', { size: 13 }) + ' ' + this._t('heating_idle')}
+                    </span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min}°C • Max: ${chart.max}°C</div>
                 </div>
               </div>
-            `).join('')}
-          </div>
-        `;
+              <div style="width:100%;overflow-x:auto;">${chart.svg}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+              ${seriesData.map(s => `
+                <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+                      <span style="font-weight:600;font-size:13px;white-space:normal;line-height:1.3;word-break:break-word;">${s.name}</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+                    <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal}°C` : '--'}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
       } else if (tab === 'illuminance') {
         const currentRoomConf = roomSensorsConfig[selectedRoom];
-        const seriesData = currentRoomConf.illum_sensors.map(s => ({
-          ...s,
-          currentVal: this._hass.states[s.id]?.state ?? null
-        }));
-        const lightObj = currentRoomConf.light_entity ? this._hass.states[currentRoomConf.light_entity] : null;
-        const isLightOn = lightObj && lightObj.state === 'on';
-        const chart = this._statsChartsMod.renderMultiLineSvgChart(this, {
-          series: seriesData,
-          stateOverlay: {
-            entity_id: currentRoomConf.light_entity,
-            label: this._t('lighting'),
-            type: 'light',
-            activeColor: '#f59e0b',
-            activeLabel: this._t('light_active'),
-            idleLabel: this._t('light_idle')
-          },
-          width: 780,
-          height: 320,
-          unit: ' lx',
-          timeSpanHours: 24
-        });
-
-        tabContent = `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
-            ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
-          </div>
-          <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-              <div>
-                <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('illum_curve_lighting')}</span>
-                <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${this._t('lux_curve_24h')}</div>
-              </div>
-              <div style="text-align:right;">
-                <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isLightOn ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isLightOn ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'};">
-                  <span style="font-size:12.5px;font-weight:700;color:${isLightOn ? '#f59e0b' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
-                    ${isLightOn ? this._icon('light', { size: 13, cls: 'icon-light' }) + ' ' + this._t('light_active') : this._icon('light', { size: 13 }) + ' ' + this._t('light_idle')}
-                  </span>
-                </div>
-                <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
-              </div>
+        if (!currentRoomConf || !currentRoomConf.illum_sensors || currentRoomConf.illum_sensors.length === 0) {
+          tabContent = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
             </div>
-            <div style="width:100%;overflow-x:auto;">${chart.svg}</div>
-          </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
-            ${seriesData.map(s => `
-              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
-                <div style="flex:1;min-width:0;">
-                  <div style="display:flex;align-items:center;gap:6px;">
-                    <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
-                    <span style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</span>
-                  </div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${s.id}">${s.id}</div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:32px;text-align:center;color:var(--text-secondary);">
+              Keine Helligkeits-Sensoren in diesem Raum konfiguriert.
+            </div>
+          `;
+        } else {
+          const seriesData = currentRoomConf.illum_sensors.map(s => ({
+            ...s,
+            currentVal: this._hass.states[s.id]?.state ?? null
+          }));
+          const lightObj = currentRoomConf.light_entity ? this._hass.states[currentRoomConf.light_entity] : null;
+          const isLightOn = lightObj && lightObj.state === 'on';
+          const chart = this._statsChartsMod.renderMultiLineSvgChart(this, {
+            series: seriesData,
+            stateOverlay: {
+              entity_id: currentRoomConf.light_entity,
+              label: this._t('lighting'),
+              type: 'light',
+              activeColor: '#f59e0b',
+              activeLabel: this._t('light_active'),
+              idleLabel: this._t('light_idle')
+            },
+            width: 780,
+            height: 320,
+            unit: ' lx',
+            timeSpanHours: 24
+          });
+
+          tabContent = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+              ${roomKeys.map(rKey => `<button class="btn-micro ${selectedRoom === rKey ? 'active' : ''}" data-stat-room="${rKey}">${roomSensorsConfig[rKey].name}</button>`).join('')}
+            </div>
+            <div style="background:rgba(255,255,255,0.06);border:1px solid var(--border-subtle);border-radius:20px;padding:16px 18px;display:flex;flex-direction:column;gap:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+                <div>
+                  <span style="font-weight:700;font-size:16px;">${currentRoomConf.name} • ${this._t('illum_curve_lighting')}</span>
+                  <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">${this._t('lux_curve_24h')}</div>
                 </div>
-                <div style="text-align:right;flex-shrink:0;margin-left:10px;">
-                  <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal} lx` : '--'}</span>
+                <div style="text-align:right;">
+                  <div style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:10px;background:${isLightOn ? 'rgba(245,158,11,0.15)' : 'rgba(255,255,255,0.06)'};border:1px solid ${isLightOn ? 'rgba(245,158,11,0.3)' : 'var(--border-subtle)'};">
+                    <span style="font-size:12.5px;font-weight:700;color:${isLightOn ? '#f59e0b' : 'var(--text-primary)'};display:flex;align-items:center;gap:4px;">
+                      ${isLightOn ? this._icon('light', { size: 13, cls: 'icon-light' }) + ' ' + this._t('light_active') : this._icon('light', { size: 13 }) + ' ' + this._t('light_idle')}
+                    </span>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-secondary);margin-top:3px;">Min: ${chart.min} lx • Max: ${chart.max} lx</div>
                 </div>
               </div>
-            `).join('')}
-          </div>
-        `;
+              <div style="width:100%;overflow-x:auto;">${chart.svg}</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;">
+              ${seriesData.map(s => `
+                <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
+                  <div style="flex:1;min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <span style="width:10px;height:10px;border-radius:50%;background:${s.color};display:inline-block;flex-shrink:0;"></span>
+                      <span style="font-weight:600;font-size:13px;white-space:normal;line-height:1.3;word-break:break-word;">${s.name}</span>
+                    </div>
+                  </div>
+                  <div style="text-align:right;flex-shrink:0;margin-left:10px;">
+                    <span style="font-size:16px;font-weight:700;color:${s.color};white-space:nowrap;">${s.currentVal != null ? `${s.currentVal} lx` : '--'}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        }
       } else if (tab === 'occupancy_heating') {
         const roomsList = roomKeys.map(k => roomSensorsConfig[k]).filter(r => r.presence_entity || r.climate_entity);
         tabContent = `
@@ -1930,7 +2031,7 @@ export const modalMethods = {
               const occObj = r.presence_entity ? this._hass.states[r.presence_entity] : null;
               const isOcc = occObj && occObj.state === 'on';
               const climObj = r.climate_entity ? this._hass.states[r.climate_entity] : null;
-              const isHeat = climObj && (climObj.state === 'heat' || climObj.attributes?.hvac_action === 'heating');
+              const isHeat = climObj && (climObj.state === 'heat' || climObj.attributes?.hvac_action === 'heating' || climObj.attributes?.call_for_heat === true);
               return `
                 <div class="control-row" style="flex-direction:column;align-items:stretch;gap:10px;padding:14px 16px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -1987,12 +2088,11 @@ export const modalMethods = {
           </div>
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px;">
             ${seriesData.map(s => `
-              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};">
+              <div class="control-row" style="padding:10px 14px;border-left:4px solid ${s.color};min-width:0;box-sizing:border-box;">
                 <div style="flex:1;min-width:0;">
-                  <div style="font-weight:600;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.name}</div>
-                  <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;font-family:monospace;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${s.id}</div>
+                  <div style="font-weight:600;font-size:13px;white-space:normal;line-height:1.3;word-break:break-word;">${s.name}</div>
                 </div>
-                <div style="text-align:right;"><span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}%` : '--'}</span></div>
+                <div style="text-align:right;flex-shrink:0;margin-left:10px;"><span style="font-size:16px;font-weight:700;color:${s.color};">${s.currentVal != null ? `${s.currentVal}%` : '--'}</span></div>
               </div>
             `).join('')}
           </div>
@@ -2002,10 +2102,15 @@ export const modalMethods = {
       body.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:16px;">
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
-            <button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} ${this._t('room_temperatures')}</button>
-            <button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} ${this._t('illuminance_lux')}</button>
-            <button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} ${this._t('occupancy_heating')}</button>
-            <button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} ${this._t('battery_curves')}</button>
+            ${statsConf.show_temperature !== false ? `<button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} ${this._t('room_temperatures')}</button>` : ''}
+            ${statsConf.show_illuminance !== false ? `<button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} ${this._t('illuminance_lux')}</button>` : ''}
+            ${statsConf.show_occupancy !== false ? `<button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} ${this._t('occupancy_heating')}</button>` : ''}
+            ${statsConf.show_battery !== false ? `<button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} ${this._t('battery_curves')}</button>` : ''}
+            ${customSections.map(cs => `
+              <button class="btn-micro ${tab === 'custom_' + cs.id ? 'active' : ''}" data-custom-stat-tab="${cs.id}">
+                ${cs.icon ? `<ha-icon icon="${cs.icon}" style="--mdc-icon-size:14px;margin-right:4px;"></ha-icon>` : ''} ${cs.title}
+              </button>
+            `).join('')}
             ${!customContainer ? `
               <button type="button" class="btn-micro" id="btnOpenFullStatsView" style="margin-left:auto;color:var(--accent);">
                 ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} ${this._t('open_full_stats')}
@@ -2016,10 +2121,21 @@ export const modalMethods = {
         </div>
       `;
 
-      body.querySelector('#btnStatsTabTemp').onclick = () => { this._statsTab = 'temperature'; updateStatsUi(); };
-      body.querySelector('#btnStatsTabIllum').onclick = () => { this._statsTab = 'illuminance'; updateStatsUi(); };
-      body.querySelector('#btnStatsTabOcc').onclick = () => { this._statsTab = 'occupancy_heating'; updateStatsUi(); };
-      body.querySelector('#btnStatsTabBat').onclick = () => { this._statsTab = 'battery'; updateStatsUi(); };
+      const btnTemp = body.querySelector('#btnStatsTabTemp');
+      if (btnTemp) btnTemp.onclick = () => { this._statsTab = 'temperature'; updateStatsUi(); };
+      const btnIllum = body.querySelector('#btnStatsTabIllum');
+      if (btnIllum) btnIllum.onclick = () => { this._statsTab = 'illuminance'; updateStatsUi(); };
+      const btnOcc = body.querySelector('#btnStatsTabOcc');
+      if (btnOcc) btnOcc.onclick = () => { this._statsTab = 'occupancy_heating'; updateStatsUi(); };
+      const btnBat = body.querySelector('#btnStatsTabBat');
+      if (btnBat) btnBat.onclick = () => { this._statsTab = 'battery'; updateStatsUi(); };
+
+      body.querySelectorAll('[data-custom-stat-tab]').forEach(btn => {
+        btn.onclick = () => {
+          this._statsTab = 'custom_' + btn.getAttribute('data-custom-stat-tab');
+          updateStatsUi();
+        };
+      });
       body.querySelectorAll('[data-stat-room]').forEach(btn => {
         btn.onclick = () => { this._statsRoom = btn.getAttribute('data-stat-room'); updateStatsUi(); };
       });

@@ -57,6 +57,14 @@ export function collectDashboardStatEntities(panel) {
     });
   }
 
+  const customSections = panel?._config?.stats?.custom_sections || [];
+  customSections.forEach((cs) => {
+    (cs.entities || []).forEach((ent) => {
+      const eId = typeof ent === 'string' ? ent : ent?.id;
+      if (eId) ids.add(eId);
+    });
+  });
+
   return [...ids];
 }
 

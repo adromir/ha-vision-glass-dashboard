@@ -955,7 +955,8 @@ class VisionGlassPanel extends HTMLElement {
           }
         });
         if (activeLightsCount > 0) {
-          chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} ${this._t('lights_on')}`;
+          const lightText = activeLightsCount === 1 ? this._t('light_on_single') : this._t('lights_on_multi');
+          chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} ${lightText}`;
         } else {
           chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> ${this._icon('light', { size: 14, style: 'margin-right:4px;' })} ${this._t('lights_off')}`;
         }
@@ -1031,9 +1032,10 @@ class VisionGlassPanel extends HTMLElement {
         });
         const avgT = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1).replace('.', ',') : '21,0';
         if (heatingCount > 0) {
-          chipClimate.innerHTML = `<span class="chip-dot dot-amber" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span> ${this._icon('flame', { size: 14, color: '#f59e0b', cls: 'pulsing-flame', style: 'margin-right:4px;' })} ${heatingCount} ${heatingCount === 1 ? 'heizt' : 'heizen'} • Ø ${avgT}°C`;
+          const heatVerb = heatingCount === 1 ? this._t('heating_single') : this._t('heating_multi');
+          chipClimate.innerHTML = `<span class="chip-dot dot-amber" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span> ${this._icon('flame', { size: 14, color: '#f59e0b', cls: 'pulsing-flame', style: 'margin-right:4px;' })} ${heatingCount} ${heatVerb} • Ø ${avgT}°C`;
         } else {
-          chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Alle Eco • Ø ${avgT}°C`;
+          chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('all_eco') || 'Alle Eco'} • Ø ${avgT}°C`;
         }
       }
     }

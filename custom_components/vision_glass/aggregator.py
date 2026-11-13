@@ -223,6 +223,7 @@ async def async_get_history(
             significant_changes_only=False,
             minimal_response=not needs_attrs,
             no_attributes=not needs_attrs,
+            include_start_time_state=True,
         )
 
     raw_map = await rec.async_add_executor_job(_query)
@@ -235,8 +236,31 @@ async def async_get_history(
         active_start: int | None = None
         active_label: str | None = None
 
+        if not states:
+            cur_st = hass.states.get(e_id)
+            if cur_st:
+                if e_id.startswith("climate."):
+                    c_attrs = getattr(cur_st, "attributes", None) or {}
+                    try:
+                        if c_attrs.get("current_temperature") is not None:
+                            c_temp = float(c_attrs["current_temperature"])
+                            numeric_pts.append((start_ms, c_temp))
+                            numeric_pts.append((end_ms, c_temp))
+                    except (TypeError, ValueError):
+                        pass
+                    hvac_act = c_attrs.get("hvac_action")
+                    if hvac_act == "heating" or (hvac_act is None and cur_st.state == "heat"):
+                        active_intervals.append([start_ms, end_ms, "heating"])
+                else:
+                    try:
+                        cur_num = float(cur_st.state)
+                        numeric_pts.append((start_ms, cur_num))
+                        numeric_pts.append((end_ms, cur_num))
+                    except (TypeError, ValueError):
+                        pass
+
         for st in states:
-            ts_ms = int(st.last_changed.timestamp() * 1000)
+            ts_ms = int(getattr(st, "last_updated", st.last_changed).timestamp() * 1000)
             state_str = str(st.state)
 
             # Extract numeric series when possible (or current_temperature on climate)
@@ -244,7 +268,16 @@ async def async_get_history(
             if e_id.startswith("climate."):
                 attrs = getattr(st, "attributes", None) or {}
                 hvac_act = attrs.get("hvac_action")
-                is_heating = hvac_act == "heating" or (hvac_act is None and state_str == "heat")
+                call_heat = attrs.get("call_for_heat")
+                valv_pos = attrs.get("valve_position") or attrs.get("position")
+                heat_pwr = attrs.get("heating_power")
+                is_heating = (
+                    hvac_act == "heating"
+                    or call_heat is True
+                    or (isinstance(valv_pos, (int, float)) and valv_pos > 0)
+                    or (isinstance(heat_pwr, (int, float)) and heat_pwr > 0.05)
+                    or (hvac_act is None and state_str == "heat")
+                )
                 if is_heating and active_start is None:
                     active_start = ts_ms
                     active_label = "heating"

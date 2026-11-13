@@ -1,6 +1,6 @@
 {
   "domain": "vision_glass",
-  "name": "Vision Glass",
+  "name": "Vision Glass Smart Home Panel",
   "codeowners": ["@adromir"],
   "config_flow": true,
   "dependencies": [
@@ -14,5 +14,5 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/adromir/ha-vision-glass-dashboard/issues",
   "single_config_entry": true,
-  "version": "3.0.3"
+  "version": "3.0.4"
 }

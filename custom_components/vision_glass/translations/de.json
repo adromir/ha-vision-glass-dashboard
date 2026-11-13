@@ -2,8 +2,8 @@
   "config": {
     "step": {
       "user": {
-        "title": "Vision Glass einrichten",
-        "description": "Konfiguriere das Vision Glass Seitenleisten-Panel und übernimm auf Wunsch deine bestehende Lovelace-Konfiguration.",
+        "title": "Vision Glass Smart Home Panel einrichten",
+        "description": "Konfiguriere das Vision Glass Smart Home Panel und übernimm auf Wunsch deine bestehende Lovelace-Konfiguration.",
         "data": {
           "sidebar_title": "Titel in der Seitenleiste",
           "sidebar_icon": "Icon in der Seitenleiste",
@@ -19,7 +19,7 @@
   "options": {
     "step": {
       "init": {
-        "title": "Vision Glass Panel-Optionen",
+        "title": "Vision Glass Smart Home Panel Optionen",
         "description": "Passe Sichtbarkeit und Darstellung in der Seitenleiste an.",
         "data": {
           "sidebar_title": "Titel in der Seitenleiste",
