@@ -160,7 +160,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     entry.async_on_unload(entry.add_update_listener(_options_changed))
 
     await _async_install_theme_if_needed(hass)
-    await _async_apply_ha_theme_mode(hass, store.data.get("theme_mode", "auto"))
 
     await panel_custom.async_register_panel(
         hass,
@@ -224,7 +223,6 @@ async def ws_config_save(
         return
 
     saved = await store.async_save(msg["config"])
-    await _async_apply_ha_theme_mode(hass, saved.get("theme_mode", "auto"))
     summary = compute_summary(hass, saved)
     connection.send_result(msg["id"], {"config": saved, "summary": summary})
 

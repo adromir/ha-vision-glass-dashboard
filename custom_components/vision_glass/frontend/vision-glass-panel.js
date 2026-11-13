@@ -282,12 +282,27 @@ class VisionGlassPanel extends HTMLElement {
 
   connectedCallback() {
     this._startClock();
+    if (!this._routeChangeHandler && typeof window !== 'undefined') {
+      this._routeChangeHandler = () => {
+        if (!window.location.pathname.startsWith('/vision-glass')) {
+          this._cleanupShellStyles();
+        } else {
+          this._applyHeaderStyles(true);
+        }
+      };
+      window.addEventListener('location-changed', this._routeChangeHandler);
+      window.addEventListener('popstate', this._routeChangeHandler);
+    }
     try {
       this._applyHeaderStyles();
     } catch (e) {}
   }
 
   _applyHeaderStyles(force = false) {
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/vision-glass')) {
+      this._cleanupShellStyles();
+      return;
+    }
     const isLight = this._resolveEffectiveThemeMode() === 'light';
     const bgShell = isLight ? 'rgba(238, 246, 255, 0.85)' : 'rgba(15, 23, 42, 0.84)';
     const textPrimary = isLight ? '#0f172a' : '#f8fafc';
@@ -305,12 +320,6 @@ class VisionGlassPanel extends HTMLElement {
       '--sidebar-selected-text-color': accentColor,
       '--sidebar-selected-icon-color': accentColor,
       '--divider-color': dividerColor,
-      '--primary-text-color': textPrimary,
-      '--secondary-text-color': textSecondary,
-      '--text-primary-color': textPrimary,
-      '--primary-color': accentColor,
-      '--ha-color-text-primary': textPrimary,
-      '--ha-color-text-secondary': textSecondary,
       '--wa-color-text-normal': textPrimary,
       '--wa-color-text-quiet': textSecondary,
       '--md-list-item-label-text-color': textPrimary,
@@ -328,9 +337,10 @@ class VisionGlassPanel extends HTMLElement {
       }
       this._lastShellMode = targetMode;
 
-      [document.documentElement, ha, main, sidebar].filter(Boolean).forEach(el => {
-        Object.entries(shellVars).forEach(([k, v]) => el.style.setProperty(k, v));
-      });
+      // Apply variables ONLY to the sidebar element so global HA pages (calendar, etc.) are never polluted
+      if (sidebar) {
+        Object.entries(shellVars).forEach(([k, v]) => sidebar.style.setProperty(k, v));
+      }
 
       if (sidebar && sidebar.shadowRoot) {
         let sbStyle = sidebar.shadowRoot.getElementById('vg-shell-sidebar-style');
@@ -408,6 +418,11 @@ class VisionGlassPanel extends HTMLElement {
       clearTimeout(this._shellRetryTimer);
       this._shellRetryTimer = null;
     }
+    if (this._routeChangeHandler && typeof window !== 'undefined') {
+      window.removeEventListener('location-changed', this._routeChangeHandler);
+      window.removeEventListener('popstate', this._routeChangeHandler);
+      this._routeChangeHandler = null;
+    }
     this._cleanupShellStyles();
   }
 
@@ -482,7 +497,10 @@ class VisionGlassPanel extends HTMLElement {
     if (themeMode === 'light') return 'light';
     if (themeMode === 'dark') return 'dark';
 
-    // 4. Sun daylight fallback
+    // 4. HA dark mode or Sun daylight fallback
+    if (this._hass && this._hass.themes && typeof this._hass.themes.darkMode === 'boolean') {
+      return this._hass.themes.darkMode ? 'dark' : 'light';
+    }
     return this._isDaytime() ? 'light' : 'dark';
   }
 
@@ -1624,22 +1642,12 @@ class VisionGlassPanel extends HTMLElement {
       ` : `
         <div class="dashboard-root theme-dark">
           <!-- Liquid Background Morphing Orbs (Fluide Lichtwellen & Wasserbrechung) -->
-        <div class="liquid-backdrop" aria-hidden="true">
-          <div class="liquid-orb liquid-orb-1"></div>
-          <div class="liquid-orb liquid-orb-2"></div>
-          <div class="liquid-orb liquid-orb-3"></div>
-          <div class="liquid-orb liquid-orb-4"></div>
-        </div>
-
-            <div>
-              <div style="font-weight:700;font-size:14px;letter-spacing:0.2px;">${this._t('edit_banner_title')}</div>
-              <div style="font-size:12px;opacity:0.92;margin-top:2px;">${this._t('edit_banner_subtitle')}</div>
-            </div>
+          <div class="liquid-backdrop" aria-hidden="true">
+            <div class="liquid-orb liquid-orb-1"></div>
+            <div class="liquid-orb liquid-orb-2"></div>
+            <div class="liquid-orb liquid-orb-3"></div>
+            <div class="liquid-orb liquid-orb-4"></div>
           </div>
-          <button id="btnEditBannerSettings" style="background:#ffffff;color:#0284c7;font-weight:700;font-size:13px;border:none;padding:8px 16px;border-radius:10px;cursor:pointer;white-space:nowrap;box-shadow:0 2px 8px rgba(0,0,0,0.18);transition:all 0.2s;">
-            ${this._t('open_settings_page')} &rarr;
-          </button>
-        </div>
 
         <!-- Top Bar Navigation & Status Chips -->
         <div class="top-bar">
