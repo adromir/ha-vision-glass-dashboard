@@ -1966,10 +1966,22 @@ class VisionGlassDashboard extends HTMLElement {
 
     title.innerHTML = `${this._icon('user', { size: 22, cls: 'icon-security', style: 'margin-right:8px;' })} ${this._t('residents')}`;
 
-    const persons = [
-      { id: 'person.andreas', name: 'Andreas', defaultPic: '/api/image/serve/77e1449b97a3b297a3359c4bf2290f43/512x512', batteryEntity: 'sensor.andreas_smartphone_battery' },
-      { id: 'person.shanty', name: 'Shanty', defaultPic: null, batteryEntity: 'sensor.shanty_smartphone_battery' }
-    ];
+    const configuredPersons = this._config?.top_bar_persons;
+    const allPersonIds = Object.keys(this._hass.states).filter(e => e.startsWith('person.'));
+    const activePersonIds = (Array.isArray(configuredPersons) && configuredPersons.length > 0)
+      ? configuredPersons.filter(id => this._hass.states[id])
+      : allPersonIds;
+
+    const persons = activePersonIds.map(pId => {
+      const stateObj = this._hass.states[pId];
+      const name = stateObj?.attributes?.friendly_name || pId.replace('person.', '');
+      const defaultPic = stateObj?.attributes?.entity_picture || null;
+      const cleanName = pId.replace('person.', '').toLowerCase();
+      const batKey = Object.keys(this._hass.states).find(e =>
+        e.startsWith('sensor.') && e.includes(cleanName) && (e.includes('battery') || e.includes('batterie'))
+      );
+      return { id: pId, name, defaultPic, batteryEntity: batKey };
+    });
 
     body.innerHTML = `
       <div style="display:flex;flex-direction:column;gap:16px;">
@@ -3946,49 +3958,87 @@ class VisionGlassDashboard extends HTMLElement {
     }
 
     // 3. Update Chips
-    // Persons Chips (with live profile pictures and status)
-    const chipPA = this.shadowRoot.getElementById('chipPersonAndreas');
-    if (chipPA) {
-      const pA = this._hass.states['person.andreas'];
-      const isHome = pA && pA.state === 'home';
-      const pic = (pA && pA.attributes && pA.attributes.entity_picture) || '/api/image/serve/77e1449b97a3b297a3359c4bf2290f43/512x512';
-      const statusText = isHome ? this._t('home') : (pA ? (pA.state === 'not_home' ? this._t('away') : pA.state) : this._t('unknown'));
-      chipPA.innerHTML = `
-        <img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Andreas" />
-        <span class="chip-name">Andreas</span>
-        <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
-        <span class="chip-status-text">${statusText}</span>
-      `;
+    // Persons Chips (Dynamically rendered for all or configured persons)
+    const personsContainer = this.shadowRoot.getElementById('chipsPersonsList');
+    if (personsContainer) {
+      if (this._config.top_bar_show_persons === false) {
+        personsContainer.innerHTML = '';
+      } else {
+        const configuredPersons = this._config?.top_bar_persons;
+        const allPersonIds = Object.keys(this._hass.states).filter(e => e.startsWith('person.'));
+        const activePersonIds = (Array.isArray(configuredPersons) && configuredPersons.length > 0)
+          ? configuredPersons.filter(id => this._hass.states[id])
+          : allPersonIds;
+
+        personsContainer.innerHTML = activePersonIds.map(pId => {
+          const pState = this._hass.states[pId];
+          const isHome = pState && pState.state === 'home';
+          const name = pState?.attributes?.friendly_name || pId.replace('person.', '');
+          const pic = pState?.attributes?.entity_picture;
+          const statusText = isHome ? this._t('home') : (pState ? (pState.state === 'not_home' ? this._t('away') : pState.state) : this._t('unknown'));
+          return `
+            <div class="chip chip-person" data-person-id="${pId}" title="Status ${name}">
+              ${pic ? `<img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="${name}" />`
+                    : `<div class="chip-avatar chip-avatar-initial" style="background: linear-gradient(135deg, #38bdf8, #818cf8);">${name.charAt(0).toUpperCase()}</div>`}
+              <span class="chip-name">${name}</span>
+              <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
+              <span class="chip-status-text">${statusText}</span>
+            </div>
+          `;
+        }).join('');
+
+        personsContainer.querySelectorAll('.chip-person[data-person-id]').forEach(chip => {
+          chip.onclick = () => {
+            const pId = chip.getAttribute('data-person-id');
+            this._openPersonModal(pId);
+          };
+        });
+      }
     }
-    const chipPS = this.shadowRoot.getElementById('chipPersonShanty');
-    if (chipPS) {
-      const pS = this._hass.states['person.shanty'];
-      const isHome = pS && pS.state === 'home';
-      const pic = (pS && pS.attributes && pS.attributes.entity_picture) || null;
-      const statusText = isHome ? this._t('home') : (pS ? (pS.state === 'not_home' ? this._t('away') : pS.state) : this._t('unknown'));
-      chipPS.innerHTML = `
-        ${pic ? `<img src="${pic}" class="chip-avatar ${isHome ? 'avatar-online' : 'avatar-offline'}" alt="Shanty" />`
-              : `<div class="chip-avatar chip-avatar-initial" style="background: linear-gradient(135deg, #ec4899, #8b5cf6);">S</div>`}
-        <span class="chip-name">Shanty</span>
-        <span class="chip-dot ${isHome ? 'dot-green' : 'dot-gray'}"></span>
-        <span class="chip-status-text">${statusText}</span>
-      `;
+
+    // Custom Chips
+    const customChipsContainer = this.shadowRoot.getElementById('chipsCustomList');
+    if (customChipsContainer) {
+      const customChips = this._config?.top_bar_custom_chips || [];
+      customChipsContainer.innerHTML = customChips.map((c, cIdx) => {
+        const s = this._hass.states[c.entity_id];
+        if (!s) return '';
+        const name = c.name || s.attributes?.friendly_name || c.entity_id;
+        const val = s.state + (s.attributes?.unit_of_measurement ? ' ' + s.attributes.unit_of_measurement : '');
+        return `
+          <div class="chip chip-custom" data-entity-id="${c.entity_id}" title="${name}">
+            <span style="display:inline-flex;align-items:center;">${this._icon(c.icon || 'star', { size: 14, style: 'margin-right:4px;' })}</span>
+            <span>${name}: <strong>${val}</strong></span>
+          </div>
+        `;
+      }).join('');
+      customChipsContainer.querySelectorAll('.chip-custom[data-entity-id]').forEach(chip => {
+        chip.onclick = () => {
+          const eId = chip.getAttribute('data-entity-id');
+          this._fireHassMoreInfo(eId);
+        };
+      });
     }
 
     // Lights Chip (Counts only individual rooms, strictly excluding Wohnung aggregate)
     const chipLights = this.shadowRoot.getElementById('chipLights');
     if (chipLights) {
-      let activeLightsCount = 0;
-      this._config.rooms.forEach(r => {
-        if (r.id === 'wohnung' || r.light_entity === 'light.licht_wohnung' || r.light_entity === this._config.all_lights_entity) return;
-        if (r.light_entity && this._hass.states[r.light_entity] && this._hass.states[r.light_entity].state === 'on') {
-          activeLightsCount++;
-        }
-      });
-      if (activeLightsCount > 0) {
-        chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} ${this._t('lights_on')}`;
+      if (this._config.top_bar_show_lights === false) {
+        chipLights.style.display = 'none';
       } else {
-        chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> ${this._icon('light', { size: 14, style: 'margin-right:4px;' })} ${this._t('lights_off')}`;
+        chipLights.style.display = 'inline-flex';
+        let activeLightsCount = 0;
+        this._config.rooms.forEach(r => {
+          if (r.id === 'wohnung' || r.light_entity === 'light.licht_wohnung' || r.light_entity === this._config.all_lights_entity) return;
+          if (r.light_entity && this._hass.states[r.light_entity] && this._hass.states[r.light_entity].state === 'on') {
+            activeLightsCount++;
+          }
+        });
+        if (activeLightsCount > 0) {
+          chipLights.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${activeLightsCount} ${this._t('lights_on')}`;
+        } else {
+          chipLights.innerHTML = `<span class="chip-dot dot-gray"></span> ${this._icon('light', { size: 14, style: 'margin-right:4px;' })} ${this._t('lights_off')}`;
+        }
       }
     }
 
@@ -3996,14 +4046,16 @@ class VisionGlassDashboard extends HTMLElement {
     const chipWarning = this.shadowRoot.getElementById('chipWarning');
     if (chipWarning) {
       let activeWarning = null;
-      Object.keys(this._hass.states).forEach(eId => {
-        if (eId.startsWith('binary_sensor.warning_') || eId.startsWith('sensor.region_') || eId.includes('dwd_weather_warnings') || eId.includes('nina')) {
-          const s = this._hass.states[eId];
-          if (s && ((s.state === 'on') || (!isNaN(parseInt(s.state)) && parseInt(s.state) > 0))) {
-            activeWarning = s.attributes?.headline || s.attributes?.event || s.attributes?.description || s.attributes?.friendly_name || 'Amtliche Warnung!';
+      if (this._config.top_bar_show_warnings !== false) {
+        Object.keys(this._hass.states).forEach(eId => {
+          if (eId.startsWith('binary_sensor.warning_') || eId.startsWith('sensor.region_') || eId.includes('dwd_weather_warnings') || eId.includes('nina')) {
+            const s = this._hass.states[eId];
+            if (s && ((s.state === 'on') || (!isNaN(parseInt(s.state)) && parseInt(s.state) > 0))) {
+              activeWarning = s.attributes?.headline || s.attributes?.event || s.attributes?.description || s.attributes?.friendly_name || 'Amtliche Warnung!';
+            }
           }
-        }
-      });
+        });
+      }
       if (activeWarning) {
         chipWarning.style.display = 'inline-flex';
         chipWarning.innerHTML = `<span class="chip-dot" style="background:#ef4444;box-shadow:0 0 8px #ef4444;"></span> ${this._icon('alert-circle', { size: 14, color: '#ef4444', style: 'margin-right:4px;' })} ${activeWarning}`;
@@ -4012,37 +4064,20 @@ class VisionGlassDashboard extends HTMLElement {
       }
     }
 
-    // Washer Chip (sensor.waschmaschine + smartplug power)
-    const chipWasher = this.shadowRoot.getElementById('chipWasher');
-    if (chipWasher) {
-      const wState = this._hass.states['sensor.waschmaschine'];
-      const wPower = this._hass.states['sensor.switch_washingmachine_smartplug_power'] || this._hass.states[this._config.washing_machine_power];
-      const pVal = wPower && !isNaN(parseFloat(wPower.state)) ? parseFloat(wPower.state) : 0;
-      const st = (wState?.state || '').toLowerCase();
-
-      if (st === 'waschen' || pVal > 15) {
-        chipWasher.style.display = 'inline-flex';
-        chipWasher.innerHTML = `<span class="chip-dot dot-blue" style="background:#38bdf8;box-shadow:0 0 8px #38bdf8;"></span> 🧺 Waschen • ${Math.round(pVal)} W`;
-      } else if (st === 'fertig' || (st === 'leerlauf' && pVal < 5 && pVal > 0.5)) {
-        chipWasher.style.display = 'inline-flex';
-        chipWasher.innerHTML = `<span class="chip-dot dot-green" style="background:#10b981;box-shadow:0 0 8px #10b981;"></span> 🧺 Wäsche fertig!`;
-      } else {
-        chipWasher.style.display = 'none';
-      }
-    }
-
     // Media Playing Chip
     const chipMedia = this.shadowRoot.getElementById('chipMedia');
     if (chipMedia) {
       let playingPlayer = null;
-      Object.keys(this._hass.states).forEach(eId => {
-        if (eId.startsWith('media_player.')) {
-          const s = this._hass.states[eId];
-          if (s && s.state === 'playing') {
-            playingPlayer = s;
+      if (this._config.top_bar_show_media !== false) {
+        Object.keys(this._hass.states).forEach(eId => {
+          if (eId.startsWith('media_player.')) {
+            const s = this._hass.states[eId];
+            if (s && s.state === 'playing') {
+              playingPlayer = s;
+            }
           }
-        }
-      });
+        });
+      }
       if (playingPlayer) {
         chipMedia.style.display = 'inline-flex';
         const title = playingPlayer.attributes?.media_title || playingPlayer.attributes?.friendly_name || 'Musik';
@@ -4055,36 +4090,31 @@ class VisionGlassDashboard extends HTMLElement {
     // Climate Chip (calculate active heating radiators & average temperature)
     const chipClimate = this.shadowRoot.getElementById('chipClimate');
     if (chipClimate) {
-      const climateIds = (this._config.rooms || [])
-        .map(r => r.climate_entity)
-        .filter(Boolean);
-      if (climateIds.length === 0) {
-        climateIds.push(
-          'climate.better_thermostat_wohnzimmer',
-          'climate.better_thermostat_arbeitszimmer',
-          'climate.better_thermostat_schlafzimmer',
-          'climate.better_thermostat_kuche',
-          'climate.better_thermostat_badezimmer',
-          'climate.better_thermostat_flur'
-        );
-      }
-      let temps = [];
-      let heatingCount = 0;
-      climateIds.forEach(cid => {
-        const cs = this._hass.states[cid];
-        if (cs && cs.attributes) {
-          if (cs.attributes.current_temperature != null) {
-            temps.push(parseFloat(cs.attributes.current_temperature));
-          }
-          const isHeating = cs.attributes.hvac_action === 'heating' || cs.attributes.call_for_heat === true || (cs.attributes.heating_power && cs.attributes.heating_power > 0.05);
-          if (isHeating) heatingCount++;
-        }
-      });
-      const avgT = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1).replace('.', ',') : '21,0';
-      if (heatingCount > 0) {
-        chipClimate.innerHTML = `<span class="chip-dot dot-amber" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span> ${this._icon('flame', { size: 14, color: '#f59e0b', cls: 'pulsing-flame', style: 'margin-right:4px;' })} ${heatingCount} ${heatingCount === 1 ? 'heizt' : 'heizen'} • Ø ${avgT}°C`;
+      if (this._config.top_bar_show_climate === false) {
+        chipClimate.style.display = 'none';
       } else {
-        chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Alle Eco • Ø ${avgT}°C`;
+        chipClimate.style.display = 'inline-flex';
+        const climateIds = (this._config.rooms || [])
+          .map(r => r.climate_entity)
+          .filter(Boolean);
+        let temps = [];
+        let heatingCount = 0;
+        climateIds.forEach(cid => {
+          const cs = this._hass.states[cid];
+          if (cs && cs.attributes) {
+            if (cs.attributes.current_temperature != null) {
+              temps.push(parseFloat(cs.attributes.current_temperature));
+            }
+            const isHeating = cs.attributes.hvac_action === 'heating' || cs.attributes.call_for_heat === true || (cs.attributes.heating_power && cs.attributes.heating_power > 0.05);
+            if (isHeating) heatingCount++;
+          }
+        });
+        const avgT = temps.length > 0 ? (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1).replace('.', ',') : '21,0';
+        if (heatingCount > 0) {
+          chipClimate.innerHTML = `<span class="chip-dot dot-amber" style="background:#f59e0b;box-shadow:0 0 8px #f59e0b;"></span> ${this._icon('flame', { size: 14, color: '#f59e0b', cls: 'pulsing-flame', style: 'margin-right:4px;' })} ${heatingCount} ${heatingCount === 1 ? 'heizt' : 'heizen'} • Ø ${avgT}°C`;
+        } else {
+          chipClimate.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} Alle Eco • Ø ${avgT}°C`;
+        }
       }
     }
 
@@ -4092,17 +4122,22 @@ class VisionGlassDashboard extends HTMLElement {
     const lockEntity = this._config.lock_entity || 'lock.wohnungsschloss';
     const chipLock = this.shadowRoot.getElementById('chipLock');
     if (chipLock) {
-      const lockObj = this._hass.states[lockEntity];
-      const doorObj = this._hass.states['binary_sensor.turkontakt_hausture_contact'];
-      const isLocked = lockObj && lockObj.state === 'locked';
-      const isDoorOpen = doorObj && doorObj.state === 'on';
-
-      if (isDoorOpen) {
-        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('door-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('door_open')}`;
-      } else if (!isLocked) {
-        chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('lock-open', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('door_closed_unlocked')}`;
+      if (this._config.top_bar_show_lock === false) {
+        chipLock.style.display = 'none';
       } else {
-        chipLock.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('door_closed_locked')}`;
+        chipLock.style.display = 'inline-flex';
+        const lockObj = this._hass.states[lockEntity];
+        const doorObj = this._hass.states['binary_sensor.turkontakt_hausture_contact'];
+        const isLocked = lockObj && lockObj.state === 'locked';
+        const isDoorOpen = doorObj && doorObj.state === 'on';
+
+        if (isDoorOpen) {
+          chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('door-open', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('door_open')}`;
+        } else if (!isLocked) {
+          chipLock.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('lock-open', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('door_closed_unlocked')}`;
+        } else {
+          chipLock.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('door_closed_locked')}`;
+        }
       }
     }
 
@@ -4110,13 +4145,28 @@ class VisionGlassDashboard extends HTMLElement {
     const chipAlarmo = this.shadowRoot.getElementById('chipAlarmo');
     if (chipAlarmo) {
       const al = this._hass.states['alarm_control_panel.alarmo'];
-      const ast = al ? al.state : 'disarmed';
-      if (ast === 'disarmed') {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('shield-check', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('deactivated')}`;
-      } else if (ast === 'triggered') {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('siren', { size: 14, cls: 'icon-temp', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('alarm_triggered')}`;
+      if (this._config.top_bar_show_alarmo === false || !al) {
+        chipAlarmo.style.display = 'none';
       } else {
-        chipAlarmo.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('armed_away')}`;
+        chipAlarmo.style.display = 'inline-flex';
+        const ast = al.state || 'disarmed';
+        if (ast === 'disarmed') {
+          chipAlarmo.innerHTML = `<span class="chip-dot dot-green"></span> ${this._icon('shield-check', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('deactivated')}`;
+        } else if (ast === 'triggered') {
+          chipAlarmo.innerHTML = `<span class="chip-dot dot-amber"></span> ${this._icon('siren', { size: 14, cls: 'icon-temp', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('alarm_triggered')}`;
+        } else {
+          chipAlarmo.innerHTML = `<span class="chip-dot dot-blue"></span> ${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo')}: ${this._t('armed_away')}`;
+        }
+      }
+    }
+
+    // Weather Chip
+    const chipWeather = this.shadowRoot.getElementById('chipWeather');
+    if (chipWeather) {
+      if (this._config.top_bar_show_weather === false) {
+        chipWeather.style.display = 'none';
+      } else {
+        chipWeather.style.display = 'inline-flex';
       }
     }
 
@@ -6507,6 +6557,84 @@ class VisionGlassDashboard extends HTMLElement {
             </div>
           </div>
         </div>
+
+        <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-top:14px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🏷️ Top-Bar Badges & Personen</div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Wähle, welche Badges in der Kopfleiste angezeigt werden sollen, und bestimme die angezeigten Personen.</div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopPersons" ${(this._config.top_bar_show_persons !== false) ? 'checked' : ''}>
+              <span>Personen-Badges</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopLights" ${(this._config.top_bar_show_lights !== false) ? 'checked' : ''}>
+              <span>Lichter-Zähler</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopClimate" ${(this._config.top_bar_show_climate !== false) ? 'checked' : ''}>
+              <span>Heizung / Temperatur</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopLock" ${(this._config.top_bar_show_lock !== false) ? 'checked' : ''}>
+              <span>Schloss / Sicherheit</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopAlarmo" ${(this._config.top_bar_show_alarmo !== false) ? 'checked' : ''}>
+              <span>Alarmo Status</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopWeather" ${(this._config.top_bar_show_weather !== false) ? 'checked' : ''}>
+              <span>Wetter-Badge</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopWarnings" ${(this._config.top_bar_show_warnings !== false) ? 'checked' : ''}>
+              <span>Amtliche Warnungen</span>
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
+              <input type="checkbox" id="chkTopMedia" ${(this._config.top_bar_show_media !== false) ? 'checked' : ''}>
+              <span>Aktive Medien</span>
+            </label>
+          </div>
+
+          <div style="border-top:1px solid var(--border-subtle);padding-top:12px;margin-bottom:14px;">
+            <div style="font-weight:600;font-size:13px;margin-bottom:6px;">Personen-Auswahl</div>
+            <div style="display:flex;flex-wrap:wrap;gap:8px;" id="topPersonsSelection">
+              ${(() => {
+                const allPersons = this._hass ? Object.keys(this._hass.states).filter(e => e.startsWith('person.')) : [];
+                const confPersons = this._config.top_bar_persons || [];
+                return allPersons.map(pId => {
+                  const s = this._hass.states[pId];
+                  const name = s?.attributes?.friendly_name || pId.replace('person.', '');
+                  const isChecked = confPersons.length === 0 || confPersons.includes(pId);
+                  return `
+                    <label style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:8px;font-size:12px;cursor:pointer;">
+                      <input type="checkbox" class="chk-person-select" data-person-id="${pId}" ${isChecked ? 'checked' : ''}>
+                      <span>${name}</span>
+                      <code style="font-size:10px;color:var(--text-secondary);">${pId}</code>
+                    </label>
+                  `;
+                }).join('') || '<span style="font-size:12px;color:var(--text-secondary);">Keine Personen im System gefunden.</span>';
+              })()}
+            </div>
+          </div>
+
+          <div style="border-top:1px solid var(--border-subtle);padding-top:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+              <div style="font-weight:600;font-size:13px;">Zusätzliche Entitäten in der Top-Bar (${(this._config.top_bar_custom_chips || []).length})</div>
+              <button type="button" class="btn btn-sm btn-primary" id="btnAddTopCustomChip" style="padding:4px 10px;font-size:12px;">+ Badge hinzufügen</button>
+            </div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;" id="topCustomChipsList">
+              ${(this._config.top_bar_custom_chips || []).map((c, cIdx) => `
+                <span class="badge" style="display:inline-flex;align-items:center;gap:6px;background:var(--bg-surface);border:1px solid var(--border-subtle);padding:4px 8px;border-radius:6px;font-size:12px;font-family:monospace;">
+                  <span>${c.name || c.entity_id}</span>
+                  <button type="button" class="btn-micro btn-del-top-chip" data-cidx="${cIdx}" style="padding:0 4px;font-size:12px;cursor:pointer;color:#ef4444;background:none;border:none;">&times;</button>
+                </span>
+              `).join('')}
+              ${(!this._config.top_bar_custom_chips || this._config.top_bar_custom_chips.length === 0) ? `<span style="font-size:12px;color:var(--text-secondary);font-style:italic;">Keine zusätzlichen Badges angelegt</span>` : ''}
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Footer Actions -->
@@ -6921,6 +7049,37 @@ class VisionGlassDashboard extends HTMLElement {
       };
     });
 
+    // Top-Bar Custom Chip Handlers
+    const btnAddTopChip = container.querySelector('#btnAddTopCustomChip');
+    if (btnAddTopChip) {
+      btnAddTopChip.onclick = () => {
+        this._showEntityPicker({
+          defaultDomain: 'all',
+          onSelect: (selectedId) => {
+            if (selectedId) {
+              if (!this._config.top_bar_custom_chips) this._config.top_bar_custom_chips = [];
+              const s = this._hass?.states[selectedId];
+              this._config.top_bar_custom_chips.push({
+                entity_id: selectedId,
+                name: s?.attributes?.friendly_name || selectedId,
+                icon: 'star'
+              });
+              this._renderSettingsContent(container, isModal);
+            }
+          }
+        });
+      };
+    }
+    container.querySelectorAll('.btn-del-top-chip').forEach(btn => {
+      btn.onclick = () => {
+        const cIdx = parseInt(btn.getAttribute('data-cidx'));
+        if (this._config.top_bar_custom_chips) {
+          this._config.top_bar_custom_chips.splice(cIdx, 1);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
     // Live Preview for Appearance Controls
     const selThemeMode = container.querySelector('#cfgThemeMode');
     if (selThemeMode) {
@@ -7027,6 +7186,32 @@ class VisionGlassDashboard extends HTMLElement {
 
         const cAutoDock = container.querySelector('#chkSettingsDockAutoDetect');
         if (cAutoDock && this._config.dock) this._config.dock.auto_detect = cAutoDock.checked;
+
+        // Collect Top-Bar settings
+        const chkTPersons = container.querySelector('#chkTopPersons');
+        if (chkTPersons) this._config.top_bar_show_persons = chkTPersons.checked;
+        const chkTLights = container.querySelector('#chkTopLights');
+        if (chkTLights) this._config.top_bar_show_lights = chkTLights.checked;
+        const chkTClimate = container.querySelector('#chkTopClimate');
+        if (chkTClimate) this._config.top_bar_show_climate = chkTClimate.checked;
+        const chkTLock = container.querySelector('#chkTopLock');
+        if (chkTLock) this._config.top_bar_show_lock = chkTLock.checked;
+        const chkTAlarmo = container.querySelector('#chkTopAlarmo');
+        if (chkTAlarmo) this._config.top_bar_show_alarmo = chkTAlarmo.checked;
+        const chkTWeather = container.querySelector('#chkTopWeather');
+        if (chkTWeather) this._config.top_bar_show_weather = chkTWeather.checked;
+        const chkTWarn = container.querySelector('#chkTopWarnings');
+        if (chkTWarn) this._config.top_bar_show_warnings = chkTWarn.checked;
+        const chkTMedia = container.querySelector('#chkTopMedia');
+        if (chkTMedia) this._config.top_bar_show_media = chkTMedia.checked;
+
+        const selPersons = [];
+        container.querySelectorAll('.chk-person-select:checked').forEach(c => {
+          selPersons.push(c.getAttribute('data-person-id'));
+        });
+        if (container.querySelector('#topPersonsSelection')) {
+          this._config.top_bar_persons = selPersons;
+        }
 
         // Collect helper controls
         const helperCtrls = {};
@@ -9127,16 +9312,15 @@ class VisionGlassDashboard extends HTMLElement {
           </div>
 
           <div class="chips-container">
-            <div class="chip" id="chipPersonAndreas" title="Status Andreas">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Andreas...</div>
-            <div class="chip" id="chipPersonShanty" title="Status Shanty">${this._icon('user', { size: 14, style: 'margin-right:4px;' })} Shanty...</div>
+            <div id="chipsPersonsList" style="display:contents;"></div>
             <div class="chip" id="chipWarning" style="display:none;"></div>
-            <div class="chip" id="chipWasher" style="display:none;"></div>
             <div class="chip" id="chipMedia" style="display:none;"></div>
             <div class="chip" id="chipLights">${this._icon('light', { size: 14, cls: 'icon-light', style: 'margin-right:4px;' })} ${this._t('lights_loading')}</div>
             <div class="chip" id="chipClimate">${this._icon('climate', { size: 14, cls: 'icon-climate', style: 'margin-right:4px;' })} ${this._t('climate_loading')}</div>
             <div class="chip" id="chipLock">${this._icon('lock-closed', { size: 14, cls: 'icon-security', style: 'margin-right:4px;' })} ${this._t('lock_loading')}</div>
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
+            <div id="chipsCustomList" style="display:contents;"></div>
             <button class="chip chip-settings" id="chipSettings" title="${this._t('settings')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
               ${this._icon('settings', { size: 14, style: 'margin-right:4px;' })} ${this._t('settings')}
             </button>
@@ -9316,11 +9500,7 @@ class VisionGlassDashboard extends HTMLElement {
     const swEl = this.shadowRoot.getElementById('sidebarWeather');
     if (swEl) swEl.addEventListener('click', () => this._openModal('weather'));
 
-    // Top Bar Chips (Person chips open dedicated Resident & Presence overlay)
-    const chipPA = this.shadowRoot.getElementById('chipPersonAndreas');
-    if (chipPA) chipPA.addEventListener('click', () => this._openPersonModal('person.andreas'));
-    const chipPS = this.shadowRoot.getElementById('chipPersonShanty');
-    if (chipPS) chipPS.addEventListener('click', () => this._openPersonModal('person.shanty'));
+    // Top Bar Chips
     this.shadowRoot.getElementById('chipLights').addEventListener('click', () => this._openModal('lighting'));
     this.shadowRoot.getElementById('chipClimate').addEventListener('click', () => this._openModal('climate'));
     this.shadowRoot.getElementById('chipLock').addEventListener('click', () => this._openModal('security'));
