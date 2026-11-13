@@ -30,8 +30,8 @@ export const tactileMethods = {
           <div style="min-width:0;">
             <div style="font-size:13px;font-weight:700;color:var(--text-primary);display:flex;align-items:center;gap:6px;flex-wrap:wrap;line-height:1.3;" title="${name}">
               <span>${name}</span>
-              ${isHeating ? `<span style="background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.5);color:#f59e0b;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">🔥 Heizen</span>` : (isOff ? `<span style="background:rgba(255,255,255,0.06);color:var(--text-secondary);padding:1px 6px;border-radius:6px;font-size:10px;">Aus</span>` : `<span style="background:rgba(56,189,248,0.15);color:var(--accent);padding:1px 6px;border-radius:6px;font-size:10px;">Bereit</span>`)}
-              ${isWindowOpen ? `<span style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;">🪟 Fenster offen</span>` : ''}
+              ${isHeating ? `<span style="background:rgba(245,158,11,0.25);border:1px solid rgba(245,158,11,0.5);color:#f59e0b;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px;"><ha-icon icon="mdi:fire" style="--mdc-icon-size:12px;"></ha-icon> Heizen</span>` : (isOff ? `<span style="background:rgba(255,255,255,0.06);color:var(--text-secondary);padding:1px 6px;border-radius:6px;font-size:10px;">Aus</span>` : `<span style="background:rgba(56,189,248,0.15);color:var(--accent);padding:1px 6px;border-radius:6px;font-size:10px;">Bereit</span>`)}
+              ${isWindowOpen ? `<span style="background:rgba(239,68,68,0.2);border:1px solid rgba(239,68,68,0.4);color:#ef4444;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px;"><ha-icon icon="mdi:window-open-variant" style="--mdc-icon-size:12px;"></ha-icon> Fenster offen</span>` : ''}
               ${battWarningHtml}
             </div>
             <div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">

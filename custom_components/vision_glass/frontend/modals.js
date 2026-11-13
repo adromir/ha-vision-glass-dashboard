@@ -344,7 +344,7 @@ export const modalMethods = {
     if (entities.length === 0) {
       body.innerHTML = `
         <div style="text-align:center;padding:36px 16px;color:var(--text-secondary);">
-          <div style="font-size:36px;margin-bottom:12px;">📂</div>
+          <div style="margin-bottom:12px;opacity:0.6;"><ha-icon icon="mdi:folder-outline" style="--mdc-icon-size:36px;"></ha-icon></div>
           <div style="font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">Keine Entitäten zugeordnet</div>
           <div style="font-size:13px;">Füge in den Einstellungen unter „Dock & Buttons“ Entitäten zu diesem Menüpunkt hinzu.</div>
         </div>

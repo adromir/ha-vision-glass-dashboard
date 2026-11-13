@@ -95,9 +95,9 @@ export const settingsMethods = {
     });
 
     const categories = [
-      { id: 'all', label: '🌟 Alle Favoriten' },
+      { id: 'all', label: '<ha-icon icon="mdi:star" style="--mdc-icon-size:16px;"></ha-icon> Alle Favoriten' },
       ...popularCategories.map(c => ({ id: c.category, label: c.category })),
-      { id: 'builtin', label: '🎨 Vision Glass Icons' }
+      { id: 'builtin', label: '<ha-icon icon="mdi:palette" style="--mdc-icon-size:16px;"></ha-icon> Vision Glass Icons' }
     ];
 
     pickerOverlay.innerHTML = `
@@ -119,7 +119,7 @@ export const settingsMethods = {
         <div style="padding: 16px 20px 12px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03);">
           <div>
             <div style="font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-              <span>🎨</span> Icon auswählen
+              <ha-icon icon="mdi:palette" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Icon auswählen
             </div>
             <div style="font-size: 12px; color: var(--text-secondary, #94a3b8); margin-top: 2px;">
               Wähle aus Standard-Icons oder gib ein beliebiges Home Assistant Icon ein (z.B. <code style="color:var(--accent,#38bdf8);">mdi:thermometer</code>)
@@ -372,14 +372,14 @@ export const settingsMethods = {
 
     const domains = [
       { id: 'all', label: 'Alle' },
-      { id: 'light', label: '💡 Licht' },
-      { id: 'climate', label: '🌡️ Klima' },
-      { id: 'sensor', label: '📊 Sensoren' },
-      { id: 'binary_sensor', label: '🚶 Binär' },
-      { id: 'switch', label: '🔌 Schalter' },
-      { id: 'media_player', label: '📺 Media' },
-      { id: 'lock', label: '🔒 Schloss' },
-      { id: 'input_number', label: '🎯 Helfer' }
+      { id: 'light', label: '<ha-icon icon="mdi:lightbulb" style="--mdc-icon-size:14px;"></ha-icon> Licht' },
+      { id: 'climate', label: '<ha-icon icon="mdi:thermometer" style="--mdc-icon-size:14px;"></ha-icon> Klima' },
+      { id: 'sensor', label: '<ha-icon icon="mdi:chart-box-outline" style="--mdc-icon-size:14px;"></ha-icon> Sensoren' },
+      { id: 'binary_sensor', label: '<ha-icon icon="mdi:motion-sensor" style="--mdc-icon-size:14px;"></ha-icon> Binär' },
+      { id: 'switch', label: '<ha-icon icon="mdi:power-socket-eu" style="--mdc-icon-size:14px;"></ha-icon> Schalter' },
+      { id: 'media_player', label: '<ha-icon icon="mdi:television" style="--mdc-icon-size:14px;"></ha-icon> Media' },
+      { id: 'lock', label: '<ha-icon icon="mdi:lock" style="--mdc-icon-size:14px;"></ha-icon> Schloss' },
+      { id: 'input_number', label: '<ha-icon icon="mdi:tune" style="--mdc-icon-size:14px;"></ha-icon> Helfer' }
     ];
 
     pickerOverlay.innerHTML = `
@@ -401,7 +401,7 @@ export const settingsMethods = {
         <div style="padding: 16px 20px 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03);">
           <div>
             <div style="font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-              <span>🔍</span> Entität auswählen
+              <ha-icon icon="mdi:magnify" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Entität auswählen
             </div>
             <div style="font-size: 12px; color: var(--text-secondary, #94a3b8); margin-top: 2px;">
               ${roomName ? `Zugeordneter Raum: <strong style="color:var(--accent,#38bdf8);">${roomName}</strong> (${roomId})` : 'Home Assistant Entitäten'}
@@ -446,8 +446,8 @@ export const settingsMethods = {
 
         <!-- Footer -->
         <div style="padding: 12px 20px; border-top: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.18);">
-          <button type="button" id="btnPickerClear" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer;">
-            ✕ Entität leeren
+          <button type="button" id="btnPickerClear" style="color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.1); padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+            <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon> Entität leeren
           </button>
           <div id="pickerCountText" style="font-size: 12px; color: var(--text-secondary, #94a3b8);">0 Entitäten</div>
         </div>
@@ -487,7 +487,7 @@ export const settingsMethods = {
       if (filtered.length === 0) {
         listEl.innerHTML = `
           <div style="text-align: center; padding: 32px 16px; color: var(--text-secondary, #94a3b8); font-size: 13px;">
-            <div style="font-size: 28px; margin-bottom: 8px;">🔍</div>
+            <div style="margin-bottom: 8px; opacity: 0.5;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:32px;"></ha-icon></div>
             Keine Entitäten gefunden${filterByRoom ? ' für diesen Raum' : ''}.<br>
             ${filterByRoom ? '<button type="button" id="btnDisableRoomFilter" style="margin-top:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);color:var(--accent,#38bdf8);padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;">Raumfilter aufheben (alle Entitäten)</button>' : ''}
           </div>
@@ -535,11 +535,11 @@ export const settingsMethods = {
               </div>
             </div>
             <div style="display: flex; align-items: center; gap: 8px;">
-              ${inRoom ? `<span style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: var(--accent, #38bdf8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">📍 ${roomName || roomId}</span>` : ''}
+              ${inRoom ? `<span style="font-size: 10px; background: rgba(56, 189, 248, 0.15); color: var(--accent, #38bdf8); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3); display: inline-flex; align-items: center; gap: 3px;"><ha-icon icon="mdi:map-marker" style="--mdc-icon-size:11px;"></ha-icon> ${roomName || roomId}</span>` : ''}
               <span style="font-size: 11px; color: var(--text-secondary, #94a3b8); background: rgba(255, 255, 255, 0.07); padding: 2px 7px; border-radius: 6px; white-space: nowrap;">
                 ${stateVal} ${unit}
               </span>
-              ${isSelected ? `<span style="color: var(--accent, #38bdf8); font-size: 13px;">✓</span>` : ''}
+              ${isSelected ? `<ha-icon icon="mdi:check" style="--mdc-icon-size:14px;color:var(--accent,#38bdf8);"></ha-icon>` : ''}
             </div>
           </div>
         `;
@@ -654,18 +654,18 @@ export const settingsMethods = {
           </div>
         </div>
         <button type="button" id="btnBackToDashboard" class="btn btn-sm" style="display:inline-flex;align-items:center;gap:6px;">
-          &larr; Zum Dashboard
+          <ha-icon icon="mdi:arrow-left" style="--mdc-icon-size:16px;"></ha-icon> Zum Dashboard
         </button>
       </div>
 
       <!-- Settings Navigation Tabs -->
       <div class="nav-tabs" style="display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px;margin-bottom:16px;">
-        <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms">🏠 ${this._t('rooms_and_cards')} (${rooms.length})</button>
-        <button class="nav-tab ${activeTab === 'badges' ? 'active' : ''}" data-stab="badges">🏷️ Bento-Badges (${bentoBadges.length})</button>
-        <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays">📂 Raum-Overlays</button>
-        <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock">⚓ ${this._t('dock_navigation')}</button>
-        <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls">🎛️ Helfer-Kontrollen</button>
-        <button class="nav-tab ${activeTab === 'general' ? 'active' : ''}" data-stab="general">⚙️ Design & Allgemein</button>
+        <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:home-outline" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('rooms_and_cards')} (${rooms.length})</button>
+        <button class="nav-tab ${activeTab === 'badges' ? 'active' : ''}" data-stab="badges" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:tag-outline" style="--mdc-icon-size:16px;"></ha-icon> Bento-Badges (${bentoBadges.length})</button>
+        <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:folder-outline" style="--mdc-icon-size:16px;"></ha-icon> Raum-Overlays</button>
+        <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:dock-bottom" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('dock_navigation')}</button>
+        <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:tune" style="--mdc-icon-size:16px;"></ha-icon> Helfer-Kontrollen</button>
+        <button class="nav-tab ${activeTab === 'general' ? 'active' : ''}" data-stab="general" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:cog-outline" style="--mdc-icon-size:16px;"></ha-icon> Design & Allgemein</button>
       </div>
 
       <!-- TAB 1: RÄUME & BENTO-KARTEN -->
@@ -673,7 +673,7 @@ export const settingsMethods = {
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
           <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
           <div style="display:flex;gap:8px;">
-            <button class="btn btn-sm btn-primary" id="btnSyncAreas">🔄 ${this._t('sync_areas_btn')}</button>
+            <button class="btn btn-sm btn-primary" id="btnSyncAreas" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('sync_areas_btn')}</button>
           </div>
         </div>
 
@@ -692,7 +692,7 @@ export const settingsMethods = {
 
               <!-- Read-only Area Badge from Home Assistant -->
               <div style="display:flex;align-items:center;gap:12px;background:rgba(255,255,255,0.05);padding:10px 14px;border-radius:10px;margin-bottom:8px;">
-                ${r.picture ? `<img src="${r.picture}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;border:1px solid var(--border-glass);" />` : `<div style="width:46px;height:46px;border-radius:8px;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;font-size:22px;">🏠</div>`}
+                ${r.picture ? `<img src="${r.picture}" style="width:46px;height:46px;border-radius:8px;object-fit:cover;border:1px solid var(--border-glass);" />` : `<div style="width:46px;height:46px;border-radius:8px;background:var(--bg-surface);display:flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:home" style="--mdc-icon-size:24px;color:var(--accent);"></ha-icon></div>`}
                 <div style="flex:1;">
                   <div style="font-weight:700;font-size:15px;color:var(--text-primary);">${r.name || r.id}</div>
                   <div style="font-size:12px;color:var(--text-secondary);display:flex;align-items:center;gap:6px;margin-top:2px;">
@@ -700,8 +700,8 @@ export const settingsMethods = {
                     <code style="background:rgba(0,0,0,0.2);padding:2px 6px;border-radius:4px;font-family:monospace;color:var(--accent);">${r.id}</code>
                   </div>
                 </div>
-                <div style="font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.06);padding:4px 8px;border-radius:6px;text-align:right;">
-                  🔒 ${this._t('managed_by_ha_areas')}
+                <div style="font-size:11px;color:var(--text-secondary);background:rgba(255,255,255,0.06);padding:4px 8px;border-radius:6px;text-align:right;display:inline-flex;align-items:center;gap:4px;">
+                  <ha-icon icon="mdi:lock-outline" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('managed_by_ha_areas')}
                 </div>
               </div>
               <div style="font-size:11px;color:var(--text-secondary);margin-bottom:12px;line-height:1.4;">
@@ -710,110 +710,169 @@ export const settingsMethods = {
 
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:8px;margin-top:6px;border-top:1px dashed var(--border-subtle);padding-top:8px;">
                 <div class="row">
-                  <label>💡 Beleuchtung (light.*)</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:lightbulb" style="--mdc-icon-size:14px;"></ha-icon> Beleuchtung (light.*)</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="light_entity" value="${r.light_entity || ''}" placeholder="light.livingroom" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="light_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="light_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🌡️ Thermostat (climate.*)</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:thermometer" style="--mdc-icon-size:14px;"></ha-icon> Thermostat (climate.*)</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="climate_entity" value="${r.climate_entity || ''}" placeholder="climate.better_thermostat_..." style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="climate_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="climate_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🎯 Zieltemp. Helfer (input_number.*)</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:target" style="--mdc-icon-size:14px;"></ha-icon> Zieltemp. Helfer (input_number.*)</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="target_temp_entity" value="${r.target_temp_entity || ''}" placeholder="input_number.*_komfort_temperatur" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="target_temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="target_temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🌡️ Ist-Temperatur Sensor</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:thermometer" style="--mdc-icon-size:14px;"></ha-icon> Ist-Temperatur Sensor</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="temp_entity" value="${r.temp_entity || ''}" placeholder="sensor.*_temperatur" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="temp_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>💧 Luftfeuchtigkeit Sensor</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:water-percent" style="--mdc-icon-size:14px;"></ha-icon> Luftfeuchtigkeit Sensor</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="humidity_entity" value="${r.humidity_entity || ''}" placeholder="sensor.*_humidity" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="humidity_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="humidity_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>💡 Helligkeit / Lux Sensor</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:brightness-6" style="--mdc-icon-size:14px;"></ha-icon> Helligkeit / Lux Sensor</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="illuminance_entity" value="${r.illuminance_entity || ''}" placeholder="sensor.*_illuminance" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="illuminance_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="illuminance_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🚶 Präsenz / Bewegung</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:motion-sensor" style="--mdc-icon-size:14px;"></ha-icon> Präsenz / Bewegung</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="presence_entity" value="${r.presence_entity || ''}" placeholder="binary_sensor.*_occupied" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="presence_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="presence_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🪟 Fensterkontakt</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:window-closed" style="--mdc-icon-size:14px;"></ha-icon> Fensterkontakt</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="window_entity" value="${r.window_entity || ''}" placeholder="binary_sensor.fenster..." style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="window_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="window_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🔌 Steckdose / Schalter (switch.*)</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:power-socket-eu" style="--mdc-icon-size:14px;"></ha-icon> Steckdose / Schalter (switch.*)</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="switch_entity" value="${r.switch_entity || ''}" placeholder="switch.smartplug..." style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="switch_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="switch_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>📺 ${this._t('tv_display')}</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:television" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('tv_display')}</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="tv_entity" value="${r.tv_entity || ''}" placeholder="media_player.wohnzimmer_tv_2" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="tv_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="tv_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🎮 ${this._t('video_player')}</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:gamepad-variant" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('video_player')}</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="video_entity" value="${r.video_entity || ''}" placeholder="media_player.shield_android_tv" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="video_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="video_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
                 <div class="row">
-                  <label>🎵 ${this._t('audio_player')}</label>
+                  <label style="display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:music" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('audio_player')}</label>
                   <div style="display:flex;gap:4px;align-items:center;">
                     <input type="text" list="dl_all_entities" class="in-room-prop" data-ridx="${rIdx}" data-prop="media_entity" value="${r.media_entity || ''}" placeholder="media_player.echo_show" style="flex:1;">
-                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="media_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                    <button type="button" class="btn btn-sm btn-pick-entity" data-ridx="${rIdx}" data-prop="media_entity" title="Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
 
                 <!-- Bento Card Action Icons Configuration -->
                 <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
-                  <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:6px;">Aktions-Icons auf Bento-Karte</label>
-                  <div style="display:flex;gap:12px;flex-wrap:wrap;">
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">Aktions-Icons auf Bento-Karte</label>
+                    <button type="button" class="btn btn-sm btn-add-custom-room-action" data-ridx="${rIdx}" style="padding:4px 8px;font-size:11px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:13px;"></ha-icon> Eigenes Aktions-Icon
+                    </button>
+                  </div>
+
+                  <!-- Standard Actions -->
+                  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
                     ${(() => {
                       const acts = this._getRoomBentoActions(r);
-                      const allTypes = [
-                        { type: 'light', label: '💡 Licht', has: Boolean(r.light_entity) },
-                        { type: 'climate', label: '🌡️ Heizung', has: Boolean(r.climate_entity) },
-                        { type: 'media', label: '🎵 Medien', has: Boolean(r.media_entity || r.audio_entity || r.video_entity) },
-                        { type: 'lock', label: '🔒 Schloss', has: Boolean(r.lock_entity) },
-                        { type: 'switch', label: '🔌 Steckdose', has: Boolean(r.switch_entity) }
+                      const stdTypes = [
+                        { type: 'light', label: 'Licht', icon: 'mdi:lightbulb', has: Boolean(r.light_entity) },
+                        { type: 'climate', label: 'Heizung', icon: 'mdi:thermometer', has: Boolean(r.climate_entity) },
+                        { type: 'media', label: 'Medien', icon: 'mdi:music', has: Boolean(r.media_entity || r.audio_entity || r.video_entity) },
+                        { type: 'lock', label: 'Schloss', icon: 'mdi:lock', has: Boolean(r.lock_entity) },
+                        { type: 'switch', label: 'Steckdose', icon: 'mdi:power-socket-eu', has: Boolean(r.switch_entity) }
                       ];
-                      return allTypes.map(at => {
-                        const configured = acts.find(a => a.type === at.type);
-                        const isChecked = configured ? configured.enabled !== false : at.has;
+                      return stdTypes.map(st => {
+                        const configured = acts.find(a => a.type === st.type);
+                        const isChecked = configured ? configured.enabled !== false : st.has;
                         return `
-                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
-                            <input type="checkbox" class="chk-bento-action" data-ridx="${rIdx}" data-act-type="${at.type}" ${isChecked ? 'checked' : ''}>
-                            <span>${at.label}</span>
+                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg-surface);padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);">
+                            <input type="checkbox" class="chk-bento-action" data-ridx="${rIdx}" data-act-type="${st.type}" ${isChecked ? 'checked' : ''}>
+                            <ha-icon icon="${st.icon}" style="--mdc-icon-size:14px;color:var(--accent);"></ha-icon>
+                            <span>${st.label}</span>
+                          </label>
+                        `;
+                      }).join('');
+                    })()}
+                  </div>
+
+                  <!-- Custom Action Icons for Room -->
+                  ${(() => {
+                    const acts = this._getRoomBentoActions(r);
+                    const customActs = acts.filter(a => a.type === 'custom');
+                    if (customActs.length === 0) return '';
+                    return `
+                      <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
+                        ${customActs.map((ca, caIdx) => `
+                          <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
+                            <div id="roomActIconBox_${rIdx}_${caIdx}" style="width:28px;height:28px;border-radius:6px;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                              <ha-icon icon="${ca.icon || 'mdi:star'}" style="--mdc-icon-size:16px;"></ha-icon>
+                            </div>
+                            <input type="text" class="in-custom-act-title" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.title || ''}" placeholder="Titel (z.B. Ventilator)" style="width:130px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:12px;">
+                            <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px;">
+                              <input type="text" class="in-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.entity_id || ''}" placeholder="switch.xyz oder script.xyz" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:11px;font-family:monospace;">
+                              <button type="button" class="btn btn-sm btn-pick-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;">
+                                <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                              </button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-pick-custom-act-icon" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                              <ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:13px;"></ha-icon> Icon
+                            </button>
+                            <button type="button" class="btn-micro btn-del-custom-act" data-ridx="${rIdx}" data-caidx="${caIdx}" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;">
+                              <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon>
+                            </button>
+                          </div>
+                        `).join('')}
+                      </div>
+                    `;
+                  })()}
+                </div>
+
+                <!-- Bento Card Badges Assignment -->
+                <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
+                  <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:6px;">Sensor-Badges auf dieser Bento-Karte</label>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                    ${(() => {
+                      const allBadges = this._getEffectiveBentoBadges();
+                      return allBadges.map(b => {
+                        const isChecked = !b.rooms || b.rooms.includes('all') || b.rooms.includes(r.id);
+                        return `
+                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg-surface);padding:5px 10px;border-radius:8px;border:1px solid var(--border-subtle);">
+                            <input type="checkbox" class="chk-bento-badge-for-room" data-ridx="${rIdx}" data-bid="${b.id}" ${isChecked ? 'checked' : ''}>
+                            <span style="color:${b.icon_color_light || 'var(--accent)'};display:inline-flex;">${this._icon(b.icon || 'star', { size: 14 })}</span>
+                            <span style="font-weight:600;">${b.name || b.id}</span>
                           </label>
                         `;
                       }).join('');
@@ -844,8 +903,8 @@ export const settingsMethods = {
                     </div>
                     <input type="text" class="in-badge-name" data-bidx="${bIdx}" value="${b.name || ''}" placeholder="Badge Name (z.B. Temperatur)" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:14px;font-weight:700;flex:1;min-width:140px;">
                   </div>
-                  <button type="button" class="btn btn-sm btn-del-bento-badge" data-bidx="${bIdx}" style="color:#ef4444;border-color:rgba(239,68,68,0.4);cursor:pointer;padding:6px 12px;">
-                    ✕ Badge löschen
+                  <button type="button" class="btn btn-sm btn-del-bento-badge" data-bidx="${bIdx}" style="color:#ef4444;border-color:rgba(239,68,68,0.4);cursor:pointer;padding:6px 12px;display:inline-flex;align-items:center;gap:4px;">
+                    <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon> Badge löschen
                   </button>
                 </div>
 
@@ -853,14 +912,14 @@ export const settingsMethods = {
                 <div style="display:flex;align-items:center;gap:12px;background:var(--bg-surface);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:12px;flex-wrap:wrap;">
                   <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Live-Vorschau:</div>
                   <div style="background:#f8fafc;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-                    <span style="font-size:11px;">☀️</span>
+                    <ha-icon icon="mdi:weather-sunny" style="--mdc-icon-size:14px;color:#d97706;"></ha-icon>
                     <span id="previewBadgeLight_${bIdx}" class="env-pill" style="color:${b.icon_color_light || '#ea580c'};background:${b.bg_light || 'rgba(234,88,12,0.1)'};border:1px solid ${b.border_light || 'rgba(234,88,12,0.25)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
                       <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_light || '#ea580c' })}</span>
                       <span class="preview-badge-text">${b.name || '21.5°C'}</span>
                     </span>
                   </div>
                   <div style="background:#0b111e;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.3);">
-                    <span style="font-size:11px;">🌙</span>
+                    <ha-icon icon="mdi:weather-night" style="--mdc-icon-size:14px;color:#38bdf8;"></ha-icon>
                     <span id="previewBadgeDark_${bIdx}" class="env-pill" style="color:${b.icon_color_dark || '#fb923c'};background:${b.bg_dark || 'rgba(251,146,60,0.15)'};border:1px solid ${b.border_dark || 'rgba(251,146,60,0.35)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
                       <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_dark || '#fb923c' })}</span>
                       <span class="preview-badge-text">${b.name || '21.5°C'}</span>
@@ -887,7 +946,7 @@ export const settingsMethods = {
                       <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Spezifische Entität</label>
                       <div style="display:flex;gap:6px;">
                         <input type="text" class="in-badge-custom-entity" data-bidx="${bIdx}" value="${b.entity_id || ''}" placeholder="sensor.xyz" style="flex:1;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
-                        <button type="button" class="btn btn-sm btn-pick-badge-entity" data-bidx="${bIdx}" style="padding:6px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;">🔍</button>
+                        <button type="button" class="btn btn-sm btn-pick-badge-entity" data-bidx="${bIdx}" style="padding:6px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
                       </div>
                     </div>
                   ` : ''}
@@ -899,8 +958,8 @@ export const settingsMethods = {
                         ${this._icon(b.icon || 'star', { size: 18 })}
                       </div>
                       <input type="text" class="in-badge-icon" data-bidx="${bIdx}" value="${b.icon || 'star'}" placeholder="mdi:thermometer oder star" style="flex:1;min-width:0;padding:7px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
-                      <button type="button" class="btn btn-sm btn-pick-badge-icon" data-bidx="${bIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;">
-                        🔍 Icon
+                      <button type="button" class="btn btn-sm btn-pick-badge-icon" data-bidx="${bIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                        <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon> Icon
                       </button>
                     </div>
                   </div>
@@ -911,7 +970,7 @@ export const settingsMethods = {
                   <!-- Light Mode Colors -->
                   <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
                     <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      ☀️ Helles Theme (Farben)
+                      <ha-icon icon="mdi:weather-sunny" style="--mdc-icon-size:16px;"></ha-icon> Helles Theme (Farben)
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div>
@@ -948,7 +1007,7 @@ export const settingsMethods = {
                   <!-- Dark Mode Colors -->
                   <div style="background:rgba(0,0,0,0.14);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
                     <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      🌙 Dunkles Theme (Farben)
+                      <ha-icon icon="mdi:weather-night" style="--mdc-icon-size:16px;"></ha-icon> Dunkles Theme (Farben)
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div>
@@ -986,8 +1045,8 @@ export const settingsMethods = {
                 <!-- Room Assignment Checkboxes -->
                 <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);">
-                      📍 Auf welchen Bento-Karten anzeigen?
+                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);display:inline-flex;align-items:center;gap:5px;">
+                      <ha-icon icon="mdi:checkbox-marked-outline" style="--mdc-icon-size:14px;color:var(--accent);"></ha-icon> Auf welchen Bento-Karten anzeigen?
                     </div>
                     <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--accent);">
                       <input type="checkbox" class="chk-badge-room-all" data-bidx="${bIdx}" ${isAll ? 'checked' : ''}>
@@ -1042,7 +1101,7 @@ export const settingsMethods = {
                       <div style="display:flex;gap:4px;">
                         <button type="button" class="btn btn-sm btn-cat-up" data-cidx="${cIdx}" ${cIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
                         <button type="button" class="btn btn-sm btn-cat-down" data-cidx="${cIdx}" ${cIdx === cats.length - 1 ? 'disabled' : ''} title="Nach unten">▼</button>
-                        <button type="button" class="btn btn-sm btn-del-cat" data-cidx="${cIdx}" style="color:#ef4444;" title="Kategorie löschen">✕</button>
+                        <button type="button" class="btn btn-sm btn-del-cat" data-cidx="${cIdx}" style="color:#ef4444;display:inline-flex;align-items:center;" title="Kategorie löschen"><ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon></button>
                       </div>
                     </div>
 
@@ -1058,18 +1117,18 @@ export const settingsMethods = {
                         return `
                           <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--bg-surface);border:1px solid var(--border-glass);border-radius:20px;font-size:12px;color:var(--text-primary);">
                             <span title="${eId}" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:500;">${fname}</span>
-                            <button type="button" class="btn-del-cat-ent" data-cidx="${cIdx}" data-eidx="${eIdx}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;font-size:13px;line-height:1;display:flex;align-items:center;" title="Entfernen">✕</button>
+                            <button type="button" class="btn-del-cat-ent" data-cidx="${cIdx}" data-eidx="${eIdx}" style="background:none;border:none;color:#ef4444;cursor:pointer;padding:0;font-size:13px;line-height:1;display:flex;align-items:center;" title="Entfernen"><ha-icon icon="mdi:close" style="--mdc-icon-size:13px;"></ha-icon></button>
                           </span>
                         `;
                       }).join('')}
                     </div>
 
                     <button type="button" class="btn btn-sm btn-add-cat-ent" data-cidx="${cIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
-                      🔍 + Entität hinzufügen
+                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:14px;"></ha-icon> Entität hinzufügen
                     </button>
                   </div>
                 `).join('')}
-                <button type="button" class="btn btn-sm btn-primary" id="btnAddOverlayCategory" style="align-self:flex-start;padding:8px 16px;border-radius:8px;cursor:pointer;">+ Neue Kategorie hinzufügen</button>
+                <button type="button" class="btn btn-sm btn-primary" id="btnAddOverlayCategory" style="align-self:flex-start;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:plus" style="--mdc-icon-size:15px;"></ha-icon> Neue Kategorie hinzufügen</button>
               </div>
             `;
           })()}
@@ -1108,7 +1167,7 @@ export const settingsMethods = {
                   <div style="display:flex;gap:4px;align-items:center;">
                     <button type="button" class="btn btn-sm btn-set-dock-up" data-didx="${dIdx}" ${dIdx === 0 ? 'disabled' : ''} title="Nach oben">▲</button>
                     <button type="button" class="btn btn-sm btn-set-dock-down" data-didx="${dIdx}" ${dIdx === (dock.items.length - 1) ? 'disabled' : ''} title="Nach unten">▼</button>
-                    ${isCustom ? `<button type="button" class="btn btn-sm btn-danger btn-del-dock-item" data-didx="${dIdx}" style="padding:4px 8px;margin-left:4px;" title="Löschen">✕</button>` : ''}
+                    ${isCustom ? `<button type="button" class="btn btn-sm btn-danger btn-del-dock-item" data-didx="${dIdx}" style="padding:4px 8px;margin-left:4px;display:inline-flex;align-items:center;" title="Löschen"><ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon></button>` : ''}
                   </div>
                 </div>
 
@@ -1124,8 +1183,8 @@ export const settingsMethods = {
                         ${this._icon(item.icon || 'star', { size: 18 })}
                       </div>
                       <input type="text" class="inp-custom-dock-icon" data-didx="${dIdx}" value="${item.icon || ''}" placeholder="Standard (${item.id})" style="flex:1;min-width:0;padding:7px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:12px;font-family:monospace;">
-                      <button type="button" class="btn btn-sm btn-pick-dock-icon" data-didx="${dIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;">
-                        🔍 Icon
+                      <button type="button" class="btn btn-sm btn-pick-dock-icon" data-didx="${dIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
+                        <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon> Icon
                       </button>
                     </div>
                   </div>
@@ -1135,7 +1194,7 @@ export const settingsMethods = {
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
                     <div style="font-size:12px;font-weight:600;color:var(--text-secondary);">Zugeordnete Entitäten im Modal (${(item.entities || []).length})</div>
                     ${(!isCustom && (!item.entities || item.entities.length === 0)) ? `
-                      <span style="font-size:11px;color:var(--accent);">⚡ Standard: Automatische System-Erkennung</span>
+                      <span style="font-size:11px;color:var(--accent);display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:flash-outline" style="--mdc-icon-size:13px;"></ha-icon> Standard: Automatische System-Erkennung</span>
                     ` : ''}
                   </div>
                   <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;">
@@ -1153,7 +1212,7 @@ export const settingsMethods = {
                     ` : ''}
                   </div>
                   <button type="button" class="btn btn-sm btn-add-cust-entity" data-didx="${dIdx}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;">
-                    🔍 + Entität zu diesem Modal hinzufügen
+                    <ha-icon icon="mdi:plus" style="--mdc-icon-size:14px;"></ha-icon> Entität zu diesem Modal hinzufügen
                   </button>
                 </div>
               </div>
@@ -1256,7 +1315,7 @@ export const settingsMethods = {
                     <select class="sel-helper-ctrl" data-entity="${eId}" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:12px;font-weight:600;">
                       ${options.map(opt => `<option value="${opt.value}" ${opt.value === curType ? 'selected' : ''}>${opt.label}</option>`).join('')}
                     </select>
-                    <button type="button" class="btn btn-sm btn-del-helper-ctrl" data-entity="${eId}" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;padding:4px;" title="Zurücksetzen">✕</button>
+                    <button type="button" class="btn btn-sm btn-del-helper-ctrl" data-entity="${eId}" style="color:#ef4444;background:none;border:none;cursor:pointer;font-size:14px;padding:4px;display:inline-flex;align-items:center;" title="Zurücksetzen"><ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon></button>
                   </div>
                 </div>
               `;
@@ -1265,14 +1324,14 @@ export const settingsMethods = {
         </div>
 
         <button type="button" class="btn btn-sm btn-primary" id="btnAddHelperControl" style="margin-top:14px;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-          🔍 + Weitere Helfer-Entität konfigurieren
+          <ha-icon icon="mdi:plus" style="--mdc-icon-size:15px;"></ha-icon> Weitere Helfer-Entität konfigurieren
         </button>
       </div>
 
       <!-- TAB 5: DESIGN & ALLGEMEIN -->
       <div id="stabContentGeneral" style="${activeTab === 'general' ? '' : 'display:none;'}">
         <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-bottom:14px;">
-          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🎨 Erscheinungsbild & Theme</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Erscheinungsbild & Theme</div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
             <div class="row">
@@ -1357,42 +1416,42 @@ export const settingsMethods = {
         </div>
 
         <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
-          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🏠 Globale Entitäten</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:earth" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Globale Entitäten</div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;">
             <div class="row">
               <label>${this._t('dashboard_title_label')}</label>
               <div style="font-size:13px;font-weight:600;color:var(--text-primary);padding:8px 12px;background:var(--bg-surface);border-radius:8px;border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;">
                 <span>${this._t('smart_home_center')}</span>
-                <span style="font-size:11px;color:var(--text-secondary);font-weight:400;">🌐 ${this._t('auto_localized')} (${this._getLang().toUpperCase()})</span>
+                <span style="font-size:11px;color:var(--text-secondary);font-weight:400;display:inline-flex;align-items:center;gap:4px;"><ha-icon icon="mdi:translate" style="--mdc-icon-size:13px;"></ha-icon> ${this._t('auto_localized')} (${this._getLang().toUpperCase()})</span>
               </div>
             </div>
             <div class="row">
               <label>Wetter-Entität</label>
               <div style="display:flex;gap:4px;align-items:center;">
                 <input type="text" list="dl_all_entities" id="cfgWeather" value="${this._config.weather_entity || ''}" placeholder="weather.hannover_hannover" style="flex:1;">
-                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgWeather" data-domain="weather" title="Wetter-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgWeather" data-domain="weather" title="Wetter-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
               </div>
             </div>
             <div class="row">
               <label>Wohnungsschloss-Entität</label>
               <div style="display:flex;gap:4px;align-items:center;">
                 <input type="text" list="dl_all_entities" id="cfgLock" value="${this._config.lock_entity || ''}" placeholder="lock.wohnungsschloss" style="flex:1;">
-                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgLock" data-domain="lock" title="Schloss-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgLock" data-domain="lock" title="Schloss-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
               </div>
             </div>
             <div class="row">
               <label>Alle-Lichter-Entität (Hauptschalter)</label>
               <div style="display:flex;gap:4px;align-items:center;">
                 <input type="text" list="dl_all_entities" id="cfgAllLights" value="${this._config.all_lights_entity || ''}" placeholder="light.licht_wohnung" style="flex:1;">
-                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgAllLights" data-domain="light" title="Licht-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;font-size:12px;line-height:1;">🔍</button>
+                <button type="button" class="btn btn-sm btn-pick-global" data-target="cfgAllLights" data-domain="light" title="Licht-Entität suchen..." style="padding:6px 9px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
               </div>
             </div>
           </div>
         </div>
 
         <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-top:14px;">
-          <div style="font-weight:700;font-size:15px;margin-bottom:12px;">🏷️ Top-Bar Badges & Personen</div>
+          <div style="font-weight:700;font-size:15px;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:badge-account-horizontal-outline" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Top-Bar Badges & Personen</div>
           <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">Wähle, welche Badges in der Kopfleiste angezeigt werden sollen, und bestimme die angezeigten Personen.</div>
 
           <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-bottom:14px;">
@@ -1477,8 +1536,8 @@ export const settingsMethods = {
         </div>
         <div style="display:flex;gap:10px;margin-left:auto;">
           ${isModal ? `<button class="btn" id="btnCancelSettings">${this._t('cancel')}</button>` : ''}
-          <button class="btn btn-primary" id="btnSaveDashboardSettings" style="background:var(--accent);color:white;font-weight:700;padding:8px 20px;border-radius:10px;border:none;cursor:pointer;">
-            💾 ${this._t('save_changes')}
+          <button class="btn btn-primary" id="btnSaveDashboardSettings" style="background:var(--accent);color:white;font-weight:700;padding:8px 20px;border-radius:10px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+            <ha-icon icon="mdi:content-save" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('save_changes')}
           </button>
         </div>
       </div>
@@ -1655,14 +1714,14 @@ export const settingsMethods = {
     if (btnSync) {
       btnSync.onclick = async () => {
         btnSync.disabled = true;
-        btnSync.textContent = '⏳ Synchronisiere...';
+        btnSync.innerHTML = '<ha-icon icon="mdi:loading" class="spin" style="--mdc-icon-size:16px;"></ha-icon> Synchronisiere...';
         const res = await this._syncAreas();
         btnSync.disabled = false;
-        btnSync.textContent = '🔄 ' + this._t('sync_areas_btn');
+        btnSync.innerHTML = '<ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ' + this._t('sync_areas_btn');
         this._renderSettingsContent(container);
         const toast = container.querySelector('#settingsToast');
         if (toast) {
-          toast.textContent = `✓ ${this._t('sync_areas_success')} (${res ? res.total : 0} Bereiche)`;
+          toast.textContent = `${this._t('sync_areas_success')} (${res ? res.total : 0} Bereiche)`;
           toast.style.display = 'block';
           setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
         }
@@ -1882,7 +1941,7 @@ export const settingsMethods = {
         const room = this._config.rooms?.[rIdx];
         if (!room) return;
         if (!Array.isArray(room.bento_actions)) {
-          room.bento_actions = this._getRoomBentoActions(room);
+          room.bento_actions = [...this._getRoomBentoActions(room)];
         }
         let act = room.bento_actions.find(a => a.type === actType);
         if (!act) {
@@ -1890,6 +1949,142 @@ export const settingsMethods = {
           room.bento_actions.push(act);
         } else {
           act.enabled = chk.checked;
+        }
+      };
+    });
+
+    // Custom Room Action Icons
+    container.querySelectorAll('.btn-add-custom-room-action').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = [...this._getRoomBentoActions(room)];
+        }
+        room.bento_actions.push({
+          id: 'custom_act_' + Date.now(),
+          type: 'custom',
+          title: 'Neues Icon',
+          icon: 'mdi:star',
+          entity_id: '',
+          enabled: true
+        });
+        this._renderSettingsContent(container, isModal);
+      };
+    });
+
+    container.querySelectorAll('.btn-del-custom-act').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const caIdx = parseInt(btn.getAttribute('data-caidx'));
+        const room = this._config.rooms?.[rIdx];
+        if (!room || !Array.isArray(room.bento_actions)) return;
+        const customActs = room.bento_actions.filter(a => a.type === 'custom');
+        const targetAct = customActs[caIdx];
+        if (targetAct) {
+          room.bento_actions = room.bento_actions.filter(a => a !== targetAct);
+          this._renderSettingsContent(container, isModal);
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-custom-act-title').forEach(inp => {
+      inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const caIdx = parseInt(inp.getAttribute('data-caidx'));
+        const room = this._config.rooms?.[rIdx];
+        const customActs = room?.bento_actions?.filter(a => a.type === 'custom');
+        if (customActs?.[caIdx]) {
+          customActs[caIdx].title = inp.value;
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-custom-act-entity').forEach(inp => {
+      inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const caIdx = parseInt(inp.getAttribute('data-caidx'));
+        const room = this._config.rooms?.[rIdx];
+        const customActs = room?.bento_actions?.filter(a => a.type === 'custom');
+        if (customActs?.[caIdx]) {
+          customActs[caIdx].entity_id = inp.value.trim();
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-custom-act-entity').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const caIdx = parseInt(btn.getAttribute('data-caidx'));
+        const room = this._config.rooms?.[rIdx];
+        const customActs = room?.bento_actions?.filter(a => a.type === 'custom');
+        if (!customActs?.[caIdx]) return;
+        this._showEntityPicker({
+          currentValue: customActs[caIdx].entity_id || '',
+          defaultDomain: 'all',
+          roomId: room.id,
+          roomName: room.name,
+          onSelect: (selectedId) => {
+            customActs[caIdx].entity_id = selectedId;
+            if (!customActs[caIdx].title || customActs[caIdx].title === 'Neues Icon') {
+              const s = this._hass?.states?.[selectedId];
+              customActs[caIdx].title = s?.attributes?.friendly_name || selectedId;
+            }
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-custom-act-icon').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const caIdx = parseInt(btn.getAttribute('data-caidx'));
+        const room = this._config.rooms?.[rIdx];
+        const customActs = room?.bento_actions?.filter(a => a.type === 'custom');
+        if (!customActs?.[caIdx]) return;
+        this._showIconPicker({
+          currentValue: customActs[caIdx].icon || 'mdi:star',
+          onSelect: (newIcon) => {
+            customActs[caIdx].icon = newIcon;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    // Bento-Badge Assignment per Room Checkbox (Item 2)
+    container.querySelectorAll('.chk-bento-badge-for-room').forEach(chk => {
+      chk.onchange = () => {
+        const rIdx = parseInt(chk.getAttribute('data-ridx'));
+        const bId = chk.getAttribute('data-bid');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!this._config.bento_badges) {
+          this._config.bento_badges = this._getEffectiveBentoBadges();
+        }
+        const badge = this._config.bento_badges.find(b => b.id === bId);
+        if (!badge) return;
+
+        const allRoomIds = (this._config.rooms || []).map(rm => rm.id);
+        if (!Array.isArray(badge.rooms)) badge.rooms = ['all'];
+
+        if (chk.checked) {
+          if (badge.rooms.includes('all')) {
+            // Already active for all
+          } else if (!badge.rooms.includes(room.id)) {
+            badge.rooms.push(room.id);
+            if (allRoomIds.length > 0 && allRoomIds.every(id => badge.rooms.includes(id))) {
+              badge.rooms = ['all'];
+            }
+          }
+        } else {
+          if (badge.rooms.includes('all')) {
+            badge.rooms = allRoomIds.filter(id => id !== room.id);
+          } else {
+            badge.rooms = badge.rooms.filter(id => id !== room.id);
+          }
         }
       };
     });

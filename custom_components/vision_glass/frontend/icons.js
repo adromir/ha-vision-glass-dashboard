@@ -108,24 +108,131 @@ export const ICONS = {
   "flame": "<path d=\"M8.5 14.5A2.5 2.5 0 0 0 11 17c1.38 0 2.5-1.12 2.5-2.5 0-.61-.22-1.17-.58-1.61L12 11.5l-.92 1.39c-.36.44-.58 1-.58 1.61Z\" fill=\"currentColor\" opacity=\"0.4\"/><path d=\"M12 2c1 3 4 4.5 4 9a6 6 0 1 1-12 0c0-4.5 3-6 4-9 1 2 2 3 4 0Z\"/>"
 };
 
+export const MDI_ICON_MAP = {
+  'home': 'mdi:home',
+  'settings': 'mdi:cog',
+  'cog': 'mdi:cog',
+  'light': 'mdi:lightbulb',
+  'climate': 'mdi:thermometer',
+  'thermometer': 'mdi:thermometer',
+  'droplet': 'mdi:water-percent',
+  'humidity': 'mdi:water-percent',
+  'lux': 'mdi:brightness-6',
+  'sun': 'mdi:weather-sunny',
+  'weather-sunny': 'mdi:weather-sunny',
+  'moon': 'mdi:weather-night',
+  'weather-clear-night': 'mdi:weather-night',
+  'music': 'mdi:music',
+  'tv': 'mdi:television',
+  'multimedia': 'mdi:television',
+  'plug': 'mdi:power-socket-eu',
+  'socket': 'mdi:power-socket-eu',
+  'power': 'mdi:power',
+  'lock-closed': 'mdi:lock',
+  'lock-open': 'mdi:lock-open',
+  'door': 'mdi:door',
+  'door-open': 'mdi:door-open',
+  'window': 'mdi:window-closed',
+  'window-open': 'mdi:window-open-variant',
+  'shield': 'mdi:shield',
+  'shield-check': 'mdi:shield-check',
+  'shield-alert': 'mdi:shield-alert',
+  'siren': 'mdi:siren',
+  'motion': 'mdi:motion-sensor',
+  'motion-idle': 'mdi:motion-sensor-off',
+  'calendar': 'mdi:calendar',
+  'clock': 'mdi:clock-outline',
+  'trash': 'mdi:trash-can-outline',
+  'recycle-sack': 'mdi:recycle',
+  'leaf': 'mdi:leaf',
+  'box': 'mdi:package-variant-closed',
+  'sunset': 'mdi:weather-sunset-down',
+  'sunrise': 'mdi:weather-sunset-up',
+  'chart-bar': 'mdi:chart-bar',
+  'stats': 'mdi:chart-box-outline',
+  'radar': 'mdi:radar',
+  'cyclone': 'mdi:weather-tornado',
+  'battery-full': 'mdi:battery',
+  'battery-medium': 'mdi:battery-50',
+  'battery-low': 'mdi:battery-20',
+  'battery-critical': 'mdi:battery-alert',
+  'battery-good': 'mdi:battery',
+  'check': 'mdi:check',
+  'alert-triangle': 'mdi:alert',
+  'alert-circle': 'mdi:alert-circle',
+  'plus': 'mdi:plus',
+  'minus': 'mdi:minus',
+  'weather-cloudy': 'mdi:weather-cloudy',
+  'weather-partlycloudy': 'mdi:weather-partly-cloudy',
+  'weather-partlycloudy-night': 'mdi:weather-night-partly-cloudy',
+  'weather-rainy': 'mdi:weather-rainy',
+  'weather-pouring': 'mdi:weather-pouring',
+  'weather-lightning': 'mdi:weather-lightning',
+  'weather-lightning-rainy': 'mdi:weather-lightning-rainy',
+  'weather-snowy': 'mdi:weather-snowy',
+  'weather-snowy-rainy': 'mdi:weather-snowy-rainy',
+  'weather-windy': 'mdi:weather-windy',
+  'weather-fog': 'mdi:weather-fog',
+  'weather-hail': 'mdi:weather-hail',
+  'plane': 'mdi:airplane',
+  'restart': 'mdi:restart',
+  'eye': 'mdi:eye',
+  'zap': 'mdi:lightning-bolt',
+  'percent': 'mdi:percent',
+  'sliders': 'mdi:tune',
+  'tune': 'mdi:tune',
+  'wifi': 'mdi:wifi',
+  'activity': 'mdi:pulse',
+  'washing-machine': 'mdi:washing-machine',
+  'speaker': 'mdi:speaker',
+  'play': 'mdi:play',
+  'pause': 'mdi:pause',
+  'skip-back': 'mdi:skip-previous',
+  'skip-forward': 'mdi:skip-next',
+  'volume-up': 'mdi:volume-high',
+  'volume-down': 'mdi:volume-medium',
+  'volume-mute': 'mdi:volume-mute',
+  'arrow-up': 'mdi:arrow-up',
+  'arrow-down': 'mdi:arrow-down',
+  'arrow-left': 'mdi:arrow-left',
+  'arrow-right': 'mdi:arrow-right',
+  'sparkles': 'mdi:creation',
+  'stop': 'mdi:stop',
+  'rotate-ccw': 'mdi:undo',
+  'menu': 'mdi:menu',
+  'alarm': 'mdi:alarm',
+  'timer': 'mdi:timer-outline',
+  'camera': 'mdi:camera',
+  'fan': 'mdi:fan',
+  'vacuum': 'mdi:robot-vacuum',
+  'blinds': 'mdi:blinds',
+  'bell': 'mdi:bell',
+  'star': 'mdi:star',
+  'flame': 'mdi:fire',
+  'magnify': 'mdi:magnify',
+  'refresh': 'mdi:refresh',
+  'close': 'mdi:close',
+  'save': 'mdi:content-save',
+  'folder': 'mdi:folder-outline',
+  'tag': 'mdi:tag-outline',
+  'dock': 'mdi:dock-bottom',
+  'user': 'mdi:account',
+  'user-walk': 'mdi:walk'
+};
+
 export function renderIcon(name, { size = 20, cls = '', color = '', fill = 'none', stroke = 'currentColor', strokeWidth = 2, style = '' } = {}) {
   if (!name) name = 'alert-triangle';
   const sizeStyle = size ? `width:${size}px;height:${size}px;` : '';
   const colorStyle = color ? `color:${color};` : '';
 
-  // 1. Explicit MDI or custom Home Assistant domain icon
-  if (name.startsWith('mdi:') || name.includes(':')) {
-    return `<ha-icon icon="${name}" class="vg-icon ${cls}" style="--mdc-icon-size:${size}px;font-size:${size}px;${sizeStyle}${colorStyle}${style}display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;"></ha-icon>`;
+  // 1. Resolve canonical Home Assistant MDI icon
+  let mdiName = name;
+  if (!mdiName.startsWith('mdi:') && !mdiName.includes(':')) {
+    mdiName = MDI_ICON_MAP[name] || `mdi:${name}`;
   }
 
-  // 2. Built-in Vision Glass SVG icons (with /vision_glass_static/icons.svg sprite reference & fallback)
-  if (ICONS[name]) {
-    const content = ICONS[name];
-    return `<svg class="vg-icon vg-icon-${name} ${cls}" viewBox="0 0 24 24" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="${sizeStyle}${colorStyle}${style}"><use href="/vision_glass_static/icons.svg#${name}"></use>${content}</svg>`;
-  }
-
-  // 3. Fallback: Any MDI icon name without "mdi:" prefix
-  return `<ha-icon icon="mdi:${name}" class="vg-icon ${cls}" style="--mdc-icon-size:${size}px;font-size:${size}px;${sizeStyle}${colorStyle}${style}display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;"></ha-icon>`;
+  // Use Home Assistant's native <ha-icon> for 100% design consistency
+  return `<ha-icon icon="${mdiName}" class="vg-icon ${cls}" style="--mdc-icon-size:${size}px;font-size:${size}px;${sizeStyle}${colorStyle}${style}display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;filter:none!important;"></ha-icon>`;
 }
 
 export const POPULAR_HA_ICONS = [

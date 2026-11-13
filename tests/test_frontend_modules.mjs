@@ -29,8 +29,12 @@ assert.deepEqual([...deKeys].filter((k) => !enKeys.has(k)), [], 'All DE I18N key
 
 // 2. Icons render cleanly
 assert.ok(Object.keys(ICONS).length >= 20, 'ICONS map should expose built-in SVGs');
-const svgOut = renderIcon('light', { size: 18 });
-assert.ok(svgOut.includes('<svg') && svgOut.includes('</svg>'), 'renderIcon must produce SVG markup');
+const iconOut = renderIcon('light', { size: 18 });
+assert.ok(
+  (iconOut.includes('<ha-icon') && iconOut.includes('</ha-icon>')) ||
+  (iconOut.includes('<svg') && iconOut.includes('</svg>')),
+  'renderIcon must produce valid icon markup (ha-icon or svg)'
+);
 
 // 3. No missing `this.<method>(` calls across all panel mixins
 const proto = new Set([

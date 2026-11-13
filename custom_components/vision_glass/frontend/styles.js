@@ -5,6 +5,9 @@ export const VISION_GLASS_STYLES = `
           font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
           box-sizing: border-box;
           width: 100%;
+          min-height: 100vh;
+          height: 100%;
+          background: inherit;
         }
 
         /* --- THEME DESIGN TOKENS --- */
@@ -58,8 +61,9 @@ export const VISION_GLASS_STYLES = `
         }
 
         .dashboard-root {
-          min-height: calc(100vh - 56px);
-          padding: 10px 24px 62px 24px;
+          min-height: 100vh;
+          width: 100%;
+          padding: 10px 24px 80px 24px;
           box-sizing: border-box;
           position: relative;
           overflow: hidden;
@@ -796,19 +800,38 @@ export const VISION_GLASS_STYLES = `
         .theme-light .room-card::after {
           background: linear-gradient(115deg,
             transparent 0%,
-            transparent 32%,
-            rgba(15, 23, 42, 0.03) 42%,
-            rgba(15, 23, 42, 0.16) 50%,
-            rgba(15, 23, 42, 0.04) 58%,
+            transparent 35%,
+            rgba(255, 255, 255, 0.70) 50%,
+            rgba(255, 255, 255, 0.20) 55%,
             transparent 70%);
           background-size: 250% 250%;
           background-position: -120% -120%;
+          pointer-events: none;
+          z-index: 2;
+          opacity: 0.6;
+          transition: background-position 0.75s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+        }
+
+        .theme-light .room-card:hover::after {
+          background-position: 140% 140%;
+          opacity: 1;
         }
 
         .theme-light .room-card:hover {
           transform: translateY(-5px) scale(1.015);
           border-color: rgba(2, 132, 199, 0.6);
           box-shadow: 0 20px 42px rgba(15, 23, 42, 0.16), 0 0 22px rgba(2, 132, 199, 0.22), inset 0 1px 2px rgba(255, 255, 255, 1);
+        }
+
+        /* Eliminate crosshair rendering artifact on scale/transform */
+        .room-card .vg-icon,
+        .room-card ha-icon,
+        .action-circle .vg-icon,
+        .action-circle ha-icon,
+        .env-pill .vg-icon,
+        .env-pill ha-icon {
+          filter: none !important;
+          pointer-events: none;
         }
 
         .room-card .action-circle {
@@ -847,7 +870,7 @@ export const VISION_GLASS_STYLES = `
 
         .room-header {
           position: relative;
-          z-index: 2;
+          z-index: 4;
           display: flex;
           justify-content: space-between;
           align-items: flex-start;
@@ -870,7 +893,7 @@ export const VISION_GLASS_STYLES = `
         /* Environmental Badges (Temp, Humidity, Lux) */
         .room-env-bar {
           position: relative;
-          z-index: 2;
+          z-index: 4;
           display: flex;
           gap: 4px;
           flex-wrap: wrap;
@@ -903,7 +926,7 @@ export const VISION_GLASS_STYLES = `
 
         .room-bottom-row {
           position: relative;
-          z-index: 2;
+          z-index: 4;
           display: flex;
           justify-content: space-between;
           align-items: center;
