@@ -109,11 +109,89 @@ export const ICONS = {
 };
 
 export function renderIcon(name, { size = 20, cls = '', color = '', fill = 'none', stroke = 'currentColor', strokeWidth = 2, style = '' } = {}) {
-  const content = ICONS[name] || ICONS['alert-triangle'] || '';
+  if (!name) name = 'alert-triangle';
   const sizeStyle = size ? `width:${size}px;height:${size}px;` : '';
   const colorStyle = color ? `color:${color};` : '';
-  return `<svg class="vg-icon vg-icon-${name} ${cls}" viewBox="0 0 24 24" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="${sizeStyle}${colorStyle}${style}">${content}</svg>`;
+
+  // 1. Explicit MDI or custom Home Assistant domain icon
+  if (name.startsWith('mdi:') || name.includes(':')) {
+    return `<ha-icon icon="${name}" class="vg-icon ${cls}" style="--mdc-icon-size:${size}px;font-size:${size}px;${sizeStyle}${colorStyle}${style}display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;"></ha-icon>`;
+  }
+
+  // 2. Built-in Vision Glass SVG icons (with /vision_glass_static/icons.svg sprite reference & fallback)
+  if (ICONS[name]) {
+    const content = ICONS[name];
+    return `<svg class="vg-icon vg-icon-${name} ${cls}" viewBox="0 0 24 24" fill="${fill}" stroke="${stroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" style="${sizeStyle}${colorStyle}${style}"><use href="/vision_glass_static/icons.svg#${name}"></use>${content}</svg>`;
+  }
+
+  // 3. Fallback: Any MDI icon name without "mdi:" prefix
+  return `<ha-icon icon="mdi:${name}" class="vg-icon ${cls}" style="--mdc-icon-size:${size}px;font-size:${size}px;${sizeStyle}${colorStyle}${style}display:inline-flex;align-items:center;justify-content:center;line-height:1;vertical-align:middle;"></ha-icon>`;
 }
+
+export const POPULAR_HA_ICONS = [
+  {
+    category: 'Klima & Temperatur',
+    icons: [
+      'mdi:thermometer', 'mdi:thermometer-lines', 'mdi:thermometer-chevron-up', 'mdi:thermometer-chevron-down',
+      'mdi:thermometer-alert', 'mdi:thermostat', 'mdi:radiator', 'mdi:air-conditioner',
+      'mdi:fire', 'mdi:snowflake', 'mdi:fan', 'mdi:water-percent', 'mdi:hvac', 'mdi:heat-wave'
+    ]
+  },
+  {
+    category: 'Licht & Ambiente',
+    icons: [
+      'mdi:lightbulb', 'mdi:lightbulb-outline', 'mdi:lightbulb-multiple', 'mdi:ceiling-light',
+      'mdi:floor-lamp', 'mdi:led-strip', 'mdi:wall-sconce-flat', 'mdi:chandelier',
+      'mdi:lamp', 'mdi:brightness-6', 'mdi:flare', 'mdi:lightbulb-cfl'
+    ]
+  },
+  {
+    category: 'Sicherheit & Fenster',
+    icons: [
+      'mdi:lock', 'mdi:lock-open', 'mdi:shield-check', 'mdi:shield-alert', 'mdi:shield-home',
+      'mdi:motion-sensor', 'mdi:door', 'mdi:door-open', 'mdi:window-closed', 'mdi:window-open-variant',
+      'mdi:cctv', 'mdi:siren', 'mdi:smoke-detector', 'mdi:key-variant'
+    ]
+  },
+  {
+    category: 'Multimedia & TV',
+    icons: [
+      'mdi:television', 'mdi:speaker', 'mdi:cast-connected', 'mdi:music', 'mdi:play-circle',
+      'mdi:radio', 'mdi:remote', 'mdi:gamepad-variant', 'mdi:volume-high', 'mdi:headphones'
+    ]
+  },
+  {
+    category: 'Schalter & Energie',
+    icons: [
+      'mdi:power-socket-eu', 'mdi:power', 'mdi:toggle-switch', 'mdi:lightning-bolt',
+      'mdi:flash', 'mdi:solar-power', 'mdi:battery', 'mdi:battery-charging', 'mdi:meter-electric', 'mdi:leaf'
+    ]
+  },
+  {
+    category: 'Wetter & Natur',
+    icons: [
+      'mdi:weather-sunny', 'mdi:weather-partly-cloudy', 'mdi:weather-rainy', 'mdi:weather-pouring',
+      'mdi:weather-windy', 'mdi:weather-sunset-up', 'mdi:weather-sunset-down', 'mdi:weather-night',
+      'mdi:brightness-5', 'mdi:weather-fog', 'mdi:water', 'mdi:gauge'
+    ]
+  },
+  {
+    category: 'Haushalt & Geräte',
+    icons: [
+      'mdi:washing-machine', 'mdi:tumble-dryer', 'mdi:dishwasher', 'mdi:robot-vacuum',
+      'mdi:coffee-maker', 'mdi:fridge', 'mdi:microwave', 'mdi:garage', 'mdi:garage-open',
+      'mdi:car-electric', 'mdi:roller-shade', 'mdi:blinds'
+    ]
+  },
+  {
+    category: 'Status & Allgemein',
+    icons: [
+      'mdi:account', 'mdi:account-group', 'mdi:home', 'mdi:walk', 'mdi:clock-outline',
+      'mdi:bell-ring', 'mdi:alert-circle', 'mdi:check-circle', 'mdi:star', 'mdi:heart',
+      'mdi:cog', 'mdi:chart-bell-curve', 'mdi:chart-bar', 'mdi:tune'
+    ]
+  }
+];
 
 export function getWeatherIcon(state, size = 24, cls = '') {
   const map = {

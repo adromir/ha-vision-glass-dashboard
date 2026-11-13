@@ -1,6 +1,302 @@
-import { ICONS } from './icons.js';
+import { ICONS, POPULAR_HA_ICONS } from './icons.js';
+
+function toHexColor(str) {
+  if (!str) return '#38bdf8';
+  str = String(str).trim();
+  if (str.startsWith('#')) {
+    if (str.length === 7) return str;
+    if (str.length === 4) return '#' + str[1] + str[1] + str[2] + str[2] + str[3] + str[3];
+    if (str.length >= 7) return str.slice(0, 7);
+  }
+  const rgbaMatch = str.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if (rgbaMatch) {
+    const r = parseInt(rgbaMatch[1]).toString(16).padStart(2, '0');
+    const g = parseInt(rgbaMatch[2]).toString(16).padStart(2, '0');
+    const b = parseInt(rgbaMatch[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+  }
+  return '#38bdf8';
+}
+
+function hexToRgba(hex, alpha = 0.2) {
+  const clean = toHexColor(hex);
+  const r = parseInt(clean.slice(1, 3), 16);
+  const g = parseInt(clean.slice(3, 5), 16);
+  const b = parseInt(clean.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function updateBadgeLivePreview(container, bIdx, badge, iconRenderer) {
+  const lightBox = container.querySelector(`#previewBadgeLight_${bIdx}`);
+  const darkBox = container.querySelector(`#previewBadgeDark_${bIdx}`);
+  const nameInp = container.querySelector(`.in-badge-name[data-bidx="${bIdx}"]`);
+  const displayName = nameInp?.value || badge.name || '21.5°C';
+  const iconName = badge.icon || 'star';
+
+  if (lightBox) {
+    lightBox.style.color = badge.icon_color_light || '#ea580c';
+    lightBox.style.background = badge.bg_light || 'rgba(234,88,12,0.1)';
+    lightBox.style.borderColor = badge.border_light || 'rgba(234,88,12,0.25)';
+    const iconSpan = lightBox.querySelector('.preview-badge-icon');
+    if (iconSpan) iconSpan.innerHTML = iconRenderer(iconName, { size: 14, color: badge.icon_color_light || '#ea580c' });
+    const textSpan = lightBox.querySelector('.preview-badge-text');
+    if (textSpan) textSpan.textContent = displayName;
+  }
+  if (darkBox) {
+    darkBox.style.color = badge.icon_color_dark || '#fb923c';
+    darkBox.style.background = badge.bg_dark || 'rgba(251,146,60,0.15)';
+    darkBox.style.borderColor = badge.border_dark || 'rgba(251,146,60,0.35)';
+    const iconSpan = darkBox.querySelector('.preview-badge-icon');
+    if (iconSpan) iconSpan.innerHTML = iconRenderer(iconName, { size: 14, color: badge.icon_color_dark || '#fb923c' });
+    const textSpan = darkBox.querySelector('.preview-badge-text');
+    if (textSpan) textSpan.textContent = displayName;
+  }
+}
 
 export const settingsMethods = {
+  _showIconPicker({ currentValue = '', onSelect }) {
+    let pickerOverlay = this.shadowRoot.getElementById('iconPickerOverlay');
+    if (pickerOverlay) pickerOverlay.remove();
+
+    pickerOverlay = document.createElement('div');
+    pickerOverlay.id = 'iconPickerOverlay';
+    pickerOverlay.style.cssText = `
+      position: fixed;
+      top: var(--header-height, 56px);
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: calc(100vh - var(--header-height, 56px));
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 250;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      box-sizing: border-box;
+    `;
+
+    let activeCategory = 'all';
+    let searchQuery = '';
+    let customVal = currentValue || '';
+
+    // Build icon list
+    const builtinList = Object.keys(ICONS || {}).map(k => ({ name: k, label: k, isMdi: false }));
+    const popularCategories = POPULAR_HA_ICONS || [];
+    const allPopularMdi = [];
+    popularCategories.forEach(cat => {
+      cat.icons.forEach(ic => {
+        if (!allPopularMdi.some(x => x.name === ic)) {
+          allPopularMdi.push({ name: ic, label: ic.replace('mdi:', ''), category: cat.category, isMdi: true });
+        }
+      });
+    });
+
+    const categories = [
+      { id: 'all', label: '🌟 Alle Favoriten' },
+      ...popularCategories.map(c => ({ id: c.category, label: c.category })),
+      { id: 'builtin', label: '🎨 Vision Glass Icons' }
+    ];
+
+    pickerOverlay.innerHTML = `
+      <div class="icon-picker-card" style="
+        background: var(--bg-card, rgba(15, 23, 42, 0.95));
+        border: 1px solid var(--border-glass, rgba(255, 255, 255, 0.2));
+        border-radius: 18px;
+        width: 100%;
+        max-width: 640px;
+        max-height: calc(100vh - var(--header-height, 56px) - 32px);
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
+        overflow: hidden;
+        color: var(--text-primary, #ffffff);
+        font-family: inherit;
+      ">
+        <!-- Header -->
+        <div style="padding: 16px 20px 12px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.1)); display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03);">
+          <div>
+            <div style="font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <span>🎨</span> Icon auswählen
+            </div>
+            <div style="font-size: 12px; color: var(--text-secondary, #94a3b8); margin-top: 2px;">
+              Wähle aus Standard-Icons oder gib ein beliebiges Home Assistant Icon ein (z.B. <code style="color:var(--accent,#38bdf8);">mdi:thermometer</code>)
+            </div>
+          </div>
+          <button id="btnIconPickerClose" style="background: transparent; border: none; font-size: 26px; color: var(--text-secondary, #94a3b8); cursor: pointer; padding: 0 6px; line-height: 1; border-radius: 6px;">&times;</button>
+        </div>
+
+        <!-- Custom Icon Input & Search Bar -->
+        <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; flex-direction: column; gap: 10px;">
+          <!-- Direct MDI input bar -->
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle, rgba(255,255,255,0.1));">
+            <div id="iconPickerCustomPreview" style="width:36px;height:36px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent,#38bdf8);flex-shrink:0;">
+              ${this._icon(customVal || 'star', { size: 22 })}
+            </div>
+            <input type="text" id="iconPickerCustomInp" value="${customVal}" placeholder="mdi:xyz oder Icon-Name..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-glass, rgba(255,255,255,0.2));background:rgba(255,255,255,0.07);color:var(--text-primary,#ffffff);font-size:13px;font-family:monospace;outline:none;">
+            <button type="button" id="btnApplyCustomIcon" style="padding:8px 14px;border-radius:8px;background:var(--accent,#38bdf8);color:#ffffff;border:none;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">
+              Übernehmen
+            </button>
+          </div>
+
+          <!-- Live Search filter -->
+          <input type="text" id="iconPickerSearchInp" placeholder="Schnellsuche in Favoriten..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, rgba(255,255,255,0.15)); background: rgba(255,255,255,0.04); color: var(--text-primary, #ffffff); font-size: 13px; outline: none; box-sizing: border-box;">
+
+          <!-- Category Pills -->
+          <div id="iconPickerCategoryPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+            ${categories.map(c => `
+              <button type="button" class="icon-cat-pill ${c.id === 'all' ? 'active' : ''}" data-cat="${c.id}" style="
+                padding: 4px 10px;
+                border-radius: 20px;
+                font-size: 11px;
+                font-weight: 600;
+                border: 1px solid ${c.id === 'all' ? 'var(--accent, #38bdf8)' : 'var(--border-subtle, rgba(255,255,255,0.15))'};
+                background: ${c.id === 'all' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255, 255, 255, 0.04)'};
+                color: ${c.id === 'all' ? 'var(--accent, #38bdf8)' : 'var(--text-secondary, #94a3b8)'};
+                cursor: pointer;
+                white-space: nowrap;
+                transition: all 0.15s ease;
+              ">
+                ${c.label}
+              </button>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- Scrollable Icon Grid -->
+        <div id="iconPickerGridContainer" style="padding: 16px 20px; overflow-y: auto; flex: 1; max-height: 380px;">
+          <div id="iconPickerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px;">
+            <!-- Rendered by updateGrid() -->
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.shadowRoot.appendChild(pickerOverlay);
+
+    const updateGrid = () => {
+      const grid = pickerOverlay.querySelector('#iconPickerGrid');
+      if (!grid) return;
+
+      let list = [];
+      if (activeCategory === 'builtin') {
+        list = builtinList;
+      } else if (activeCategory === 'all') {
+        list = [...builtinList, ...allPopularMdi];
+      } else {
+        const catObj = popularCategories.find(c => c.category === activeCategory);
+        list = (catObj?.icons || []).map(ic => ({ name: ic, label: ic.replace('mdi:', ''), isMdi: true }));
+      }
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        list = list.filter(item => item.name.toLowerCase().includes(q) || item.label.toLowerCase().includes(q));
+      }
+
+      if (list.length === 0) {
+        grid.innerHTML = `
+          <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px;">
+            Kein passendes Icon in den Favoriten gefunden. Gib den Namen oben im MDI-Feld direkt ein!
+          </div>
+        `;
+        return;
+      }
+
+      grid.innerHTML = list.map(item => `
+        <button type="button" class="btn-select-icon" data-icon="${item.name}" style="
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          padding: 10px 4px;
+          border-radius: 10px;
+          background: rgba(255, 255, 255, 0.04);
+          border: 1px solid var(--border-subtle, rgba(255, 255, 255, 0.12));
+          color: var(--text-primary, #ffffff);
+          cursor: pointer;
+          transition: all 0.15s ease;
+          overflow: hidden;
+        ">
+          <div style="color: var(--accent, #38bdf8); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">
+            ${this._icon(item.name, { size: 24 })}
+          </div>
+          <div style="font-size: 10px; color: var(--text-secondary, #94a3b8); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px;">
+            ${item.label}
+          </div>
+        </button>
+      `).join('');
+
+      grid.querySelectorAll('.btn-select-icon').forEach(btn => {
+        btn.onmouseenter = () => {
+          btn.style.background = 'rgba(56, 189, 248, 0.15)';
+          btn.style.borderColor = 'var(--accent, #38bdf8)';
+        };
+        btn.onmouseleave = () => {
+          btn.style.background = 'rgba(255, 255, 255, 0.04)';
+          btn.style.borderColor = 'var(--border-subtle, rgba(255, 255, 255, 0.12))';
+        };
+        btn.onclick = () => {
+          const selected = btn.getAttribute('data-icon');
+          if (onSelect) onSelect(selected);
+          pickerOverlay.remove();
+        };
+      });
+    };
+
+    updateGrid();
+
+    // Event listeners
+    const customInp = pickerOverlay.querySelector('#iconPickerCustomInp');
+    const customPrev = pickerOverlay.querySelector('#iconPickerCustomPreview');
+    if (customInp && customPrev) {
+      customInp.oninput = () => {
+        const val = customInp.value.trim() || 'star';
+        customPrev.innerHTML = this._icon(val, { size: 22 });
+      };
+    }
+
+    const btnApply = pickerOverlay.querySelector('#btnApplyCustomIcon');
+    if (btnApply && customInp) {
+      btnApply.onclick = () => {
+        const val = customInp.value.trim();
+        if (val && onSelect) onSelect(val);
+        pickerOverlay.remove();
+      };
+    }
+
+    const searchInp = pickerOverlay.querySelector('#iconPickerSearchInp');
+    if (searchInp) {
+      searchInp.oninput = () => {
+        searchQuery = searchInp.value.trim();
+        updateGrid();
+      };
+    }
+
+    pickerOverlay.querySelectorAll('.icon-cat-pill').forEach(pill => {
+      pill.onclick = () => {
+        activeCategory = pill.getAttribute('data-cat');
+        pickerOverlay.querySelectorAll('.icon-cat-pill').forEach(p => {
+          p.style.borderColor = 'var(--border-subtle, rgba(255,255,255,0.15))';
+          p.style.background = 'rgba(255, 255, 255, 0.04)';
+          p.style.color = 'var(--text-secondary, #94a3b8)';
+        });
+        pill.style.borderColor = 'var(--accent, #38bdf8)';
+        pill.style.background = 'rgba(56, 189, 248, 0.18)';
+        pill.style.color = 'var(--accent, #38bdf8)';
+        updateGrid();
+      };
+    });
+
+    const closeBtn = pickerOverlay.querySelector('#btnIconPickerClose');
+    if (closeBtn) closeBtn.onclick = () => pickerOverlay.remove();
+
+    pickerOverlay.onclick = (e) => {
+      if (e.target === pickerOverlay) pickerOverlay.remove();
+    };
+  },
   _isEntityInRoom(eId, roomId, roomName) {
     if (!eId) return false;
     if (!roomId && !roomName) return true;
@@ -541,9 +837,9 @@ export const settingsMethods = {
             const isAll = !b.rooms || b.rooms.includes('all');
             return `
               <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;gap:8px;flex-wrap:wrap;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
                   <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px;">
-                    <div style="width:34px;height:34px;border-radius:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+                    <div id="badgeHeaderIconBox_${bIdx}" style="width:34px;height:34px;border-radius:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
                       ${this._icon(b.icon || 'star', { size: 18 })}
                     </div>
                     <input type="text" class="in-badge-name" data-bidx="${bIdx}" value="${b.name || ''}" placeholder="Badge Name (z.B. Temperatur)" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:14px;font-weight:700;flex:1;min-width:140px;">
@@ -551,6 +847,25 @@ export const settingsMethods = {
                   <button type="button" class="btn btn-sm btn-del-bento-badge" data-bidx="${bIdx}" style="color:#ef4444;border-color:rgba(239,68,68,0.4);cursor:pointer;padding:6px 12px;">
                     ✕ Badge löschen
                   </button>
+                </div>
+
+                <!-- Live Preview Row: Light Mode & Dark Mode -->
+                <div style="display:flex;align-items:center;gap:12px;background:var(--bg-surface);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:12px;flex-wrap:wrap;">
+                  <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Live-Vorschau:</div>
+                  <div style="background:#f8fafc;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+                    <span style="font-size:11px;">☀️</span>
+                    <span id="previewBadgeLight_${bIdx}" class="env-pill" style="color:${b.icon_color_light || '#ea580c'};background:${b.bg_light || 'rgba(234,88,12,0.1)'};border:1px solid ${b.border_light || 'rgba(234,88,12,0.25)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
+                      <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_light || '#ea580c' })}</span>
+                      <span class="preview-badge-text">${b.name || '21.5°C'}</span>
+                    </span>
+                  </div>
+                  <div style="background:#0b111e;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.3);">
+                    <span style="font-size:11px;">🌙</span>
+                    <span id="previewBadgeDark_${bIdx}" class="env-pill" style="color:${b.icon_color_dark || '#fb923c'};background:${b.bg_dark || 'rgba(251,146,60,0.15)'};border:1px solid ${b.border_dark || 'rgba(251,146,60,0.35)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
+                      <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_dark || '#fb923c' })}</span>
+                      <span class="preview-badge-text">${b.name || '21.5°C'}</span>
+                    </span>
+                  </div>
                 </div>
 
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;">
@@ -578,38 +893,54 @@ export const settingsMethods = {
                   ` : ''}
 
                   <div class="form-group">
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Icon</label>
-                    <select class="sel-badge-icon" data-bidx="${bIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-weight:600;cursor:pointer;">
-                      ${['thermometer', 'droplet', 'lux', 'light', 'wind', 'sun', 'flame', 'leaf', 'battery-good', 'shield', 'plug', 'star', 'music', 'lock-closed', 'clock', 'eye'].map(ic => `
-                        <option value="${ic}" ${b.icon === ic ? 'selected' : ''}>${ic}</option>
-                      `).join('')}
-                    </select>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Icon (MDI oder Built-in)</label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div id="badgeIconBox_${bIdx}" style="width:34px;height:34px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                        ${this._icon(b.icon || 'star', { size: 18 })}
+                      </div>
+                      <input type="text" class="in-badge-icon" data-bidx="${bIdx}" value="${b.icon || 'star'}" placeholder="mdi:thermometer oder star" style="flex:1;min-width:0;padding:7px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
+                      <button type="button" class="btn btn-sm btn-pick-badge-icon" data-bidx="${bIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;">
+                        🔍 Icon
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <!-- Colors Configuration: Light & Dark Mode -->
+                <!-- Colors Configuration with Color Picker Swatches: Light & Dark Mode -->
                 <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px;">
                   <!-- Light Mode Colors -->
                   <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
                     <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      ☀️ Helles Theme
+                      ☀️ Helles Theme (Farben)
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_light" value="${b.icon_color_light || '#ea580c'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="icon_color_light" value="${toHexColor(b.icon_color_light || '#ea580c')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_light" value="${b.icon_color_light || '#ea580c'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_light" value="${b.bg_light || 'rgba(234,88,12,0.1)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="bg_light" value="${toHexColor(b.bg_light || 'rgba(234,88,12,0.1)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_light" value="${b.bg_light || 'rgba(234,88,12,0.1)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_light" value="${b.border_light || 'rgba(234,88,12,0.25)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="border_light" value="${toHexColor(b.border_light || 'rgba(234,88,12,0.25)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_light" value="${b.border_light || 'rgba(234,88,12,0.25)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_light" value="${b.hover_light || 'rgba(234,88,12,0.22)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="hover_light" value="${toHexColor(b.hover_light || 'rgba(234,88,12,0.22)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_light" value="${b.hover_light || 'rgba(234,88,12,0.22)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -617,24 +948,36 @@ export const settingsMethods = {
                   <!-- Dark Mode Colors -->
                   <div style="background:rgba(0,0,0,0.14);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
                     <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      🌙 Dunkles Theme
+                      🌙 Dunkles Theme (Farben)
                     </div>
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${b.icon_color_dark || '#fb923c'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${toHexColor(b.icon_color_dark || '#fb923c')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${b.icon_color_dark || '#fb923c'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_dark" value="${b.bg_dark || 'rgba(251,146,60,0.15)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="bg_dark" value="${toHexColor(b.bg_dark || 'rgba(251,146,60,0.15)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_dark" value="${b.bg_dark || 'rgba(251,146,60,0.15)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_dark" value="${b.border_dark || 'rgba(251,146,60,0.35)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="border_dark" value="${toHexColor(b.border_dark || 'rgba(251,146,60,0.35)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_dark" value="${b.border_dark || 'rgba(251,146,60,0.35)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                       <div>
                         <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
-                        <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_dark" value="${b.hover_dark || 'rgba(251,146,60,0.30)'}" style="width:100%;padding:5px 8px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        <div style="display:flex;align-items:center;gap:4px;">
+                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="hover_dark" value="${toHexColor(b.hover_dark || 'rgba(251,146,60,0.30)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
+                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_dark" value="${b.hover_dark || 'rgba(251,146,60,0.30)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -769,19 +1112,22 @@ export const settingsMethods = {
                   </div>
                 </div>
 
-                <div style="display:grid;grid-template-columns:1fr 140px;gap:10px;margin-bottom:12px;">
+                <div style="display:grid;grid-template-columns:1fr minmax(220px, 1fr);gap:10px;margin-bottom:12px;">
                   <div>
                     <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Titel im Dock</label>
                     <input type="text" class="inp-custom-dock-title" data-didx="${dIdx}" value="${item.title || ''}" placeholder="${item.id}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
                   </div>
                   <div>
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Icon</label>
-                    <select class="sel-custom-dock-icon" data-didx="${dIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);box-sizing:border-box;">
-                      <option value="" ${!item.icon ? 'selected' : ''}>Standard (${item.id})</option>
-                      ${['light', 'climate', 'stats', 'lock-closed', 'shield', 'zap', 'battery', 'weather', 'star', 'camera', 'fan', 'vacuum', 'music', 'tv', 'blinds', 'bell', 'eye', 'flame', 'clock', 'robot', 'sliders', 'speaker'].map(ic => `
-                        <option value="${ic}" ${item.icon === ic ? 'selected' : ''}>${ic}</option>
-                      `).join('')}
-                    </select>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:4px;">Icon (MDI oder Standard)</label>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                      <div id="dockIconBox_${dIdx}" style="width:34px;height:34px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                        ${this._icon(item.icon || 'star', { size: 18 })}
+                      </div>
+                      <input type="text" class="inp-custom-dock-icon" data-didx="${dIdx}" value="${item.icon || ''}" placeholder="Standard (${item.id})" style="flex:1;min-width:0;padding:7px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:12px;font-family:monospace;">
+                      <button type="button" class="btn btn-sm btn-pick-dock-icon" data-didx="${dIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;">
+                        🔍 Icon
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -1139,6 +1485,8 @@ export const settingsMethods = {
     `;
 
     // Hook up Event Listeners
+    const backBtn = container.querySelector('#btnBackToDashboard');
+    if (backBtn) backBtn.onclick = () => this._setViewMode('home');
     container.querySelectorAll('[data-stab]').forEach(tabBtn => {
       tabBtn.onclick = () => {
         this._settingsActiveTab = tabBtn.getAttribute('data-stab');
@@ -1312,9 +1660,7 @@ export const settingsMethods = {
         btnSync.disabled = false;
         btnSync.textContent = '🔄 ' + this._t('sync_areas_btn');
         this._renderSettingsContent(container);
-        const backBtn = container.querySelector('#btnBackToDashboard');
-    if (backBtn) backBtn.onclick = () => this._setViewMode('home');
-    const toast = container.querySelector('#settingsToast');
+        const toast = container.querySelector('#settingsToast');
         if (toast) {
           toast.textContent = `✓ ${this._t('sync_areas_success')} (${res ? res.total : 0} Bereiche)`;
           toast.style.display = 'block';
@@ -1393,13 +1739,29 @@ export const settingsMethods = {
       };
     });
 
-    container.querySelectorAll('.sel-custom-dock-icon').forEach(sel => {
-      sel.onchange = () => {
-        const idx = parseInt(sel.getAttribute('data-didx'));
+    container.querySelectorAll('.inp-custom-dock-icon').forEach(inp => {
+      inp.oninput = () => {
+        const idx = parseInt(inp.getAttribute('data-didx'));
         if (this._config.dock?.items?.[idx]) {
-          this._config.dock.items[idx].icon = sel.value;
-          this._renderSettingsContent(container, isModal);
+          this._config.dock.items[idx].icon = inp.value.trim();
+          const box = container.querySelector('#dockIconBox_' + idx);
+          if (box) box.innerHTML = this._icon(this._config.dock.items[idx].icon || 'star', { size: 18 });
         }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-dock-icon').forEach(btn => {
+      btn.onclick = () => {
+        const idx = parseInt(btn.getAttribute('data-didx'));
+        const item = this._config.dock?.items?.[idx];
+        if (!item) return;
+        this._showIconPicker({
+          currentValue: item.icon || 'star',
+          onSelect: (newIcon) => {
+            item.icon = newIcon;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
       };
     });
 
@@ -1571,6 +1933,7 @@ export const settingsMethods = {
         const bIdx = parseInt(inp.getAttribute('data-bidx'));
         if (this._config.bento_badges?.[bIdx]) {
           this._config.bento_badges[bIdx].name = inp.value;
+          updateBadgeLivePreview(container, bIdx, this._config.bento_badges[bIdx], (name, opt) => this._icon(name, opt));
         }
       };
     });
@@ -1610,13 +1973,68 @@ export const settingsMethods = {
       };
     });
 
-    container.querySelectorAll('.sel-badge-icon').forEach(sel => {
-      sel.onchange = () => {
-        const bIdx = parseInt(sel.getAttribute('data-bidx'));
-        if (this._config.bento_badges?.[bIdx]) {
-          this._config.bento_badges[bIdx].icon = sel.value;
-          this._renderSettingsContent(container, isModal);
+    container.querySelectorAll('.in-badge-icon').forEach(inp => {
+      inp.oninput = () => {
+        const bIdx = parseInt(inp.getAttribute('data-bidx'));
+        const badge = this._config.bento_badges?.[bIdx];
+        if (badge) {
+          badge.icon = inp.value.trim();
+          const box = container.querySelector('#badgeIconBox_' + bIdx);
+          if (box) box.innerHTML = this._icon(badge.icon || 'star', { size: 18 });
+          const headerBox = container.querySelector('#badgeHeaderIconBox_' + bIdx);
+          if (headerBox) headerBox.innerHTML = this._icon(badge.icon || 'star', { size: 18 });
+          updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
         }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-badge-icon').forEach(btn => {
+      btn.onclick = () => {
+        const bIdx = parseInt(btn.getAttribute('data-bidx'));
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        this._showIconPicker({
+          currentValue: badge.icon || 'star',
+          onSelect: (newIcon) => {
+            badge.icon = newIcon;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.color-picker-swatch').forEach(swatch => {
+      swatch.oninput = () => {
+        const bIdx = parseInt(swatch.getAttribute('data-bidx'));
+        const prop = swatch.getAttribute('data-prop');
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        const hex = swatch.value;
+        const textInp = container.querySelector(`.in-badge-color[data-bidx="${bIdx}"][data-prop="${prop}"]`);
+
+        if (prop.startsWith('icon_color')) {
+          badge[prop] = hex;
+          if (textInp) textInp.value = hex;
+        } else if (prop.startsWith('bg')) {
+          const alpha = prop.includes('light') ? 0.12 : 0.16;
+          const rgba = hexToRgba(hex, alpha);
+          badge[prop] = rgba;
+          if (textInp) textInp.value = rgba;
+        } else if (prop.startsWith('border')) {
+          const alpha = prop.includes('light') ? 0.35 : 0.40;
+          const rgba = hexToRgba(hex, alpha);
+          badge[prop] = rgba;
+          if (textInp) textInp.value = rgba;
+        } else if (prop.startsWith('hover')) {
+          const alpha = prop.includes('light') ? 0.25 : 0.30;
+          const rgba = hexToRgba(hex, alpha);
+          badge[prop] = rgba;
+          if (textInp) textInp.value = rgba;
+        } else {
+          badge[prop] = hex;
+          if (textInp) textInp.value = hex;
+        }
+        updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
       };
     });
 
@@ -1624,9 +2042,12 @@ export const settingsMethods = {
       inp.oninput = () => {
         const bIdx = parseInt(inp.getAttribute('data-bidx'));
         const prop = inp.getAttribute('data-prop');
-        if (this._config.bento_badges?.[bIdx]) {
-          this._config.bento_badges[bIdx][prop] = inp.value;
-        }
+        const badge = this._config.bento_badges?.[bIdx];
+        if (!badge) return;
+        badge[prop] = inp.value;
+        const swatch = container.querySelector(`.color-picker-swatch[data-bidx="${bIdx}"][data-prop="${prop}"]`);
+        if (swatch) swatch.value = toHexColor(inp.value);
+        updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
       };
     });
 

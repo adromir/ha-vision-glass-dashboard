@@ -12,24 +12,24 @@ export const VISION_GLASS_STYLES = `
           background: radial-gradient(circle at 15% 15%, rgba(255, 255, 255, 0.95) 0%, transparent 45%),
                       radial-gradient(circle at 85% 80%, rgba(186, 230, 253, 0.55) 0%, transparent 50%),
                       linear-gradient(135deg, #dbeafe 0%, #eff6ff 35%, #f8fafc 70%, #ede9fe 100%);
-          --bg-surface: rgba(255, 255, 255, 0.75);
-          --bg-surface-hover: rgba(255, 255, 255, 0.92);
-          --bg-card: rgba(255, 255, 255, 0.60);
-          --border-glass: rgba(255, 255, 255, 0.92);
-          --border-subtle: rgba(226, 232, 240, 0.85);
+          --bg-surface: rgba(255, 255, 255, 0.92);
+          --bg-surface-hover: #ffffff;
+          --bg-card: rgba(255, 255, 255, 0.90);
+          --border-glass: rgba(148, 163, 184, 0.42);
+          --border-subtle: rgba(203, 213, 225, 0.88);
           --text-primary: #0f172a;
-          --text-secondary: #475569;
+          --text-secondary: #334155;
           --accent: #0284c7;
           --accent-amber: #ea580c;
           --accent-green: #10b981;
-          --dock-bg: rgba(255, 255, 255, 0.92);
-          --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.08), 0 2px 6px rgba(15, 23, 42, 0.04);
-          --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.70) 0%, rgba(255,255,255,0.40) 100%);
+          --dock-bg: rgba(255, 255, 255, 0.96);
+          --shadow-ambient: 0 14px 35px rgba(15, 23, 42, 0.12), 0 3px 8px rgba(15, 23, 42, 0.06);
+          --card-overlay: linear-gradient(180deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.60) 100%);
           --glass-refraction:
             inset 0 1.5px 1px 0 #ffffff,
-            inset 0 -1.5px 1.5px 0 rgba(15, 23, 42, 0.05),
-            inset 1.5px 0 1.5px 0 rgba(255, 255, 255, 0.85),
-            inset -1.5px 0 1.5px 0 rgba(15, 23, 42, 0.04);
+            inset 0 -1.5px 1.5px 0 rgba(15, 23, 42, 0.08),
+            inset 1.5px 0 1.5px 0 rgba(255, 255, 255, 0.95),
+            0 0 0 1px rgba(148, 163, 184, 0.32);
         }
 
         .dashboard-root.theme-dark {
@@ -317,6 +317,18 @@ export const VISION_GLASS_STYLES = `
           background: var(--bg-surface-hover);
         }
 
+        .theme-light .chip {
+          background: rgba(255, 255, 255, 0.94);
+          border: 1px solid rgba(148, 163, 184, 0.42);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+          color: #0f172a;
+          font-weight: 600;
+        }
+        .theme-light .chip:hover {
+          background: #ffffff;
+          border-color: rgba(2, 132, 199, 0.6);
+        }
+
         .chip-avatar {
           width: 20px;
           height: 20px;
@@ -445,9 +457,9 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .sidebar-card {
-          background: var(--bg-card);
-          border: 1.5px solid var(--border-glass);
-          box-shadow: var(--glass-refraction), var(--shadow-ambient);
+          background: rgba(255, 255, 255, 0.92);
+          border: 1px solid rgba(148, 163, 184, 0.42);
+          box-shadow: 0 14px 32px rgba(15, 23, 42, 0.12), 0 2px 6px rgba(15, 23, 42, 0.05);
         }
 
         .theme-light .sidebar-card:hover {
@@ -539,8 +551,8 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .sidebar-weather-box {
-          background: rgba(240, 246, 254, 0.85);
-          border-color: rgba(219, 234, 254, 1);
+          background: rgba(240, 246, 254, 0.92);
+          border: 1px solid rgba(148, 163, 184, 0.40);
           box-shadow: 0 4px 14px rgba(2, 132, 199, 0.08);
         }
 
@@ -643,7 +655,7 @@ export const VISION_GLASS_STYLES = `
 
         .theme-light .agenda-item {
           background: var(--bg-pill, rgba(248, 250, 252, 0.95));
-          border-color: rgba(226, 232, 240, 1);
+          border: 1px solid rgba(148, 163, 184, 0.38);
           color: #0f172a;
           box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
         }
@@ -776,9 +788,9 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .room-card {
-          background: var(--bg-card);
-          border: 1.5px solid var(--border-glass);
-          box-shadow: var(--glass-refraction), var(--shadow-ambient);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.94) 0%, rgba(248, 250, 252, 0.90) 100%);
+          border: 1px solid rgba(148, 163, 184, 0.40);
+          box-shadow: 0 12px 28px rgba(15, 23, 42, 0.10), 0 2px 6px rgba(15, 23, 42, 0.05), inset 0 1px 1.5px #ffffff;
         }
 
         .theme-light .room-card::after {
@@ -882,10 +894,11 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .env-pill {
-          background: var(--bg-pill, rgba(241, 245, 249, 0.9));
-          border-color: rgba(226, 232, 240, 0.95);
-          color: #1e293b;
-          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+          background: var(--bg-pill, rgba(241, 245, 249, 0.94));
+          border: 1px solid rgba(148, 163, 184, 0.42);
+          color: #0f172a;
+          font-weight: 700;
+          box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
         }
 
         .room-bottom-row {
@@ -972,9 +985,10 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .quick-climate-stepper {
-          background: rgba(255, 255, 255, 0.92);
-          border-color: rgba(226, 232, 240, 1);
-          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+          background: rgba(255, 255, 255, 0.95);
+          border: 1px solid rgba(148, 163, 184, 0.45);
+          box-shadow: 0 2px 8px rgba(15, 23, 42, 0.08);
+          color: #0f172a;
         }
 
         .quick-step-btn {
@@ -1068,16 +1082,24 @@ export const VISION_GLASS_STYLES = `
         }
 
         .theme-light .dock-container {
-          background: rgba(255, 255, 255, 0.90);
-          background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(238, 246, 255, 0.90) 100%);
+          background: rgba(255, 255, 255, 0.96);
+          background-image: linear-gradient(180deg, rgba(255, 255, 255, 0.99) 0%, rgba(241, 245, 249, 0.94) 100%);
           backdrop-filter: blur(32px) saturate(200%);
           -webkit-backdrop-filter: blur(32px) saturate(200%);
-          border: 1.5px solid rgba(186, 230, 253, 0.90);
+          border: 1px solid rgba(148, 163, 184, 0.45);
           box-shadow:
             inset 0 2px 1.5px 0 #ffffff,
             inset 0 -1.5px 1.5px 0 rgba(15, 23, 42, 0.08),
-            0 14px 38px rgba(15, 23, 42, 0.16),
-            0 0 28px rgba(2, 132, 199, 0.25);
+            0 16px 40px rgba(15, 23, 42, 0.16),
+            0 2px 8px rgba(15, 23, 42, 0.08);
+        }
+
+        .theme-light .dock-item {
+          color: #334155;
+        }
+        .theme-light .dock-item:hover {
+          color: var(--accent);
+          background: rgba(2, 132, 199, 0.12);
         }
 
         .dock-item {

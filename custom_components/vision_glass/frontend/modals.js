@@ -1020,10 +1020,15 @@ export const modalMethods = {
     if (modalEl) modalEl.classList.add('hidden');
   },
 
-  _renderModalContent(type) {
-    const body = this.shadowRoot.getElementById('modalBody');
-    const title = this.shadowRoot.getElementById('modalTitle');
-    if (!body || !title || !this._hass) return;
+  _renderStatsPageView(container) {
+    if (!container || !this._hass) return;
+    this._renderModalContent('stats', container);
+  },
+
+  _renderModalContent(type, customContainer = null) {
+    const body = customContainer || this.shadowRoot.getElementById('modalBody');
+    const title = customContainer ? null : this.shadowRoot.getElementById('modalTitle');
+    if (!body || (!customContainer && !title) || !this._hass) return;
 
     if (type === 'lighting') {
       title.innerHTML = `${this._icon('light', { size: 22, cls: 'icon-light', style: 'margin-right:8px;' })} ${this._t('lighting_control')}`;
@@ -1722,12 +1727,22 @@ export const modalMethods = {
         };
       }
     } else if (type === 'stats') {
-      title.innerHTML = `${this._icon('chart-bar', { size: 22, cls: 'icon-stats', style: 'margin-right:8px;' })} ${this._t('stats_title')}`;
+      if (title) {
+        title.innerHTML = `${this._icon('chart-bar', { size: 22, cls: 'icon-stats', style: 'margin-right:8px;' })} ${this._t('stats_title')}`;
+      }
+
+      const updateStatsUi = () => {
+        if (customContainer) {
+          this._renderStatsPageView(customContainer);
+        } else if (this._activeModal === 'stats') {
+          this._renderModalContent('stats');
+        }
+      };
 
       if (!this._statsChartsMod) {
         body.innerHTML = `<div style="padding:28px;text-align:center;color:var(--text-secondary);">${this._t('loading')}</div>`;
         this._loadStatsModule().then(() => {
-          if (this._activeModal === 'stats') this._renderModalContent('stats');
+          updateStatsUi();
         });
         return;
       }
@@ -1737,7 +1752,7 @@ export const modalMethods = {
         const statEntities = this._statsChartsMod.collectDashboardStatEntities(this);
         this._statsChartsMod.fetchHistoryViaBackend(this._hass, statEntities, 24, 120).then((series) => {
           Object.assign(this._statsHistory, series);
-          if (this._activeModal === 'stats') this._renderModalContent('stats');
+          updateStatsUi();
         });
       }
 
@@ -1986,23 +2001,35 @@ export const modalMethods = {
 
       body.innerHTML = `
         <div style="display:flex;flex-direction:column;gap:16px;">
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">
             <button class="btn-micro ${tab === 'temperature' ? 'active' : ''}" id="btnStatsTabTemp">${this._icon('thermometer', { size: 14, style: 'margin-right:4px;' })} ${this._t('room_temperatures')}</button>
             <button class="btn-micro ${tab === 'illuminance' ? 'active' : ''}" id="btnStatsTabIllum">${this._icon('lux', { size: 14, style: 'margin-right:4px;' })} ${this._t('illuminance_lux')}</button>
             <button class="btn-micro ${tab === 'occupancy_heating' ? 'active' : ''}" id="btnStatsTabOcc">${this._icon('user-walk', { size: 14, style: 'margin-right:4px;' })} ${this._t('occupancy_heating')}</button>
             <button class="btn-micro ${tab === 'battery' ? 'active' : ''}" id="btnStatsTabBat">${this._icon('battery-full', { size: 14, style: 'margin-right:4px;' })} ${this._t('battery_curves')}</button>
+            ${!customContainer ? `
+              <button type="button" class="btn-micro" id="btnOpenFullStatsView" style="margin-left:auto;color:var(--accent);">
+                ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} ${this._t('open_full_stats')}
+              </button>
+            ` : ''}
           </div>
           ${tabContent}
         </div>
       `;
 
-      body.querySelector('#btnStatsTabTemp').onclick = () => { this._statsTab = 'temperature'; this._renderModalContent('stats'); };
-      body.querySelector('#btnStatsTabIllum').onclick = () => { this._statsTab = 'illuminance'; this._renderModalContent('stats'); };
-      body.querySelector('#btnStatsTabOcc').onclick = () => { this._statsTab = 'occupancy_heating'; this._renderModalContent('stats'); };
-      body.querySelector('#btnStatsTabBat').onclick = () => { this._statsTab = 'battery'; this._renderModalContent('stats'); };
+      body.querySelector('#btnStatsTabTemp').onclick = () => { this._statsTab = 'temperature'; updateStatsUi(); };
+      body.querySelector('#btnStatsTabIllum').onclick = () => { this._statsTab = 'illuminance'; updateStatsUi(); };
+      body.querySelector('#btnStatsTabOcc').onclick = () => { this._statsTab = 'occupancy_heating'; updateStatsUi(); };
+      body.querySelector('#btnStatsTabBat').onclick = () => { this._statsTab = 'battery'; updateStatsUi(); };
       body.querySelectorAll('[data-stat-room]').forEach(btn => {
-        btn.onclick = () => { this._statsRoom = btn.getAttribute('data-stat-room'); this._renderModalContent('stats'); };
+        btn.onclick = () => { this._statsRoom = btn.getAttribute('data-stat-room'); updateStatsUi(); };
       });
+      const btnFull = body.querySelector('#btnOpenFullStatsView');
+      if (btnFull) {
+        btnFull.onclick = () => {
+          this._closeModal();
+          this._setViewMode('stats');
+        };
+      }
     }
   }
 };

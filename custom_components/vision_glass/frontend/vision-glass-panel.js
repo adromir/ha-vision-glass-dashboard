@@ -21,7 +21,8 @@ class VisionGlassPanel extends HTMLElement {
     this._narrow = false;
     this._panel = null;
     this._route = null;
-    this._viewMode = (typeof window !== 'undefined' && window.location.hash === '#settings') ? 'settings' : 'home';
+    const initHash = (typeof window !== 'undefined' && window.location.hash) || '';
+    this._viewMode = (initHash === '#settings') ? 'settings' : (initHash === '#stats' ? 'stats' : 'home');
     this._activeModal = null;
     this._timer = null;
     this._initialRenderDone = false;
@@ -55,7 +56,13 @@ class VisionGlassPanel extends HTMLElement {
   set route(val) {
     this._route = val;
     const p = val?.path || '';
-    const nextMode = (p === '/settings' || window.location.hash === '#settings') ? 'settings' : 'home';
+    const hash = (typeof window !== 'undefined' && window.location.hash) || '';
+    let nextMode = 'home';
+    if (p === '/settings' || hash === '#settings') {
+      nextMode = 'settings';
+    } else if (p === '/stats' || hash === '#stats') {
+      nextMode = 'stats';
+    }
     if (nextMode !== this._viewMode) {
       this._viewMode = nextMode;
       if (this._configLoaded) this._render();
@@ -75,7 +82,7 @@ class VisionGlassPanel extends HTMLElement {
       return;
     }
     if (!this._initialRenderDone) return;
-    if (this._viewMode === 'settings') {
+    if (this._viewMode === 'settings' || this._viewMode === 'stats') {
       this._applyThemeClass();
       return;
     }
@@ -147,9 +154,15 @@ class VisionGlassPanel extends HTMLElement {
   }
 
   _setViewMode(mode) {
-    this._viewMode = mode === 'settings' ? 'settings' : 'home';
+    if (mode === 'settings') {
+      this._viewMode = 'settings';
+    } else if (mode === 'stats') {
+      this._viewMode = 'stats';
+    } else {
+      this._viewMode = 'home';
+    }
     if (typeof window !== 'undefined') {
-      const targetHash = this._viewMode === 'settings' ? '#settings' : '';
+      const targetHash = this._viewMode === 'home' ? '' : `#${this._viewMode}`;
       if (window.location.hash !== targetHash) {
         window.history.replaceState(null, '', window.location.pathname + targetHash);
       }
@@ -1142,12 +1155,12 @@ class VisionGlassPanel extends HTMLElement {
         icon: 'thermometer',
         icon_color_light: '#ea580c',
         icon_color_dark: '#fb923c',
-        bg_light: 'rgba(234, 88, 12, 0.10)',
-        border_light: 'rgba(234, 88, 12, 0.25)',
-        hover_light: 'rgba(234, 88, 12, 0.22)',
-        bg_dark: 'rgba(251, 146, 60, 0.15)',
-        border_dark: 'rgba(251, 146, 60, 0.35)',
-        hover_dark: 'rgba(251, 146, 60, 0.30)',
+        bg_light: 'rgba(234, 88, 12, 0.16)',
+        border_light: 'rgba(234, 88, 12, 0.45)',
+        hover_light: 'rgba(234, 88, 12, 0.28)',
+        bg_dark: 'rgba(251, 146, 60, 0.18)',
+        border_dark: 'rgba(251, 146, 60, 0.45)',
+        hover_dark: 'rgba(251, 146, 60, 0.35)',
         rooms: ['all']
       },
       {
@@ -1157,12 +1170,12 @@ class VisionGlassPanel extends HTMLElement {
         icon: 'droplet',
         icon_color_light: '#0284c7',
         icon_color_dark: '#38bdf8',
-        bg_light: 'rgba(2, 132, 199, 0.10)',
-        border_light: 'rgba(2, 132, 199, 0.25)',
-        hover_light: 'rgba(2, 132, 199, 0.22)',
-        bg_dark: 'rgba(56, 189, 248, 0.15)',
-        border_dark: 'rgba(56, 189, 248, 0.35)',
-        hover_dark: 'rgba(56, 189, 248, 0.30)',
+        bg_light: 'rgba(2, 132, 199, 0.16)',
+        border_light: 'rgba(2, 132, 199, 0.45)',
+        hover_light: 'rgba(2, 132, 199, 0.28)',
+        bg_dark: 'rgba(56, 189, 248, 0.18)',
+        border_dark: 'rgba(56, 189, 248, 0.45)',
+        hover_dark: 'rgba(56, 189, 248, 0.35)',
         rooms: ['all']
       },
       {
@@ -1172,12 +1185,12 @@ class VisionGlassPanel extends HTMLElement {
         icon: 'lux',
         icon_color_light: '#d97706',
         icon_color_dark: '#f59e0b',
-        bg_light: 'rgba(217, 119, 6, 0.10)',
-        border_light: 'rgba(217, 119, 6, 0.25)',
-        hover_light: 'rgba(217, 119, 6, 0.22)',
-        bg_dark: 'rgba(245, 158, 11, 0.15)',
-        border_dark: 'rgba(245, 158, 11, 0.35)',
-        hover_dark: 'rgba(245, 158, 11, 0.30)',
+        bg_light: 'rgba(217, 119, 6, 0.16)',
+        border_light: 'rgba(217, 119, 6, 0.45)',
+        hover_light: 'rgba(217, 119, 6, 0.28)',
+        bg_dark: 'rgba(245, 158, 11, 0.18)',
+        border_dark: 'rgba(245, 158, 11, 0.45)',
+        hover_dark: 'rgba(245, 158, 11, 0.35)',
         rooms: ['all']
       }
     ];
@@ -1625,6 +1638,7 @@ class VisionGlassPanel extends HTMLElement {
       return;
     }
     const isSettings = this._viewMode === 'settings';
+    const isStats = this._viewMode === 'stats';
     this.shadowRoot.innerHTML = `
       <style>${VISION_GLASS_STYLES}</style>
 
@@ -1638,6 +1652,31 @@ class VisionGlassPanel extends HTMLElement {
             <div class="liquid-orb liquid-orb-4"></div>
           </div>
           <div id="settingsPageContainer" style="max-width:960px;margin:14px auto 0 auto;position:relative;z-index:1;"></div>
+        </div>
+      ` : isStats ? `
+        <div class="dashboard-root theme-dark" style="min-height:100vh;padding:28px 32px 80px 32px;box-sizing:border-box;">
+          <!-- Liquid Background Morphing Orbs -->
+          <div class="liquid-backdrop" aria-hidden="true">
+            <div class="liquid-orb liquid-orb-1"></div>
+            <div class="liquid-orb liquid-orb-2"></div>
+            <div class="liquid-orb liquid-orb-3"></div>
+            <div class="liquid-orb liquid-orb-4"></div>
+          </div>
+          <div style="max-width:1100px;margin:0 auto 18px auto;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;position:relative;z-index:2;">
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:42px;height:42px;border-radius:12px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
+                ${this._icon('chart-bar', { size: 24, cls: 'icon-stats' })}
+              </div>
+              <div>
+                <div style="font-size:20px;font-weight:700;">${this._t('stats_title')}</div>
+                <div style="font-size:12px;color:var(--text-secondary);">${this._t('detailed_stats_sub')}</div>
+              </div>
+            </div>
+            <button type="button" id="btnStatsBackToDashboard" class="btn btn-sm" style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;">
+              &larr; Zum Dashboard
+            </button>
+          </div>
+          <div id="statsPageContainer" style="max-width:1100px;margin:0 auto;position:relative;z-index:2;"></div>
         </div>
       ` : `
         <div class="dashboard-root theme-dark">
@@ -1669,6 +1708,9 @@ class VisionGlassPanel extends HTMLElement {
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
             <div id="chipsCustomList" style="display:contents;"></div>
+            <button class="chip chip-stats" id="chipStatsNav" title="${this._t('stats')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
+              ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} ${this._t('stats')}
+            </button>
             <button class="chip chip-settings" id="chipSettings" title="${this._t('settings')}" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);cursor:pointer;">
               ${this._icon('settings', { size: 14, style: 'margin-right:4px;' })} ${this._t('settings')}
             </button>
@@ -1864,6 +1906,23 @@ class VisionGlassPanel extends HTMLElement {
       return;
     }
 
+    if (isStats) {
+      const cont = this.shadowRoot.getElementById('statsPageContainer');
+      const backBtn = this.shadowRoot.getElementById('btnStatsBackToDashboard');
+      if (backBtn) backBtn.onclick = () => this._setViewMode('home');
+      if (cont) {
+        if (this._renderStatsPageView) {
+          this._renderStatsPageView(cont);
+        } else {
+          cont.innerHTML = `<div style="padding:36px;text-align:center;color:var(--text-secondary);">${this._t('loading')}</div>`;
+          this._loadStatsModule().then(() => {
+            if (this._viewMode === 'stats') this._renderStatsPageView(cont);
+          });
+        }
+      }
+      return;
+    }
+
     // Event Listeners
     // Sidebar Weather Card Click -> Open Weather Modal
     const swEl = this.shadowRoot.getElementById('sidebarWeather');
@@ -1890,13 +1949,15 @@ class VisionGlassPanel extends HTMLElement {
         const dockId = itemEl.getAttribute('data-dock-id');
         if (dockId === 'settings') {
           navigateToSettings();
+        } else if (dockId === 'stats') {
+          this._setViewMode('stats');
         } else {
           const dockCfg = this._config?.dock || {};
           const items = dockCfg.items || [];
           const item = items.find(i => i.id === dockId);
           if (item && item.entities && item.entities.length > 0) {
             this._openCustomDockModal(item);
-          } else if (['lighting', 'climate', 'stats', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
+          } else if (['lighting', 'climate', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
             this._openModal(dockId);
           } else if (item) {
             this._openCustomDockModal(item);
@@ -1904,6 +1965,8 @@ class VisionGlassPanel extends HTMLElement {
         }
       };
     });
+    const cStatsNav = this.shadowRoot.getElementById('chipStatsNav');
+    if (cStatsNav) cStatsNav.onclick = () => this._setViewMode('stats');
     const cSet = this.shadowRoot.getElementById('chipSettings');
     if (cSet) cSet.addEventListener('click', navigateToSettings);
 // Modal Close
