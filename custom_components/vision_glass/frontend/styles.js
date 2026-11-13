@@ -401,11 +401,11 @@ export const VISION_GLASS_STYLES = `
           gap: 8px;
           padding: 4px 12px 4px 6px;
           border-radius: 12px;
-          background: var(--dock-bg, rgba(16, 24, 38, 0.98));
+          background: #0f172a !important;
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
           border: 1px solid rgba(56, 189, 248, 0.5);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 16px rgba(56, 189, 248, 0.3);
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 16px rgba(56, 189, 248, 0.3);
           z-index: 100;
           white-space: nowrap;
           pointer-events: none;
@@ -414,11 +414,11 @@ export const VISION_GLASS_STYLES = `
           transition: opacity 0.18s ease;
         }
         .theme-light .cluster-floating-overlay {
-          background: rgba(255, 255, 255, 0.98);
+          background: #ffffff !important;
           backdrop-filter: blur(28px) saturate(190%);
           -webkit-backdrop-filter: blur(28px) saturate(190%);
           border-color: rgba(2, 132, 199, 0.6);
-          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.18), 0 0 16px rgba(2, 132, 199, 0.25);
+          box-shadow: 0 10px 30px rgba(15, 23, 42, 0.22), 0 0 16px rgba(2, 132, 199, 0.25);
         }
         .chip-persons-cluster:hover .cluster-floating-overlay {
           opacity: 1;
