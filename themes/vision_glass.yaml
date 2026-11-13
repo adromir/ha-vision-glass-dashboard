@@ -198,6 +198,15 @@ Vision Glass:
       sidebar-selected-text-color: '#0284c7'
       sidebar-selected-icon-color: '#0284c7'
       sidebar-icon-color: '#475569'
+      ha-color-text-primary: '#0f172a'
+      ha-color-text-secondary: '#475569'
+      wa-color-text-normal: '#0f172a'
+      wa-color-text-quiet: '#475569'
+      mdc-theme-primary: '#0284c7'
+      mdc-theme-on-primary: '#0f172a'
+      mdc-theme-text-primary-on-background: '#0f172a'
+      md-list-item-label-text-color: '#0f172a'
+      md-list-item-leading-icon-color: '#475569'
 
       # --- Dialogs & Modals ---
       dialog-backdrop-filter: 'blur(20px)'
@@ -294,6 +303,15 @@ Vision Glass:
       sidebar-selected-text-color: '#38bdf8'
       sidebar-selected-icon-color: '#38bdf8'
       sidebar-icon-color: '#94a3b8'
+      ha-color-text-primary: '#f8fafc'
+      ha-color-text-secondary: '#94a3b8'
+      wa-color-text-normal: '#f8fafc'
+      wa-color-text-quiet: '#94a3b8'
+      mdc-theme-primary: '#38bdf8'
+      mdc-theme-on-primary: '#f8fafc'
+      mdc-theme-text-primary-on-background: '#f8fafc'
+      md-list-item-label-text-color: '#f8fafc'
+      md-list-item-leading-icon-color: '#94a3b8'
 
       # --- Dialogs & Modals ---
       dialog-backdrop-filter: 'blur(20px)'
@@ -480,6 +498,15 @@ Vision Glass Light:
   sidebar-selected-text-color: '#0284c7'
   sidebar-selected-icon-color: '#0284c7'
   sidebar-icon-color: '#475569'
+  ha-color-text-primary: '#0f172a'
+  ha-color-text-secondary: '#475569'
+  wa-color-text-normal: '#0f172a'
+  wa-color-text-quiet: '#475569'
+  mdc-theme-primary: '#0284c7'
+  mdc-theme-on-primary: '#0f172a'
+  mdc-theme-text-primary-on-background: '#0f172a'
+  md-list-item-label-text-color: '#0f172a'
+  md-list-item-leading-icon-color: '#475569'
 
   # --- Dialogs & Modals ---
   dialog-backdrop-filter: 'blur(20px)'
@@ -667,6 +694,15 @@ Vision Glass Dark:
   sidebar-selected-text-color: '#38bdf8'
   sidebar-selected-icon-color: '#38bdf8'
   sidebar-icon-color: '#94a3b8'
+  ha-color-text-primary: '#f8fafc'
+  ha-color-text-secondary: '#94a3b8'
+  wa-color-text-normal: '#f8fafc'
+  wa-color-text-quiet: '#94a3b8'
+  mdc-theme-primary: '#38bdf8'
+  mdc-theme-on-primary: '#f8fafc'
+  mdc-theme-text-primary-on-background: '#f8fafc'
+  md-list-item-label-text-color: '#f8fafc'
+  md-list-item-leading-icon-color: '#94a3b8'
 
   # --- Dialogs & Modals ---
   dialog-backdrop-filter: 'blur(20px)'

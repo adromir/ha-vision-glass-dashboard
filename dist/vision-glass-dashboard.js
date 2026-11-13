@@ -1279,13 +1279,16 @@ class VisionGlassDashboard extends HTMLElement {
         }
       }
 
-      // Sync frontend theme if requested
+      // Sync frontend theme across both light and dark HA modes
       if (this._config.theme_mode === 'light') {
-        this._callService('frontend', 'set_theme', { name: 'Vision Glass Light' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Light', mode: 'light' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Light', mode: 'dark' });
       } else if (this._config.theme_mode === 'dark') {
-        this._callService('frontend', 'set_theme', { name: 'Vision Glass Dark' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Dark', mode: 'light' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Dark', mode: 'dark' });
       } else if (this._config.theme_mode === 'auto') {
-        this._callService('frontend', 'set_theme', { name: 'Vision Glass' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Light', mode: 'light' });
+        this._callService('frontend', 'set_theme', { name: 'Vision Glass Dark', mode: 'dark' });
       }
 
       if (toast) {
@@ -1588,6 +1591,8 @@ class VisionGlassDashboard extends HTMLElement {
     if (this._config && (this._config.mode === 'settings' || this._config.view === 'settings')) {
       if (!this._standaloneConfigLoaded) {
         this._loadDashboardConfigForStandaloneSettings();
+      } else {
+        this._applyThemeClass();
       }
       return;
     }
@@ -1689,33 +1694,192 @@ class VisionGlassDashboard extends HTMLElement {
     }, 2000);
   }
 
-  _applyHeaderStyles() {
+  _applyHeaderStyles(force = false) {
     const isLight = this._resolveEffectiveThemeMode() === 'light';
-    const bgHeader = isLight ? 'rgba(248, 250, 252, 0.96)' : 'rgba(11, 17, 30, 0.96)';
+    const bgShell = isLight ? 'rgba(238, 246, 255, 0.85)' : 'rgba(15, 23, 42, 0.84)';
+    const textPrimary = isLight ? '#0f172a' : '#f8fafc';
+    const textSecondary = isLight ? '#475569' : '#94a3b8';
+    const accentColor = isLight ? '#0284c7' : '#38bdf8';
+    const dividerColor = isLight ? 'rgba(148, 163, 184, 0.35)' : 'rgba(255, 255, 255, 0.12)';
+    const hoverBg = isLight ? 'rgba(255, 255, 255, 0.55)' : 'rgba(255, 255, 255, 0.08)';
+    const activeBg = isLight ? 'rgba(2, 132, 199, 0.16)' : 'rgba(56, 189, 248, 0.18)';
+    const activeBorder = isLight ? 'rgba(2, 132, 199, 0.35)' : 'rgba(56, 189, 248, 0.35)';
+
+    const shellVars = {
+      '--app-header-background-color': bgShell,
+      '--app-header-text-color': textPrimary,
+      '--app-header-selection-bar-color': accentColor,
+      '--sidebar-background-color': bgShell,
+      '--sidebar-text-color': textPrimary,
+      '--sidebar-icon-color': textSecondary,
+      '--sidebar-selected-text-color': accentColor,
+      '--sidebar-selected-icon-color': accentColor,
+      '--divider-color': dividerColor,
+      '--primary-text-color': textPrimary,
+      '--secondary-text-color': textSecondary,
+      '--text-primary-color': textPrimary,
+      '--primary-color': accentColor,
+      '--ha-color-text-primary': textPrimary,
+      '--ha-color-text-secondary': textSecondary,
+      '--wa-color-text-normal': textPrimary,
+      '--wa-color-text-quiet': textSecondary,
+      '--mdc-theme-primary': accentColor,
+      '--mdc-theme-on-primary': textPrimary,
+      '--mdc-theme-text-primary-on-background': textPrimary,
+      '--md-list-item-label-text-color': textPrimary,
+      '--md-list-item-leading-icon-color': textSecondary
+    };
+
     try {
-      if (document && document.documentElement) {
-        document.documentElement.style.setProperty('--app-header-background-color', bgHeader);
+      const ha = document.querySelector('home-assistant');
+      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
+      const mainRoot = main?.shadowRoot;
+      const sidebar = mainRoot?.querySelector('ha-sidebar');
+      const lovelace = mainRoot?.querySelector('ha-panel-lovelace');
+      const huiRoot = lovelace?.shadowRoot?.querySelector('hui-root');
+      const huiShadow = huiRoot?.shadowRoot;
+
+      const targetMode = isLight ? 'light' : 'dark';
+      if (!force && this._lastShellMode === targetMode && huiShadow?.getElementById('vg-shell-header-style') && sidebar?.shadowRoot?.getElementById('vg-shell-sidebar-style')) {
+        return;
       }
-      const root = document.querySelector('home-assistant')?.shadowRoot
-        ?.querySelector('home-assistant-main')?.shadowRoot
-        ?.querySelector('ha-drawer ha-panel-lovelace')?.shadowRoot
-        ?.querySelector('hui-root')?.shadowRoot;
-      const header = root?.querySelector('ha-top-app-bar') || root?.querySelector('app-header') || root?.querySelector('.header');
-      if (header) {
-        header.style.zIndex = '100';
-        header.style.backgroundColor = bgHeader;
-        header.style.backdropFilter = 'blur(20px)';
-        header.style.webkitBackdropFilter = 'blur(20px)';
+      this._lastShellMode = targetMode;
+
+      const hosts = [document.documentElement, ha, main, sidebar, lovelace, huiRoot].filter(Boolean);
+      hosts.forEach(el => {
+        Object.entries(shellVars).forEach(([k, v]) => el.style.setProperty(k, v));
+      });
+
+      if (huiShadow) {
+        let styleEl = huiShadow.getElementById('vg-shell-header-style');
+        if (!styleEl) {
+          styleEl = document.createElement('style');
+          styleEl.id = 'vg-shell-header-style';
+          huiShadow.appendChild(styleEl);
+        }
+        const css = `
+          .header, app-header, ha-top-app-bar, ha-top-app-bar-fixed {
+            background: ${bgShell} !important;
+            background-color: ${bgShell} !important;
+            backdrop-filter: blur(28px) saturate(190%) !important;
+            -webkit-backdrop-filter: blur(28px) saturate(190%) !important;
+            color: ${textPrimary} !important;
+            border-bottom: 1px solid ${dividerColor} !important;
+            z-index: 100 !important;
+          }
+          .toolbar, .main-title, [main-title], ha-menu-button, ha-icon-button, ha-button-menu, ha-tabs, paper-tabs, sl-tab-group, sl-tab, ha-tab, paper-tab {
+            color: ${textPrimary} !important;
+          }
+          sl-tab[active], ha-tab[active], paper-tab.iron-selected {
+            color: ${accentColor} !important;
+          }
+          sl-tab-group::part(active-tab-indicator), ha-tabs {
+            --indicator-color: ${accentColor} !important;
+            --paper-tabs-selection-bar-color: ${accentColor} !important;
+          }
+        `;
+        if (force || styleEl.textContent !== css) styleEl.textContent = css;
       }
+
+      if (sidebar && sidebar.shadowRoot) {
+        let sbStyle = sidebar.shadowRoot.getElementById('vg-shell-sidebar-style');
+        if (!sbStyle) {
+          sbStyle = document.createElement('style');
+          sbStyle.id = 'vg-shell-sidebar-style';
+          sidebar.shadowRoot.appendChild(sbStyle);
+        }
+        const sbCss = `
+          :host {
+            background: ${bgShell} !important;
+            background-color: ${bgShell} !important;
+            backdrop-filter: blur(30px) saturate(190%) !important;
+            -webkit-backdrop-filter: blur(30px) saturate(190%) !important;
+            color: ${textPrimary} !important;
+            border-right: 1px solid ${dividerColor} !important;
+          }
+          .menu {
+            background: transparent !important;
+            color: ${textPrimary} !important;
+            border-bottom: 1px solid ${dividerColor} !important;
+          }
+          .menu .title, .menu ha-icon-button, .notifications, .profile, .item-text {
+            color: ${textPrimary} !important;
+          }
+          paper-listbox, ha-md-list {
+            background: transparent !important;
+          }
+          ha-md-list-item, paper-icon-item, a[role="listitem"] {
+            border-radius: 14px !important;
+            margin: 2px 8px !important;
+            color: ${textPrimary} !important;
+            transition: background 0.2s ease, border-color 0.2s ease !important;
+          }
+          ha-md-list-item:hover, paper-icon-item:hover, a[role="listitem"]:hover {
+            background: ${hoverBg} !important;
+          }
+          ha-md-list-item.iron-selected, paper-icon-item.iron-selected, a.iron-selected, [aria-current="page"] {
+            background: ${activeBg} !important;
+            border: 1px solid ${activeBorder} !important;
+            color: ${accentColor} !important;
+            --md-list-item-label-text-color: ${accentColor} !important;
+            --md-list-item-leading-icon-color: ${accentColor} !important;
+          }
+          .divider {
+            border-color: ${dividerColor} !important;
+          }
+        `;
+        if (force || sbStyle.textContent !== sbCss) sbStyle.textContent = sbCss;
+      }
+
+      if ((!huiShadow || !sidebar?.shadowRoot) && !this._shellRetryTimer) {
+        this._shellRetryTimer = setTimeout(() => {
+          this._shellRetryTimer = null;
+          this._applyHeaderStyles(true);
+        }, 250);
+      }
+    } catch (e) {}
+  }
+
+  _cleanupShellStyles() {
+    try {
+      const ha = document.querySelector('home-assistant');
+      const main = ha?.shadowRoot?.querySelector('home-assistant-main');
+      const mainRoot = main?.shadowRoot;
+      const sidebar = mainRoot?.querySelector('ha-sidebar');
+      const lovelace = mainRoot?.querySelector('ha-panel-lovelace');
+      const huiRoot = lovelace?.shadowRoot?.querySelector('hui-root');
+
+      const varKeys = [
+        '--app-header-background-color', '--app-header-text-color', '--app-header-selection-bar-color',
+        '--sidebar-background-color', '--sidebar-text-color', '--sidebar-icon-color',
+        '--sidebar-selected-text-color', '--sidebar-selected-icon-color', '--divider-color',
+        '--primary-text-color', '--secondary-text-color', '--text-primary-color', '--primary-color',
+        '--ha-color-text-primary', '--ha-color-text-secondary', '--wa-color-text-normal', '--wa-color-text-quiet',
+        '--mdc-theme-primary', '--mdc-theme-on-primary', '--mdc-theme-text-primary-on-background',
+        '--md-list-item-label-text-color', '--md-list-item-leading-icon-color'
+      ];
+      [document.documentElement, ha, main, sidebar, lovelace, huiRoot].filter(Boolean).forEach(el => {
+        varKeys.forEach(k => el.style.removeProperty(k));
+      });
+      huiRoot?.shadowRoot?.getElementById('vg-shell-header-style')?.remove();
+      sidebar?.shadowRoot?.getElementById('vg-shell-sidebar-style')?.remove();
+      this._lastShellMode = null;
     } catch (e) {}
   }
 
   disconnectedCallback() {
     if (this._timer) clearInterval(this._timer);
     if (this._editModeInterval) clearInterval(this._editModeInterval);
+    if (this._shellRetryTimer) {
+      clearTimeout(this._shellRetryTimer);
+      this._shellRetryTimer = null;
+    }
     if (this._editModeObserver) {
       this._editModeObserver.disconnect();
       this._editModeObserver = null;
+    }
+    if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/vision-glass')) {
+      this._cleanupShellStyles();
     }
   }
 
