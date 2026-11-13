@@ -6015,7 +6015,7 @@ class VisionGlassDashboard extends HTMLElement {
       </div>
 
       <!-- Settings Navigation Tabs -->
-      <div class="nav-tabs" style="display:flex;gap:6px;border-bottom:1px solid var(--border-subtle);padding-bottom:10px;margin-bottom:16px;overflow-x:auto;">
+      <div class="nav-tabs" style="display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px;margin-bottom:16px;">
         <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms">🏠 ${this._t('rooms_and_cards')} (${rooms.length})</button>
         <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays">📂 Raum-Overlays</button>
         <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock">⚓ ${this._t('dock_navigation')}</button>
@@ -8788,11 +8788,11 @@ class VisionGlassDashboard extends HTMLElement {
         }
         .nav-tabs {
           display: flex;
-          gap: 6px;
+          flex-wrap: wrap;
+          gap: 8px;
           border-bottom: 1px solid var(--border-subtle);
-          padding-bottom: 10px;
+          padding-bottom: 12px;
           margin-bottom: 16px;
-          overflow-x: auto;
         }
         .nav-tab {
           padding: 8px 14px;
@@ -9582,10 +9582,10 @@ class VisionGlassDashboardEditor extends HTMLElement {
         }
         .nav-tabs {
           display: flex;
-          gap: 6px;
+          flex-wrap: wrap;
+          gap: 8px;
           border-bottom: 1px solid var(--divider-color, #e2e8f0);
           padding-bottom: 8px;
-          overflow-x: auto;
         }
         .nav-tab {
           padding: 8px 14px;
