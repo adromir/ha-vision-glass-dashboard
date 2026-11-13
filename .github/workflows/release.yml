@@ -12,7 +12,7 @@ on:
 
 jobs:
   release:
-    name: Create GitHub Release
+    name: Validate & Create GitHub Release
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -22,19 +22,30 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Verify Asset
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Validate Integration & Run Tests
         run: |
-          if [ ! -f "dist/vision-glass-dashboard.js" ]; then
-            echo "Error: dist/vision-glass-dashboard.js not found!"
+          if [ ! -f "custom_components/vision_glass/manifest.json" ]; then
+            echo "Error: custom_components/vision_glass/manifest.json not found!"
             exit 1
           fi
+          python -m compileall -q custom_components/vision_glass
+          python -m unittest -v tests/test_python_backend.py
+          node tests/test_frontend_modules.mjs
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ github.event.inputs.tag_name || github.ref_name }}
-          files: |
-            dist/vision-glass-dashboard.js
           generate_release_notes: true
           draft: false
           prerelease: false
