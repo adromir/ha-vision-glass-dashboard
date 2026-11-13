@@ -1488,10 +1488,6 @@ export const settingsMethods = {
               <input type="checkbox" id="chkTopMedia" ${(this._config.top_bar_show_media !== false) ? 'checked' : ''}>
               <span>Aktive Medien</span>
             </label>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
-              <input type="checkbox" id="chkTopTheme" ${(this._config.hide_theme_chip !== true) ? 'checked' : ''}>
-              <span>Theme Switch Status</span>
-            </label>
           </div>
 
           <div style="border-top:1px solid var(--border-subtle);padding-top:12px;margin-bottom:14px;">
@@ -1810,6 +1806,7 @@ export const settingsMethods = {
       tabBtn.onclick = () => {
         this._settingsActiveTab = tabBtn.getAttribute('data-stab');
         this._renderSettingsContent(container, isModal);
+        this._applyThemeClass?.();
       };
     });
 
@@ -1818,6 +1815,40 @@ export const settingsMethods = {
       bgSel.onchange = () => {
         const rowCust = container.querySelector('#rowCustomBgUrl');
         if (rowCust) rowCust.style.display = bgSel.value === 'custom' ? 'flex' : 'none';
+        this._config.background_style = bgSel.value;
+        this._applyThemeClass?.();
+      };
+    }
+
+    const animSel = container.querySelector('#cfgAmbientSpeed');
+    if (animSel) {
+      animSel.onchange = () => {
+        this._config.ambient_speed = animSel.value;
+        this._applyThemeClass?.();
+      };
+    }
+
+    const tModeSel = container.querySelector('#cfgThemeMode');
+    if (tModeSel) {
+      tModeSel.onchange = () => {
+        this._config.theme_mode = tModeSel.value;
+        this._applyThemeClass?.();
+      };
+    }
+
+    const bgModeSel = container.querySelector('#cfgBgMode');
+    if (bgModeSel) {
+      bgModeSel.onchange = () => {
+        this._config.background_mode = bgModeSel.value;
+        this._applyThemeClass?.();
+      };
+    }
+
+    const bgUrlInp = container.querySelector('#cfgBgUrl');
+    if (bgUrlInp) {
+      bgUrlInp.oninput = () => {
+        this._config.background_image_url = bgUrlInp.value.trim();
+        this._applyThemeClass?.();
       };
     }
 
@@ -1826,6 +1857,8 @@ export const settingsMethods = {
       schemeSel.onchange = () => {
         const rowCustScheme = container.querySelector('#rowCustomColors');
         if (rowCustScheme) rowCustScheme.style.display = schemeSel.value === 'custom' ? 'grid' : 'none';
+        this._config.color_scheme = schemeSel.value;
+        this._applyThemeClass?.();
       };
     }
 
@@ -2923,8 +2956,6 @@ export const settingsMethods = {
         if (chkTWarn) this._config.top_bar_show_warnings = chkTWarn.checked;
         const chkTMedia = container.querySelector('#chkTopMedia');
         if (chkTMedia) this._config.top_bar_show_media = chkTMedia.checked;
-        const chkTTheme = container.querySelector('#chkTopTheme');
-        if (chkTTheme) this._config.hide_theme_chip = !chkTTheme.checked;
 
         const selPersons = [];
         container.querySelectorAll('.chk-person-select:checked').forEach(c => {

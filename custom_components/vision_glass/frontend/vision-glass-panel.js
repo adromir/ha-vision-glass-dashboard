@@ -843,26 +843,44 @@ class VisionGlassPanel extends HTMLElement {
 
           personsContainer.innerHTML = `
             <div class="chip chip-persons-cluster" id="chipPersonsCluster" title="Anwesenheit (${summaryLabel})">
-              <div class="cluster-stack">
-                ${personData.map((p, idx) => `
-                  <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
-                    ${p.pic
-                      ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
-                      : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
-                    }
-                    <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
-                  </div>
-                `).join('')}
+              <!-- Inline layout anchor: flex width never changes -->
+              <div class="cluster-anchor">
+                <div class="cluster-stack">
+                  ${personData.map((p, idx) => `
+                    <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
+                      ${p.pic
+                        ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
+                        : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
+                      }
+                      <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="cluster-collapsed-label">${summaryLabel}</div>
               </div>
-              <div class="cluster-collapsed-label">${summaryLabel}</div>
-              <div class="cluster-expanded-list">
-                ${personData.map(p => `
-                  <div class="cluster-expanded-item" data-person-id="${p.id}" title="${p.name} Details öffnen">
-                    <span class="cluster-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
-                    <span class="cluster-user-name">${p.name}</span>
-                    <span class="cluster-user-status">(${p.statusText})</span>
-                  </div>
-                `).join('')}
+
+              <!-- Floating overlay flyout: absolute, zero footprint in flex flow, ZERO jitter -->
+              <div class="cluster-floating-overlay">
+                <div class="cluster-stack cluster-stack-fanned">
+                  ${personData.map((p, idx) => `
+                    <div class="cluster-avatar-wrap" style="--stack-idx: ${idx}; z-index: ${personData.length - idx};" data-person-id="${p.id}" title="${p.name}: ${p.statusText}">
+                      ${p.pic
+                        ? `<img src="${p.pic}" class="cluster-avatar ${p.isHome ? 'avatar-online' : 'avatar-offline'}" alt="${p.name}" />`
+                        : `<div class="cluster-avatar cluster-avatar-initial ${p.isHome ? 'avatar-online' : 'avatar-offline'}">${p.name.charAt(0).toUpperCase()}</div>`
+                      }
+                      <span class="cluster-status-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                    </div>
+                  `).join('')}
+                </div>
+                <div class="cluster-expanded-list">
+                  ${personData.map(p => `
+                    <div class="cluster-expanded-item" data-person-id="${p.id}" title="${p.name} Details öffnen">
+                      <span class="cluster-dot ${p.isHome ? 'dot-green' : 'dot-gray'}"></span>
+                      <span class="cluster-user-name">${p.name}</span>
+                      <span class="cluster-user-status">(${p.statusText})</span>
+                    </div>
+                  `).join('')}
+                </div>
               </div>
             </div>
           `;
@@ -1052,30 +1070,6 @@ class VisionGlassPanel extends HTMLElement {
         chipWeather.style.display = 'none';
       } else {
         chipWeather.style.display = 'inline-flex';
-      }
-    }
-
-    // Theme Switch Engine Chip
-    const chipTheme = this.shadowRoot.getElementById('chipTheme');
-    if (chipTheme) {
-      if (this._config.hide_theme_chip === true) {
-        chipTheme.style.display = 'none';
-      } else {
-        const activeThemeState = this._hass?.states['sensor.active_theme'] || this._hass?.states['sensor.theme_switch_engine_active_theme'];
-        const activeModeState = this._hass?.states['select.theme_mode'] || this._hass?.states['select.theme_switch_engine_mode'];
-        const effMode = this._resolveEffectiveThemeMode();
-
-        let themeLabel = activeThemeState?.state || (effMode === 'light' ? 'Vision Glass Light' : 'Vision Glass Dark');
-        const mode = activeModeState?.state || (effMode === 'light' ? 'Day' : 'Night');
-        let iconName = 'palette';
-        if (mode === 'Day' || effMode === 'light') {
-          iconName = 'weather-sunny';
-        } else if (mode === 'Night' || effMode === 'dark') {
-          iconName = 'weather-night';
-        }
-        const dotColor = (effMode === 'light') ? 'dot-amber' : 'dot-blue';
-        chipTheme.style.display = 'inline-flex';
-        chipTheme.innerHTML = `<span class="chip-dot ${dotColor}"></span> ${this._icon(iconName, { size: 14, style: 'margin-right:4px;' })} ${themeLabel}`;
       }
     }
 
@@ -1628,11 +1622,17 @@ class VisionGlassPanel extends HTMLElement {
     }
     const isSettings = this._viewMode === 'settings';
     const isStats = this._viewMode === 'stats';
+    const effMode = this._resolveEffectiveThemeMode();
+    const isLight = effMode === 'light';
+    const bgStyle = (this._config && this._config.background_style) || 'aurora';
+    const animSpeed = (this._config && this._config.ambient_speed) || 'normal';
+    const rootClass = `dashboard-root ${isLight ? 'theme-light' : 'theme-dark'} bg-${bgStyle} anim-${animSpeed}`;
+
     this.shadowRoot.innerHTML = `
       <style>${VISION_GLASS_STYLES}</style>
 
       ${isSettings ? `
-        <div class="dashboard-root theme-dark" style="min-height:100vh;padding:28px 32px 80px 32px;box-sizing:border-box;">
+        <div class="${rootClass}" style="min-height:100vh;padding:28px 32px 80px 32px;box-sizing:border-box;">
           <!-- Liquid Background Morphing Orbs -->
           <div class="liquid-backdrop" aria-hidden="true">
             <div class="liquid-orb liquid-orb-1"></div>
@@ -1643,7 +1643,7 @@ class VisionGlassPanel extends HTMLElement {
           <div id="settingsPageContainer" style="max-width:960px;margin:14px auto 0 auto;position:relative;z-index:1;"></div>
         </div>
       ` : isStats ? `
-        <div class="dashboard-root theme-dark" style="min-height:100vh;padding:28px 32px 80px 32px;box-sizing:border-box;">
+        <div class="${rootClass}" style="min-height:100vh;padding:28px 32px 80px 32px;box-sizing:border-box;">
           <!-- Liquid Background Morphing Orbs -->
           <div class="liquid-backdrop" aria-hidden="true">
             <div class="liquid-orb liquid-orb-1"></div>
@@ -1668,7 +1668,7 @@ class VisionGlassPanel extends HTMLElement {
           <div id="statsPageContainer" style="max-width:1100px;margin:0 auto;position:relative;z-index:2;"></div>
         </div>
       ` : `
-        <div class="dashboard-root theme-dark">
+        <div class="${rootClass}">
           <!-- Liquid Background Morphing Orbs (Fluide Lichtwellen & Wasserbrechung) -->
           <div class="liquid-backdrop" aria-hidden="true">
             <div class="liquid-orb liquid-orb-1"></div>
@@ -1697,7 +1697,6 @@ class VisionGlassPanel extends HTMLElement {
             <div class="chip" id="chipAlarmo">${this._icon('shield', { size: 14, cls: 'icon-alarmo', style: 'margin-right:4px;' })} ${this._t('alarmo_loading')}</div>
             <div class="chip" id="chipWeather">${this._icon('weather-partlycloudy', { size: 14, cls: 'icon-weather', style: 'margin-right:4px;' })} ${this._t('weather_loading')}</div>
             <div id="chipsCustomList" style="display:contents;"></div>
-            <div class="chip" id="chipTheme" style="display:none;cursor:pointer;" title="Theme Switch Engine"></div>
             <div class="chip chip-stats" id="chipStatsNav" title="${this._t('stats')}">
               ${this._icon('chart-bar', { size: 14, style: 'margin-right:4px;' })} <span>${this._t('stats')}</span>
             </div>
@@ -1901,10 +1900,14 @@ class VisionGlassPanel extends HTMLElement {
       if (cont) {
         if (this._renderSettingsContent) {
           this._renderSettingsContent(cont, false);
+          this._applyThemeClass();
         } else {
           cont.innerHTML = `<div style="padding:36px;text-align:center;color:var(--text-secondary);">${this._t('loading')}</div>`;
           this._loadSettingsModule().then(() => {
-            if (this._viewMode === 'settings') this._renderSettingsContent(cont, false);
+            if (this._viewMode === 'settings') {
+              this._renderSettingsContent(cont, false);
+              this._applyThemeClass();
+            }
           });
         }
       }
@@ -1918,10 +1921,14 @@ class VisionGlassPanel extends HTMLElement {
       if (cont) {
         if (this._renderStatsPageView) {
           this._renderStatsPageView(cont);
+          this._applyThemeClass();
         } else {
           cont.innerHTML = `<div style="padding:36px;text-align:center;color:var(--text-secondary);">${this._t('loading')}</div>`;
           this._loadStatsModule().then(() => {
-            if (this._viewMode === 'stats') this._renderStatsPageView(cont);
+            if (this._viewMode === 'stats') {
+              this._renderStatsPageView(cont);
+              this._applyThemeClass();
+            }
           });
         }
       }
@@ -1939,26 +1946,6 @@ class VisionGlassPanel extends HTMLElement {
     this.shadowRoot.getElementById('chipLock').addEventListener('click', () => this._openModal('security'));
     this.shadowRoot.getElementById('chipAlarmo').addEventListener('click', () => this._openModal('alarmo'));
     this.shadowRoot.getElementById('chipWeather').addEventListener('click', () => this._openModal('weather'));
-
-    const chipTheme = this.shadowRoot.getElementById('chipTheme');
-    if (chipTheme) {
-      chipTheme.addEventListener('click', () => {
-        const selState = this._hass?.states['select.theme_mode'] || this._hass?.states['select.theme_switch_engine_mode'];
-        if (selState) {
-          const current = selState.state;
-          const options = selState.attributes?.options || ['Auto', 'Day', 'Night', 'Cinema', 'Paused'];
-          const idx = options.indexOf(current);
-          const next = options[(idx + 1) % options.length];
-          this._callService('select', 'select_option', { entity_id: selState.entity_id, option: next });
-        } else {
-          const currentMode = this._resolveEffectiveThemeMode();
-          const nextMode = (currentMode === 'light') ? 'dark' : 'light';
-          this._config.theme_mode = nextMode;
-          this._applyThemeClass();
-          this._saveDashboardConfig(this._config);
-        }
-      });
-    }
 
     // Dock Items (Dynamic click binding)
     const navigateToSettings = () => {

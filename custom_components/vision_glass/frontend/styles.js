@@ -69,6 +69,7 @@ export const VISION_GLASS_STYLES = `
           overflow: hidden;
           color: var(--text-primary, var(--primary-text-color, #f8fafc));
           background: var(--lovelace-background, var(--primary-background-color, #0f172a));
+          background-attachment: fixed;
           --bg-surface: var(--ha-card-background, var(--card-background-color, rgba(24, 32, 48, 0.70)));
           --bg-surface-hover: var(--secondary-background-color, rgba(30, 41, 59, 0.85));
           --bg-card: var(--ha-card-background, var(--card-background-color, rgba(18, 25, 38, 0.62)));
@@ -173,7 +174,7 @@ export const VISION_GLASS_STYLES = `
 
         /* Animated Liquid Ambient Fluid Backdrop */
         .liquid-backdrop {
-          position: absolute;
+          position: fixed;
           inset: 0;
           overflow: hidden;
           pointer-events: none;
@@ -361,11 +362,56 @@ export const VISION_GLASS_STYLES = `
 
         .chip-persons-cluster {
           position: relative;
-          padding: 4px 10px 4px 6px;
+          padding: 0;
+          display: inline-flex;
+          align-items: center;
+          cursor: pointer;
+        }
+        .cluster-anchor {
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          cursor: pointer;
+          padding: 4px 10px 4px 6px;
+          box-sizing: border-box;
+          white-space: nowrap;
+        }
+        .cluster-floating-overlay {
+          position: absolute;
+          left: -1px;
+          top: -1px;
+          bottom: -1px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 12px 4px 6px;
+          border-radius: 9999px;
+          background: var(--dock-bg, rgba(16, 24, 38, 0.95));
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(56, 189, 248, 0.5);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(56, 189, 248, 0.22);
+          z-index: 100;
+          white-space: nowrap;
+          pointer-events: none;
+          opacity: 0;
+          transform: scale(0.97);
+          transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .theme-light .cluster-floating-overlay {
+          background: rgba(255, 255, 255, 0.95);
+          border-color: rgba(2, 132, 199, 0.6);
+          box-shadow: 0 8px 24px rgba(15, 23, 42, 0.15), 0 0 12px rgba(2, 132, 199, 0.2);
+        }
+        .chip-persons-cluster:hover .cluster-floating-overlay {
+          opacity: 1;
+          pointer-events: auto;
+          transform: scale(1);
+        }
+        .cluster-stack-fanned .cluster-avatar-wrap {
+          margin-right: 6px !important;
+        }
+        .cluster-stack-fanned .cluster-avatar-wrap:last-child {
+          margin-right: 0 !important;
         }
         .chip-persons-cluster:hover {
           border-color: rgba(56, 189, 248, 0.5);
@@ -483,12 +529,7 @@ export const VISION_GLASS_STYLES = `
           display: inline-flex;
           align-items: center;
           gap: 8px;
-          max-width: 0;
-          opacity: 0;
-          overflow: hidden;
           white-space: nowrap;
-          transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
-          pointer-events: none;
         }
         .cluster-expanded-item {
           display: inline-flex;
@@ -520,30 +561,12 @@ export const VISION_GLASS_STYLES = `
           color: var(--text-secondary, #94a3b8);
         }
 
-        /* Hover expansion: Fan out avatars! */
-        .chip-persons-cluster:hover .cluster-avatar-wrap {
-          margin-right: 6px;
+        .cluster-floating-overlay .cluster-avatar-wrap:hover {
+          z-index: 10 !important;
         }
-        .chip-persons-cluster:hover .cluster-avatar-wrap:last-child {
-          margin-right: 0;
-        }
-        .chip-persons-cluster:hover .cluster-avatar-wrap:hover {
-          z-index: 5 !important;
-        }
-        .chip-persons-cluster:hover .cluster-avatar-wrap:hover .cluster-avatar {
+        .cluster-floating-overlay .cluster-avatar-wrap:hover .cluster-avatar {
           border-color: #38bdf8 !important;
           box-shadow: 0 0 8px rgba(56, 189, 248, 0.6);
-        }
-        .chip-persons-cluster:hover .cluster-collapsed-label {
-          max-width: 0;
-          opacity: 0;
-          margin: 0;
-          padding: 0;
-        }
-        .chip-persons-cluster:hover .cluster-expanded-list {
-          max-width: 480px;
-          opacity: 1;
-          pointer-events: auto;
         }
 
         .chip-avatar {
