@@ -384,7 +384,48 @@ class VisionGlassPanel extends HTMLElement {
     if (themeMode === 'light') return 'light';
     if (themeMode === 'dark') return 'dark';
 
-    // 4. HA dark mode or Sun daylight fallback
+    // 4. Active theme name from HA themes or Theme Switch Engine sensor
+    const activeTheme = (this._hass && this._hass.themes && this._hass.themes.theme) ||
+                        (this._hass && this._hass.selectedTheme && this._hass.selectedTheme.theme) ||
+                        (this._hass && this._hass.states && this._hass.states['sensor.active_theme'] && this._hass.states['sensor.active_theme'].state) || '';
+    if (typeof activeTheme === 'string' && activeTheme) {
+      const lower = activeTheme.toLowerCase();
+      if (lower.includes('light') || lower.includes('hell') || lower.includes('day') || lower.includes('tag')) {
+        return 'light';
+      }
+      if (lower.includes('dark') || lower.includes('dunkel') || lower.includes('night') || lower.includes('nacht')) {
+        return 'dark';
+      }
+    }
+
+    // 5. Inspect computed primary text color (if dark text is used in HA, it's a light theme)
+    try {
+      const computedColor = (typeof getComputedStyle === 'function') ? (
+        getComputedStyle(document.body).getPropertyValue('--primary-text-color') ||
+        getComputedStyle(this).getPropertyValue('--primary-text-color')
+      ) : '';
+      if (computedColor) {
+        const trimmed = computedColor.trim();
+        if (trimmed.startsWith('#')) {
+          let hex = trimmed.slice(1);
+          if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
+          if (hex.length >= 6) {
+            const r = parseInt(hex.slice(0, 2), 16);
+            const g = parseInt(hex.slice(2, 4), 16);
+            const b = parseInt(hex.slice(4, 6), 16);
+            const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+            return lum < 140 ? 'light' : 'dark';
+          }
+        }
+        const match = trimmed.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (match) {
+          const lum = 0.299 * parseInt(match[1], 10) + 0.587 * parseInt(match[2], 10) + 0.114 * parseInt(match[3], 10);
+          return lum < 140 ? 'light' : 'dark';
+        }
+      }
+    } catch (_) {}
+
+    // 6. HA dark mode or Sun daylight fallback
     if (this._hass && this._hass.themes && typeof this._hass.themes.darkMode === 'boolean') {
       return this._hass.themes.darkMode ? 'dark' : 'light';
     }
