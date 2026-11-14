@@ -1297,6 +1297,58 @@ export const settingsMethods = {
           </div>
         </div>
 
+        <!-- EMPFOHLENE BEGLEIT-KOMPONENTEN (THEME & THEME ENGINE) -->
+        <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;margin-bottom:14px;">
+          <div style="font-weight:700;font-size:15px;margin-bottom:4px;display:inline-flex;align-items:center;gap:6px;">
+            <ha-icon icon="mdi:auto-fix" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> ${this._t('recommended_companions')}
+          </div>
+          <div style="font-size:12px;color:var(--text-secondary);margin-bottom:14px;">
+            ${this._t('recommended_companions_desc')}
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+            <!-- Vision Glass Theme Card -->
+            <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;color:var(--text-primary);margin-bottom:4px;">
+                  <ha-icon icon="mdi:palette" style="--mdc-icon-size:16px;color:#38bdf8;"></ha-icon> ${this._t('install_theme_title')}
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;">
+                  ${this._t('install_theme_desc')}
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-theme&category=theme" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:rgba(56,189,248,0.15);color:var(--accent);border:1px solid rgba(56,189,248,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;">
+                  <ha-icon icon="mdi:download-circle-outline" style="--mdc-icon-size:15px;"></ha-icon> ${this._t('btn_open_hacs')}
+                </a>
+                <a href="https://github.com/adromir/ha-vision-glass-theme" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:8px;font-size:12px;">
+                  <ha-icon icon="mdi:github" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('btn_view_repo')}
+                </a>
+              </div>
+            </div>
+
+            <!-- Theme Switch Engine Card -->
+            <div style="background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:12px;padding:12px;display:flex;flex-direction:column;justify-content:space-between;gap:10px;">
+              <div>
+                <div style="font-weight:600;font-size:14px;display:flex;align-items:center;gap:6px;color:var(--text-primary);margin-bottom:4px;">
+                  <ha-icon icon="mdi:theme-light-dark" style="--mdc-icon-size:16px;color:#a855f7;"></ha-icon> ${this._t('install_engine_title')}
+                </div>
+                <div style="font-size:12px;color:var(--text-secondary);line-height:1.4;">
+                  ${this._t('install_engine_desc')}
+                </div>
+              </div>
+              <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px;">
+                <a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-theme-switch-engine&category=integration" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:rgba(168,85,247,0.15);color:#c084fc;border:1px solid rgba(168,85,247,0.3);padding:6px 12px;border-radius:8px;font-size:12px;font-weight:600;">
+                  <ha-icon icon="mdi:download-circle-outline" style="--mdc-icon-size:15px;"></ha-icon> ${this._t('btn_open_hacs')}
+                </a>
+                <a href="https://github.com/adromir/ha-theme-switch-engine" target="_blank" rel="noopener noreferrer" style="text-decoration:none;display:inline-flex;align-items:center;gap:6px;background:var(--bg-card);color:var(--text-secondary);border:1px solid var(--border-subtle);padding:6px 10px;border-radius:8px;font-size:12px;">
+                  <ha-icon icon="mdi:github" style="--mdc-icon-size:14px;"></ha-icon> ${this._t('btn_view_repo')}
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
           <div style="font-weight:700;font-size:15px;margin-bottom:12px;display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:earth" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Globale Entitäten</div>
 

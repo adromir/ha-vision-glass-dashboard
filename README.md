@@ -18,11 +18,11 @@ Starting with **v3.0.0**, Vision Glass installs cleanly as a single **HACS Integ
 
 For the ultimate spatial glassmorphism experience across your entire Home Assistant setup, combine Vision Glass Panel with the companion theme and automatic theme switcher:
 
-| Component | Type | Description | Quick Install |
+| Component | Type | Description | Quick Install & Repository |
 | :--- | :--- | :--- | :--- |
-| **Vision Glass Smart Home Panel** | Integration | Spatial Glassmorphism panel, Bento cards, tactile controls, popups, and recorder stats | [![Install Panel](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration) |
-| **Vision Glass Theme** | Theme | Universal Home Assistant theme covering the sidebar, header bar, dialogs, and data tables with frosted glass | [![Install Theme](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-theme&category=theme) |
-| **Theme Switch Engine** | Companion | Seamless, automatic light/dark switching synced to daylight (`sun.sun`) or schedules | [![Install Theme Switcher](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-theme-switch-engine&category=integration) |
+| [**Vision Glass Panel**](https://github.com/adromir/ha-vision-glass-dashboard) | Integration | Spatial Glassmorphism panel, Bento cards, tactile controls, popups, and recorder stats | [![Install Panel](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration)<br>[🔗 GitHub Repository](https://github.com/adromir/ha-vision-glass-dashboard) |
+| [**Vision Glass Theme**](https://github.com/adromir/ha-vision-glass-theme) | Theme | Universal Home Assistant theme covering the sidebar, header bar, dialogs, and data tables with frosted glass | [![Install Theme](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-theme&category=theme)<br>[🔗 GitHub Repository](https://github.com/adromir/ha-vision-glass-theme) |
+| [**Theme Switch Engine**](https://github.com/adromir/ha-theme-switch-engine) | Companion | Seamless, automatic light/dark switching synced to daylight (`sun.sun`) or schedules | [![Install Theme Switcher](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-theme-switch-engine&category=integration)<br>[🔗 GitHub Repository](https://github.com/adromir/ha-theme-switch-engine) |
 
 ---
 
