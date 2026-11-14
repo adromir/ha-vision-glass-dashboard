@@ -329,6 +329,7 @@ export function getBuiltinDockIcon(id, size = 19) {
     case 'security': return renderIcon('lock-closed', { size, cls: 'icon-security' });
     case 'alarmo': return renderIcon('shield', { size, cls: 'icon-alarmo' });
     case 'switches': return renderIcon('plug', { size, cls: 'icon-switch' });
+    case 'devices_helpers': return renderIcon('sliders', { size, cls: 'icon-helpers' });
     case 'battery': return renderIcon('battery-full', { size, cls: 'icon-battery' });
     case 'weather': return renderIcon('weather-partlycloudy', { size, cls: 'icon-weather' });
     case 'settings': return renderIcon('settings', { size });

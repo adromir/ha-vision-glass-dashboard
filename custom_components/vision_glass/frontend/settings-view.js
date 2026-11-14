@@ -626,6 +626,7 @@ export const settingsMethods = {
       { id: 'lighting', title: this._t('lighting'), enabled: true, auto_hide: true },
       { id: 'climate', title: this._t('climate'), enabled: true, auto_hide: true },
       { id: 'stats', title: this._t('stats'), enabled: true, auto_hide: false },
+      { id: 'devices_helpers', title: this._t('devices_helpers_title') || this._t('devices_and_helpers'), enabled: true, auto_hide: false },
       { id: 'security', title: this._t('security'), enabled: true, auto_hide: false },
       { id: 'alarmo', title: this._t('alarmo'), enabled: true, auto_hide: true },
       { id: 'switches', title: this._t('switches'), enabled: true, auto_hide: true },
@@ -821,9 +822,9 @@ export const settingsMethods = {
                 <!-- Bento Card Action Icons Configuration -->
                 <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">Standard- & eigene Aktions-Icons auf Bento-Karte</label>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">${this._t('bento_actions_title') || 'Standard- & eigene Aktions-Icons auf Bento-Karte'}</label>
                     <button type="button" class="btn btn-sm btn-add-custom-room-action" data-ridx="${rIdx}" style="padding:4px 8px;font-size:11px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
-                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:13px;"></ha-icon> Eigenes Aktions-Icon
+                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:13px;"></ha-icon> ${this._t('add_custom_action') || 'Eigenes Aktions-Icon'}
                     </button>
                   </div>
 
@@ -835,8 +836,7 @@ export const settingsMethods = {
                         { type: 'light', label: 'Licht', defaultTitle: this._t('toggle_light') || 'Licht', defaultIcon: 'mdi:lightbulb', defaultEntity: r.light_entity || '' },
                         { type: 'climate', label: 'Heizung', defaultTitle: this._t('open_climate') || 'Heizung', defaultIcon: 'mdi:thermometer', defaultEntity: r.climate_entity || '' },
                         { type: 'media', label: 'Medien', defaultTitle: this._t('toggle_media') || 'Medien', defaultIcon: 'mdi:music', defaultEntity: r.media_entity || r.audio_entity || r.video_entity || '' },
-                        { type: 'lock', label: 'Schloss', defaultTitle: this._t('toggle_lock') || 'Schloss', defaultIcon: 'mdi:lock', defaultEntity: r.lock_entity || '' },
-                        { type: 'devices_helpers', label: 'Schaltzentrale', defaultTitle: this._t('devices_and_helpers') || 'Geräte & Helfer', defaultIcon: 'mdi:tune-vertical', defaultEntity: '' }
+                        { type: 'lock', label: 'Schloss', defaultTitle: this._t('toggle_lock') || 'Schloss', defaultIcon: 'mdi:lock', defaultEntity: r.lock_entity || '' }
                       ];
                       return stdDefs.map(st => {
                         const act = acts.find(a => a.type === st.type) || { type: st.type, enabled: true, title: st.defaultTitle, icon: st.defaultIcon, entity_id: st.defaultEntity };

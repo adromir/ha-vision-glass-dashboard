@@ -1285,15 +1285,20 @@ class VisionGlassPanel extends HTMLElement {
       const cObj = this._hass.states[room.climate_entity];
       const curTemp = cObj.attributes?.current_temperature ?? cObj.attributes?.temperature;
       if (curTemp != null && !isNaN(parseFloat(curTemp))) {
-        return { text: `${parseFloat(curTemp).toFixed(1)}°C`, entityId: room.climate_entity };
+        return { text: `${parseFloat(curTemp).toFixed(1)}°C`, entityId: room.climate_entity, isAlert: false, iconName: 'mdi:thermometer' };
       }
     }
     if (!entityId || typeof entityId !== 'string' || !entityId.trim()) return null;
     const s = this._hass.states[entityId.trim()];
     if (!s || s.state === 'unavailable' || s.state === 'unknown') return null;
 
-    let displayVal = s.state;
+    const devClass = (s.attributes?.device_class || '').toLowerCase();
     const unit = s.attributes?.unit_of_measurement || '';
+    const lang = this._getLang();
+    let displayVal = s.state;
+    let isAlert = false;
+    let dynamicIcon = null;
+
     if (!isNaN(parseFloat(s.state))) {
       const num = parseFloat(s.state);
       if (unit === '°C' || unit === '°F' || badge.id === 'badge_temp' || badge.id === 'temp' || badge.entity_prop === 'temp_entity') {
@@ -1305,12 +1310,76 @@ class VisionGlassPanel extends HTMLElement {
       } else {
         displayVal = `${num} ${unit}`.trim();
       }
-    } else if (s.state === 'on') {
-      displayVal = 'An';
-    } else if (s.state === 'off') {
-      displayVal = 'Aus';
+      if (devClass === 'battery' && num < 15) {
+        isAlert = true;
+      }
+    } else {
+      const st = String(s.state).toLowerCase();
+      if (devClass === 'window' || devClass === 'door' || devClass === 'garage_door' || devClass === 'opening') {
+        if (st === 'on' || st === 'open') {
+          isAlert = true;
+          displayVal = lang === 'en' ? 'Open' : (lang === 'id' ? 'Terbuka' : 'Offen');
+          dynamicIcon = devClass === 'window' ? 'mdi:window-open-variant' : 'mdi:door-open';
+        } else {
+          displayVal = lang === 'en' ? 'Closed' : (lang === 'id' ? 'Tertutup' : 'Zu');
+          dynamicIcon = devClass === 'window' ? 'mdi:window-closed-variant' : 'mdi:door-closed';
+        }
+      } else if (devClass === 'motion' || devClass === 'occupancy' || devClass === 'presence') {
+        if (st === 'on' || st === 'detected') {
+          isAlert = true;
+          displayVal = lang === 'en' ? 'Occupied' : (lang === 'id' ? 'Terisi' : 'Belegt');
+          dynamicIcon = 'mdi:motion-sensor';
+        } else {
+          displayVal = lang === 'en' ? 'Clear' : (lang === 'id' ? 'Kosong' : 'Frei');
+          dynamicIcon = 'mdi:motion-sensor-off';
+        }
+      } else if (devClass === 'lock') {
+        if (st === 'locked') {
+          displayVal = lang === 'en' ? 'Locked' : (lang === 'id' ? 'Terkunci' : 'Zu');
+          dynamicIcon = 'mdi:lock';
+        } else {
+          isAlert = true;
+          displayVal = lang === 'en' ? 'Unlocked' : (lang === 'id' ? 'Tidak terkunci' : 'Offen');
+          dynamicIcon = 'mdi:lock-open-variant';
+        }
+      } else if (devClass === 'moisture') {
+        if (st === 'on' || st === 'wet') {
+          isAlert = true;
+          displayVal = lang === 'en' ? 'Wet' : (lang === 'id' ? 'Basah' : 'Nass');
+          dynamicIcon = 'mdi:water-alert';
+        } else {
+          displayVal = lang === 'en' ? 'Dry' : (lang === 'id' ? 'Kering' : 'Trocken');
+          dynamicIcon = 'mdi:water-check';
+        }
+      } else if (devClass === 'smoke' || devClass === 'gas' || devClass === 'problem' || devClass === 'safety') {
+        if (st === 'on' || st === 'problem') {
+          isAlert = true;
+          displayVal = 'Alarm';
+          dynamicIcon = 'mdi:alert-circle';
+        } else {
+          displayVal = 'OK';
+          dynamicIcon = 'mdi:check-circle';
+        }
+      } else if (st === 'on') {
+        displayVal = lang === 'en' ? 'On' : (lang === 'id' ? 'Nyala' : 'An');
+        isAlert = true;
+      } else if (st === 'off') {
+        displayVal = lang === 'en' ? 'Off' : (lang === 'id' ? 'Mati' : 'Aus');
+      }
     }
-    return { text: displayVal, entityId: entityId.trim() };
+
+    let finalIcon = dynamicIcon;
+    if (!finalIcon && badge.icon && badge.icon.trim()) {
+      finalIcon = badge.icon.trim();
+    }
+    if (!finalIcon && s.attributes?.icon) {
+      finalIcon = s.attributes.icon;
+    }
+    if (!finalIcon) {
+      finalIcon = 'mdi:chart-box-outline';
+    }
+
+    return { text: displayVal, entityId: entityId.trim(), isAlert, iconName: finalIcon };
   }
 
   _updateRoomCard(room, idx) {
@@ -1343,10 +1412,23 @@ class VisionGlassPanel extends HTMLElement {
             if (battWarn) envBar.insertBefore(bEl, battWarn);
             else envBar.appendChild(bEl);
           }
-          const iconName = (b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline'));
+          const iconName = valObj.iconName || ((b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline')));
           bEl.innerHTML = `${this._icon(iconName, { size: 11, style: 'margin-right:3px;' })} <span>${valObj.text}</span>`;
           bEl.style.display = 'inline-flex';
           bEl.title = `${b.name || 'Badge'}: ${valObj.text}`;
+          if (valObj.isAlert) {
+            bEl.classList.add('badge-alert');
+            bEl.style.borderColor = 'rgba(245,158,11,0.55)';
+            bEl.style.background = 'rgba(245,158,11,0.18)';
+            bEl.style.color = '#fbbf24';
+            bEl.style.fontWeight = '700';
+          } else {
+            bEl.classList.remove('badge-alert');
+            bEl.style.borderColor = '';
+            bEl.style.background = '';
+            bEl.style.color = '';
+            bEl.style.fontWeight = '';
+          }
         } else if (bEl) {
           bEl.remove();
         }
@@ -1896,8 +1978,11 @@ class VisionGlassPanel extends HTMLElement {
                         const valObj = this._resolveBentoBadgeValue(b, room);
                         if (!valObj || !valObj.text) return '';
                         const bId = b.id || bIdx;
-                        const iconName = (b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline'));
-                        return `<span class="env-pill bento-badge-pill" id="badge_${idx}_${bId}" style="display:inline-flex;" title="${b.name || 'Badge'}: ${valObj.text}">${this._icon(iconName, { size: 11, style: 'margin-right:3px;' })} <span>${valObj.text}</span></span>`;
+                        const iconName = valObj.iconName || ((b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline')));
+                        const alertStyle = valObj.isAlert
+                          ? 'border-color:rgba(245,158,11,0.55);background:rgba(245,158,11,0.18);color:#fbbf24;font-weight:700;'
+                          : '';
+                        return `<span class="env-pill bento-badge-pill ${valObj.isAlert ? 'badge-alert' : ''}" id="badge_${idx}_${bId}" style="display:inline-flex;${alertStyle}" title="${b.name || 'Badge'}: ${valObj.text}">${this._icon(iconName, { size: 11, style: 'margin-right:3px;' })} <span>${valObj.text}</span></span>`;
                       }).join('');
                     })()}
                   </div>
@@ -1910,7 +1995,6 @@ class VisionGlassPanel extends HTMLElement {
                         const out = [];
                         acts.forEach(a => {
                           if (a.enabled === false) return;
-                          const iconName = (a.icon && a.icon.includes(':')) ? a.icon : (MDI_ICON_MAP[a.icon] || (a.icon ? 'mdi:' + a.icon : ''));
                           const title = a.title || '';
 
                           if (a.type === 'light') {
@@ -1918,33 +2002,62 @@ class VisionGlassPanel extends HTMLElement {
                             if (ent) {
                               const s = this._hass && this._hass.states[ent];
                               const isOn = s && s.state === 'on';
-                              out.push(`<div class="action-circle action-light ${isOn ? 'active' : ''}" title="${title || this._t('toggle_light')}" data-action="light" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'light', { size: 16, cls: 'icon-light' })}</div>`);
+                              const inheritedIcon = s?.attributes?.icon;
+                              const iconName = (a.icon && a.icon.trim()) ? a.icon.trim() : (inheritedIcon || 'mdi:lightbulb');
+                              out.push(`<div class="action-circle action-light ${isOn ? 'active active-amber' : ''}" title="${title || this._t('toggle_light')}" data-action="light" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName, { size: 16, cls: 'icon-light' })}</div>`);
                             }
                           } else if (a.type === 'climate') {
                             const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : (room.climate_entity && room.climate_entity.trim());
                             if (ent) {
-                              out.push(`<div class="action-circle action-climate" title="${title || this._t('open_climate')}" data-action="climate" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'climate', { size: 16, cls: 'icon-climate' })}</div>`);
+                              const s = this._hass && this._hass.states[ent];
+                              const isHeating = s && (s.state === 'heat' || s.attributes?.hvac_action === 'heating' || s.attributes?.call_for_heat === true || (s.attributes?.heating_power && s.attributes.heating_power > 0.05));
+                              const inheritedIcon = s?.attributes?.icon;
+                              const iconName = (a.icon && a.icon.trim()) ? a.icon.trim() : (inheritedIcon || 'mdi:thermometer');
+                              out.push(`<div class="action-circle action-climate ${isHeating ? 'active-heat' : 'cool-idle'}" title="${title || this._t('open_climate')}" data-action="climate" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName, { size: 16, cls: 'icon-climate' })}</div>`);
                             }
                           } else if (a.type === 'media') {
                             const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim()));
                             if (ent) {
                               const s = this._hass && this._hass.states[ent];
                               const isOn = s && (s.state === 'playing' || s.state === 'on');
-                              out.push(`<div class="action-circle action-media ${isOn ? 'active' : ''}" title="${title || this._t('toggle_media')}" data-action="media" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'music', { size: 16, cls: 'icon-media' })}</div>`);
+                              const inheritedIcon = s?.attributes?.icon;
+                              const iconName = (a.icon && a.icon.trim()) ? a.icon.trim() : (inheritedIcon || 'mdi:music');
+                              out.push(`<div class="action-circle action-media ${isOn ? 'active' : ''}" title="${title || this._t('toggle_media')}" data-action="media" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName, { size: 16, cls: 'icon-media' })}</div>`);
                             }
                           } else if (a.type === 'lock') {
                             const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : (room.lock_entity && room.lock_entity.trim());
                             if (ent) {
                               const s = this._hass && this._hass.states[ent];
                               const isLocked = s && s.state === 'locked';
-                              out.push(`<div class="action-circle action-lock ${isLocked ? 'active' : ''}" title="${title || this._t('toggle_lock')}" data-action="lock" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'lock-closed', { size: 16, cls: 'icon-security' })}</div>`);
+                              const inheritedIcon = s?.attributes?.icon;
+                              const iconName = (a.icon && a.icon.trim()) ? a.icon.trim() : (inheritedIcon || (isLocked ? 'mdi:lock' : 'mdi:lock-open-variant'));
+                              out.push(`<div class="action-circle action-lock ${isLocked ? 'active-green' : 'active-amber'}" title="${title || this._t('toggle_lock')}" data-action="lock" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName, { size: 16, cls: 'icon-security' })}</div>`);
                             }
                           } else if (a.type === 'devices_helpers') {
-                            out.push(`<div class="action-circle action-devices-helpers" title="${title || (this._t('devices_and_helpers') || 'Geräte & Helfer')}" data-action="devices_helpers" data-idx="${idx}">${this._icon(iconName || 'mdi:tune-vertical', { size: 16 })}</div>`);
+                            out.push(`<div class="action-circle action-devices-helpers" title="${title || (this._t('devices_and_helpers') || 'Geräte & Helfer')}" data-action="devices_helpers" data-idx="${idx}">${this._icon(a.icon || 'mdi:tune-vertical', { size: 16 })}</div>`);
                           } else if (a.type === 'custom' && a.entity_id) {
-                            const s = this._hass && this._hass.states[a.entity_id];
-                            const isOn = s && (s.state === 'on' || s.state === 'open' || s.state === 'active' || s.state === 'playing');
-                            out.push(`<div class="action-circle action-custom ${isOn ? 'active' : ''}" title="${a.title || a.entity_id}" data-action="custom" data-entity="${a.entity_id}" data-idx="${idx}">${this._icon(a.icon || 'star', { size: 16 })}</div>`);
+                            const ent = a.entity_id.trim();
+                            const s = this._hass && this._hass.states[ent];
+                            const isOn = s && (s.state === 'on' || s.state === 'open' || s.state === 'active' || s.state === 'playing' || s.state === 'heat' || s.state === 'cool' || s.state === 'unlocked');
+                            let iconName = (a.icon && a.icon.trim()) ? a.icon.trim() : '';
+                            if (!iconName) {
+                              if (s?.attributes?.icon) {
+                                iconName = s.attributes.icon;
+                              } else if (ent.startsWith('switch.') || ent.startsWith('input_boolean.')) {
+                                iconName = isOn ? 'mdi:toggle-switch' : 'mdi:toggle-switch-off';
+                              } else if (ent.startsWith('cover.')) {
+                                iconName = s?.state === 'open' ? 'mdi:window-shutter-open' : 'mdi:window-shutter';
+                              } else if (ent.startsWith('binary_sensor.')) {
+                                const dc = (s?.attributes?.device_class || '').toLowerCase();
+                                if (dc === 'window') iconName = isOn ? 'mdi:window-open-variant' : 'mdi:window-closed-variant';
+                                else if (dc === 'door') iconName = isOn ? 'mdi:door-open' : 'mdi:door-closed';
+                                else if (dc === 'motion') iconName = isOn ? 'mdi:motion-sensor' : 'mdi:motion-sensor-off';
+                                else iconName = isOn ? 'mdi:checkbox-marked-circle' : 'mdi:checkbox-blank-circle-outline';
+                              } else {
+                                iconName = 'mdi:star';
+                              }
+                            }
+                            out.push(`<div class="action-circle action-custom ${isOn ? 'active' : ''}" title="${title || s?.attributes?.friendly_name || ent}" data-action="custom" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName, { size: 16 })}</div>`);
                           }
                         });
                         return out.join('');
@@ -1973,6 +2086,7 @@ class VisionGlassPanel extends HTMLElement {
               { id: 'lighting', title: this._t('lighting'), enabled: true, auto_hide: true },
               { id: 'climate', title: this._t('climate'), enabled: true, auto_hide: true },
               { id: 'stats', title: this._t('stats'), enabled: true, auto_hide: false },
+              { id: 'devices_helpers', title: this._t('devices_helpers_title') || this._t('devices_and_helpers'), enabled: true, auto_hide: false },
               { id: 'security', title: this._t('security'), enabled: true, auto_hide: false },
               { id: 'alarmo', title: this._t('alarmo'), enabled: true, auto_hide: true },
               { id: 'switches', title: this._t('switches'), enabled: true, auto_hide: true },
@@ -1981,11 +2095,16 @@ class VisionGlassPanel extends HTMLElement {
             ];
             const effItems = (dockCfg.items && dockCfg.items.length > 0) ? dockCfg.items : defaultDockItems;
 
-            return effItems.map(item => {
+            const itemsHtml = effItems.map(item => {
               if (item.enabled === false) return '';
               const iconHtml = item.icon ? this._icon(item.icon, { size: 19 }) : this._getBuiltinDockIcon(item.id, 19);
               return `<div class="dock-item" data-dock-id="${item.id}" title="${item.title || item.id}">${iconHtml}</div>`;
             }).join('');
+
+            const hasHelpers = effItems.some(i => i.id === 'devices_helpers' && i.enabled !== false);
+            const helpersHtml = !hasHelpers ? `<div class="dock-item" data-dock-id="devices_helpers" title="${this._t('devices_helpers_title') || this._t('devices_and_helpers')}">${this._getBuiltinDockIcon('devices_helpers', 19)}</div>` : '';
+
+            return itemsHtml + helpersHtml;
           })()}
           <div class="dock-item" data-dock-id="settings" title="${this._t('settings')}" style="color:var(--accent);">${this._icon('settings', { size: 19 })}</div>
         </div>
@@ -2081,7 +2200,7 @@ class VisionGlassPanel extends HTMLElement {
           const item = items.find(i => i.id === dockId);
           if (item && item.entities && item.entities.length > 0) {
             this._openCustomDockModal(item);
-          } else if (['lighting', 'climate', 'security', 'alarmo', 'switches', 'battery', 'weather'].includes(dockId)) {
+          } else if (['lighting', 'climate', 'security', 'alarmo', 'switches', 'battery', 'weather', 'devices_helpers'].includes(dockId)) {
             this._openModal(dockId);
           } else if (item) {
             this._openCustomDockModal(item);

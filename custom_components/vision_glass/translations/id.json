@@ -1,0 +1,32 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Siapkan Panel Rumah Pintar Vision Glass",
+        "description": "Konfigurasikan Panel Rumah Pintar Vision Glass dan secara opsional migrasikan konfigurasi dasbor Lovelace yang ada.",
+        "data": {
+          "sidebar_title": "Judul Bilah Sisi",
+          "sidebar_icon": "Ikon Bilah Sisi",
+          "require_admin": "Hanya Akses Admin",
+          "migrate_lovelace": "Migrasikan konfigurasi Lovelace 'vision-glass' yang sudah ada"
+        }
+      }
+    },
+    "abort": {
+      "single_instance_allowed": "Vision Glass sudah dikonfigurasi."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Opsi Panel Rumah Pintar Vision Glass",
+        "description": "Sesuaikan visibilitas dan tampilan bilah sisi untuk Panel Rumah Pintar Vision Glass.",
+        "data": {
+          "sidebar_title": "Judul Bilah Sisi",
+          "sidebar_icon": "Ikon Bilah Sisi",
+          "require_admin": "Hanya Akses Admin"
+        }
+      }
+    }
+  }
+}

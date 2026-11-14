@@ -264,7 +264,11 @@ export const I18N = {
         group_by_domain: 'Nach Domäne',
         unassigned_area: 'Ohne Bereich / Allgemein',
         show_temp_control: 'Temperatur-Schnellregler auf Bento-Karte anzeigen',
-        show_temp_control_hint: 'Regelt wahlweise das Thermostat oder den Zieltemperatur-Helfer'
+        show_temp_control_hint: 'Regelt wahlweise das Thermostat oder den Zieltemperatur-Helfer',
+        bento_actions_title: 'Standard- & eigene Aktions-Icons auf Bento-Karte',
+        add_custom_action: 'Eigenes Aktions-Icon',
+        bento_badges_title: 'Sensor-Badges auf Bento-Karte',
+        add_custom_badge: 'Eigenes Badge'
       },
       en: {
         welcome: 'Welcome',
@@ -531,7 +535,11 @@ export const I18N = {
         group_by_domain: 'By Domain',
         unassigned_area: 'No Area / General',
         show_temp_control: 'Show quick temperature stepper on Bento card',
-        show_temp_control_hint: 'Controls thermostat or target temperature helper'
+        show_temp_control_hint: 'Controls thermostat or target temperature helper',
+        bento_actions_title: 'Standard & custom action icons on Bento card',
+        add_custom_action: 'Custom Action Icon',
+        bento_badges_title: 'Sensor badges on Bento card',
+        add_custom_badge: 'Custom Badge'
       },
       id: {
         welcome: 'Selamat datang',
@@ -798,6 +806,10 @@ export const I18N = {
         group_by_domain: 'Berdasarkan Domain',
         unassigned_area: 'Tanpa Area / Umum',
         show_temp_control: 'Tampilkan kontrol suhu cepat di kartu Bento',
-        show_temp_control_hint: 'Mengontrol termostat atau pembantu suhu target'
+        show_temp_control_hint: 'Mengontrol termostat atau pembantu suhu target',
+        bento_actions_title: 'Ikon aksi standar & kustom di kartu Bento',
+        add_custom_action: 'Ikon Aksi Kustom',
+        bento_badges_title: 'Lencana sensor di kartu Bento',
+        add_custom_badge: 'Lencana Kustom'
       }
     };
