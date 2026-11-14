@@ -1,4 +1,4 @@
-import { ICONS, POPULAR_HA_ICONS } from './icons.js';
+import { ICONS, POPULAR_HA_ICONS, MDI_ICON_MAP } from './icons.js';
 
 function toHexColor(str) {
   if (!str) return '#38bdf8';
@@ -26,34 +26,46 @@ function hexToRgba(hex, alpha = 0.2) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function updateBadgeLivePreview(container, bIdx, badge, iconRenderer) {
-  const lightBox = container.querySelector(`#previewBadgeLight_${bIdx}`);
-  const darkBox = container.querySelector(`#previewBadgeDark_${bIdx}`);
-  const nameInp = container.querySelector(`.in-badge-name[data-bidx="${bIdx}"]`);
-  const displayName = nameInp?.value || badge.name || '21.5°C';
-  const iconName = badge.icon || 'star';
-
-  if (lightBox) {
-    lightBox.style.color = badge.icon_color_light || '#ea580c';
-    lightBox.style.background = badge.bg_light || 'rgba(234,88,12,0.1)';
-    lightBox.style.borderColor = badge.border_light || 'rgba(234,88,12,0.25)';
-    const iconSpan = lightBox.querySelector('.preview-badge-icon');
-    if (iconSpan) iconSpan.innerHTML = iconRenderer(iconName, { size: 14, color: badge.icon_color_light || '#ea580c' });
-    const textSpan = lightBox.querySelector('.preview-badge-text');
-    if (textSpan) textSpan.textContent = displayName;
-  }
-  if (darkBox) {
-    darkBox.style.color = badge.icon_color_dark || '#fb923c';
-    darkBox.style.background = badge.bg_dark || 'rgba(251,146,60,0.15)';
-    darkBox.style.borderColor = badge.border_dark || 'rgba(251,146,60,0.35)';
-    const iconSpan = darkBox.querySelector('.preview-badge-icon');
-    if (iconSpan) iconSpan.innerHTML = iconRenderer(iconName, { size: 14, color: badge.icon_color_dark || '#fb923c' });
-    const textSpan = darkBox.querySelector('.preview-badge-text');
-    if (textSpan) textSpan.textContent = displayName;
-  }
-}
-
 export const settingsMethods = {
+  _getRoomBentoBadges(room) {
+    if (!room) return [];
+    if (Array.isArray(room.bento_badges)) {
+      return room.bento_badges;
+    }
+    // Legacy migration from global config.bento_badges if present
+    if (this._config && Array.isArray(this._config.bento_badges) && this._config.bento_badges.length > 0) {
+      const matching = this._config.bento_badges.filter(b => (!b.rooms || b.rooms.includes('all') || b.rooms.includes(room.id)));
+      if (matching.length > 0) return matching;
+    }
+    // Clean default fallback for room primary sensor entities
+    const badges = [];
+    if (room.temp_entity || room.climate_entity) {
+      badges.push({
+        id: 'badge_temp',
+        name: 'Temperatur',
+        icon: 'mdi:thermometer',
+        entity_id: room.temp_entity || (room.climate_entity || '')
+      });
+    }
+    if (room.humidity_entity) {
+      badges.push({
+        id: 'badge_humidity',
+        name: 'Luftfeuchtigkeit',
+        icon: 'mdi:water-percent',
+        entity_id: room.humidity_entity
+      });
+    }
+    if (room.illuminance_entity) {
+      badges.push({
+        id: 'badge_lux',
+        name: 'Helligkeit',
+        icon: 'mdi:brightness-6',
+        entity_id: room.illuminance_entity
+      });
+    }
+    return badges;
+  },
+
   _showIconPicker({ currentValue = '', onSelect }) {
     let pickerOverlay = this.shadowRoot.getElementById('iconPickerOverlay');
     if (pickerOverlay) pickerOverlay.remove();
@@ -78,27 +90,55 @@ export const settingsMethods = {
       box-sizing: border-box;
     `;
 
-    let activeCategory = 'all';
     let searchQuery = '';
-    let customVal = currentValue || '';
 
-    // Build icon list
-    const builtinList = Object.keys(ICONS || {}).map(k => ({ name: k, label: k, isMdi: false }));
-    const popularCategories = POPULAR_HA_ICONS || [];
-    const allPopularMdi = [];
-    popularCategories.forEach(cat => {
-      cat.icons.forEach(ic => {
-        if (!allPopularMdi.some(x => x.name === ic)) {
-          allPopularMdi.push({ name: ic, label: ic.replace('mdi:', ''), category: cat.category, isMdi: true });
-        }
-      });
+    // Build unified, deduplicated list of all available icons (all starting with mdi:)
+    const iconSet = new Set();
+    const allIcons = [];
+
+    const addIcon = (raw) => {
+      if (!raw || typeof raw !== 'string') return;
+      let mdi = raw.trim();
+      if (!mdi.startsWith('mdi:') && !mdi.includes(':')) {
+        mdi = MDI_ICON_MAP[mdi] || `mdi:${mdi}`;
+      }
+      if (!iconSet.has(mdi)) {
+        iconSet.add(mdi);
+        allIcons.push({ name: mdi, label: mdi.replace(/^mdi:/, '') });
+      }
+    };
+
+    // 1. All icons from POPULAR_HA_ICONS
+    (POPULAR_HA_ICONS || []).forEach(cat => {
+      (cat.icons || []).forEach(addIcon);
     });
 
-    const categories = [
-      { id: 'all', label: '<ha-icon icon="mdi:star" style="--mdc-icon-size:16px;"></ha-icon> Alle Favoriten' },
-      ...popularCategories.map(c => ({ id: c.category, label: c.category })),
-      { id: 'builtin', label: '<ha-icon icon="mdi:palette" style="--mdc-icon-size:16px;"></ha-icon> Vision Glass Icons' }
-    ];
+    // 2. All icons from MDI_ICON_MAP
+    Object.values(MDI_ICON_MAP || {}).forEach(addIcon);
+
+    // 3. Built-in keys from ICONS mapped to MDI
+    Object.keys(ICONS || {}).forEach(addIcon);
+
+    // 4. Additional standard Home Assistant MDI icons to ensure comprehensive coverage
+    [
+      'mdi:home', 'mdi:home-outline', 'mdi:home-assistant', 'mdi:view-dashboard',
+      'mdi:lightbulb', 'mdi:lightbulb-outline', 'mdi:lightbulb-group', 'mdi:led-strip', 'mdi:ceiling-light', 'mdi:wall-sconce', 'mdi:lamp', 'mdi:desk-lamp', 'mdi:chandelier',
+      'mdi:power-socket-eu', 'mdi:power-socket-us', 'mdi:power', 'mdi:toggle-switch', 'mdi:toggle-switch-off', 'mdi:lightning-bolt', 'mdi:flash', 'mdi:solar-power',
+      'mdi:thermometer', 'mdi:thermometer-chevron-up', 'mdi:thermometer-chevron-down', 'mdi:thermostat', 'mdi:air-conditioner', 'mdi:radiator', 'mdi:fire', 'mdi:snowflake', 'mdi:fan', 'mdi:hvac',
+      'mdi:water-percent', 'mdi:water', 'mdi:water-pump', 'mdi:water-boiler', 'mdi:sprinkler',
+      'mdi:brightness-6', 'mdi:brightness-5', 'mdi:white-balance-sunny',
+      'mdi:lock', 'mdi:lock-open', 'mdi:door', 'mdi:door-open', 'mdi:window-closed', 'mdi:window-open', 'mdi:window-shutter', 'mdi:curtains', 'mdi:blinds',
+      'mdi:shield', 'mdi:shield-check', 'mdi:shield-alert', 'mdi:shield-home', 'mdi:motion-sensor', 'mdi:motion-sensor-off', 'mdi:cctv', 'mdi:siren', 'mdi:smoke-detector', 'mdi:gas-cylinder',
+      'mdi:television', 'mdi:speaker', 'mdi:speaker-multiple', 'mdi:cast', 'mdi:cast-connected', 'mdi:music', 'mdi:radio', 'mdi:play', 'mdi:pause', 'mdi:stop', 'mdi:remote',
+      'mdi:washing-machine', 'mdi:tumble-dryer', 'mdi:dishwasher', 'mdi:robot-vacuum', 'mdi:coffee-maker', 'mdi:fridge', 'mdi:microwave', 'mdi:kettle', 'mdi:toaster', 'mdi:iron',
+      'mdi:garage', 'mdi:garage-open', 'mdi:car', 'mdi:car-electric', 'mdi:ev-station', 'mdi:bicycle',
+      'mdi:weather-sunny', 'mdi:weather-night', 'mdi:weather-cloudy', 'mdi:weather-partly-cloudy', 'mdi:weather-rainy', 'mdi:weather-pouring', 'mdi:weather-snowy', 'mdi:weather-fog', 'mdi:weather-windy', 'mdi:weather-lightning',
+      'mdi:battery', 'mdi:battery-charging', 'mdi:battery-alert', 'mdi:wifi', 'mdi:router-wireless', 'mdi:nas', 'mdi:printer',
+      'mdi:account', 'mdi:account-group', 'mdi:walk', 'mdi:run', 'mdi:bed', 'mdi:sofa', 'mdi:silverware-fork-knife', 'mdi:bathtub', 'mdi:baby',
+      'mdi:calendar', 'mdi:clock-outline', 'mdi:timer-outline', 'mdi:alarm', 'mdi:bell', 'mdi:bell-ring', 'mdi:trash-can-outline', 'mdi:recycle', 'mdi:leaf',
+      'mdi:chart-bar', 'mdi:chart-line', 'mdi:chart-box-outline', 'mdi:gauge', 'mdi:tune', 'mdi:pulse',
+      'mdi:star', 'mdi:star-outline', 'mdi:heart', 'mdi:heart-outline', 'mdi:help-circle-outline', 'mdi:alert-circle', 'mdi:information-outline', 'mdi:cog'
+    ].forEach(addIcon);
 
     pickerOverlay.innerHTML = `
       <div class="icon-picker-card" style="
@@ -122,51 +162,22 @@ export const settingsMethods = {
               <ha-icon icon="mdi:palette" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Icon auswählen
             </div>
             <div style="font-size: 12px; color: var(--text-secondary, #94a3b8); margin-top: 2px;">
-              Wähle aus Standard-Icons oder gib ein beliebiges Home Assistant Icon ein (z.B. <code style="color:var(--accent,#38bdf8);">mdi:thermometer</code>)
+              Klicke auf ein Icon zum sofortigen Übernehmen oder suche gezielt nach Namen.
             </div>
           </div>
           <button id="btnIconPickerClose" style="background: transparent; border: none; font-size: 26px; color: var(--text-secondary, #94a3b8); cursor: pointer; padding: 0 6px; line-height: 1; border-radius: 6px;">&times;</button>
         </div>
 
-        <!-- Custom Icon Input & Search Bar -->
-        <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; flex-direction: column; gap: 10px;">
-          <!-- Direct MDI input bar -->
+        <!-- Search / Direct Input Bar -->
+        <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; flex-direction: column; gap: 8px;">
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle, rgba(255,255,255,0.1));">
-            <div id="iconPickerCustomPreview" style="width:36px;height:36px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent,#38bdf8);flex-shrink:0;">
-              ${this._icon(customVal || 'star', { size: 22 })}
-            </div>
-            <input type="text" id="iconPickerCustomInp" value="${customVal}" placeholder="mdi:xyz oder Icon-Name..." style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border-glass, rgba(255,255,255,0.2));background:rgba(255,255,255,0.07);color:var(--text-primary,#ffffff);font-size:13px;font-family:monospace;outline:none;">
-            <button type="button" id="btnApplyCustomIcon" style="padding:8px 14px;border-radius:8px;background:var(--accent,#38bdf8);color:#ffffff;border:none;font-weight:700;font-size:12px;cursor:pointer;white-space:nowrap;">
-              Übernehmen
-            </button>
-          </div>
-
-          <!-- Live Search filter -->
-          <input type="text" id="iconPickerSearchInp" placeholder="Schnellsuche in Favoriten..." style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle, rgba(255,255,255,0.15)); background: rgba(255,255,255,0.04); color: var(--text-primary, #ffffff); font-size: 13px; outline: none; box-sizing: border-box;">
-
-          <!-- Category Pills -->
-          <div id="iconPickerCategoryPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
-            ${categories.map(c => `
-              <button type="button" class="icon-cat-pill ${c.id === 'all' ? 'active' : ''}" data-cat="${c.id}" style="
-                padding: 4px 10px;
-                border-radius: 20px;
-                font-size: 11px;
-                font-weight: 600;
-                border: 1px solid ${c.id === 'all' ? 'var(--accent, #38bdf8)' : 'var(--border-subtle, rgba(255,255,255,0.15))'};
-                background: ${c.id === 'all' ? 'rgba(56, 189, 248, 0.18)' : 'rgba(255, 255, 255, 0.04)'};
-                color: ${c.id === 'all' ? 'var(--accent, #38bdf8)' : 'var(--text-secondary, #94a3b8)'};
-                cursor: pointer;
-                white-space: nowrap;
-                transition: all 0.15s ease;
-              ">
-                ${c.label}
-              </button>
-            `).join('')}
+            <ha-icon icon="mdi:magnify" style="--mdc-icon-size:20px;color:var(--accent,#38bdf8);flex-shrink:0;"></ha-icon>
+            <input type="text" id="iconPickerSearchInp" placeholder="Icon suchen oder mdi:name eingeben..." style="flex:1;background:transparent;border:none;outline:none;color:var(--text-primary,#ffffff);font-size:13px;">
           </div>
         </div>
 
         <!-- Scrollable Icon Grid -->
-        <div id="iconPickerGridContainer" style="padding: 16px 20px; overflow-y: auto; flex: 1; max-height: 380px;">
+        <div id="iconPickerGridContainer" style="padding: 16px 20px; overflow-y: auto; flex: 1; max-height: 420px;">
           <div id="iconPickerGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 8px;">
             <!-- Rendered by updateGrid() -->
           </div>
@@ -180,27 +191,29 @@ export const settingsMethods = {
       const grid = pickerOverlay.querySelector('#iconPickerGrid');
       if (!grid) return;
 
-      let list = [];
-      if (activeCategory === 'builtin') {
-        list = builtinList;
-      } else if (activeCategory === 'all') {
-        list = [...builtinList, ...allPopularMdi];
-      } else {
-        const catObj = popularCategories.find(c => c.category === activeCategory);
-        list = (catObj?.icons || []).map(ic => ({ name: ic, label: ic.replace('mdi:', ''), isMdi: true }));
-      }
-
+      let list = allIcons;
       if (searchQuery) {
-        const q = searchQuery.toLowerCase();
-        list = list.filter(item => item.name.toLowerCase().includes(q) || item.label.toLowerCase().includes(q));
+        const q = searchQuery.toLowerCase().replace(/^mdi:/, '');
+        list = list.filter(item => item.label.toLowerCase().includes(q) || item.name.toLowerCase().includes(q));
       }
 
       if (list.length === 0) {
+        const typedIcon = searchQuery.includes(':') ? searchQuery : `mdi:${searchQuery}`;
         grid.innerHTML = `
           <div style="grid-column: 1 / -1; padding: 24px; text-align: center; color: var(--text-secondary, #94a3b8); font-size: 13px;">
-            Kein passendes Icon in den Favoriten gefunden. Gib den Namen oben im MDI-Feld direkt ein!
+            <p style="margin-bottom:12px;">Kein Icon im Katalog gefunden.</p>
+            <button type="button" class="btn-select-icon" data-icon="${typedIcon}" style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:8px;background:var(--accent,#38bdf8);color:#ffffff;border:none;cursor:pointer;font-weight:600;">
+              <ha-icon icon="${typedIcon}" style="--mdc-icon-size:18px;"></ha-icon> "${typedIcon}" verwenden
+            </button>
           </div>
         `;
+        const directBtn = grid.querySelector('.btn-select-icon');
+        if (directBtn) {
+          directBtn.onclick = () => {
+            if (onSelect) onSelect(typedIcon);
+            pickerOverlay.remove();
+          };
+        }
         return;
       }
 
@@ -221,7 +234,7 @@ export const settingsMethods = {
           overflow: hidden;
         ">
           <div style="color: var(--accent, #38bdf8); display: flex; align-items: center; justify-content: center; width: 28px; height: 28px;">
-            ${this._icon(item.name, { size: 24 })}
+            <ha-icon icon="${item.name}" style="--mdc-icon-size:24px;"></ha-icon>
           </div>
           <div style="font-size: 10px; color: var(--text-secondary, #94a3b8); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 2px;">
             ${item.label}
@@ -248,47 +261,30 @@ export const settingsMethods = {
 
     updateGrid();
 
-    // Event listeners
-    const customInp = pickerOverlay.querySelector('#iconPickerCustomInp');
-    const customPrev = pickerOverlay.querySelector('#iconPickerCustomPreview');
-    if (customInp && customPrev) {
-      customInp.oninput = () => {
-        const val = customInp.value.trim() || 'star';
-        customPrev.innerHTML = this._icon(val, { size: 22 });
-      };
-    }
-
-    const btnApply = pickerOverlay.querySelector('#btnApplyCustomIcon');
-    if (btnApply && customInp) {
-      btnApply.onclick = () => {
-        const val = customInp.value.trim();
-        if (val && onSelect) onSelect(val);
-        pickerOverlay.remove();
-      };
-    }
-
     const searchInp = pickerOverlay.querySelector('#iconPickerSearchInp');
     if (searchInp) {
       searchInp.oninput = () => {
         searchQuery = searchInp.value.trim();
         updateGrid();
       };
-    }
-
-    pickerOverlay.querySelectorAll('.icon-cat-pill').forEach(pill => {
-      pill.onclick = () => {
-        activeCategory = pill.getAttribute('data-cat');
-        pickerOverlay.querySelectorAll('.icon-cat-pill').forEach(p => {
-          p.style.borderColor = 'var(--border-subtle, rgba(255,255,255,0.15))';
-          p.style.background = 'rgba(255, 255, 255, 0.04)';
-          p.style.color = 'var(--text-secondary, #94a3b8)';
-        });
-        pill.style.borderColor = 'var(--accent, #38bdf8)';
-        pill.style.background = 'rgba(56, 189, 248, 0.18)';
-        pill.style.color = 'var(--accent, #38bdf8)';
-        updateGrid();
+      searchInp.onkeydown = (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const val = searchInp.value.trim();
+          if (val) {
+            const firstBtn = pickerOverlay.querySelector('.btn-select-icon');
+            if (firstBtn) {
+              firstBtn.click();
+            } else {
+              const typedIcon = val.includes(':') ? val : `mdi:${val}`;
+              if (onSelect) onSelect(typedIcon);
+              pickerOverlay.remove();
+            }
+          }
+        }
       };
-    });
+      setTimeout(() => searchInp.focus(), 50);
+    }
 
     const closeBtn = pickerOverlay.querySelector('#btnIconPickerClose');
     if (closeBtn) closeBtn.onclick = () => pickerOverlay.remove();
@@ -606,7 +602,7 @@ export const settingsMethods = {
     if (!container || !this._config) return;
     this._ensureDiscovery?.();
 
-    if (!this._settingsActiveTab) this._settingsActiveTab = 'rooms';
+    if (!this._settingsActiveTab || this._settingsActiveTab === 'badges') this._settingsActiveTab = 'rooms';
     const activeTab = this._settingsActiveTab;
 
     const rooms = this._config.rooms || [];
@@ -627,10 +623,6 @@ export const settingsMethods = {
     }
     const dock = this._config.dock;
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
-    if (!this._config.bento_badges) {
-      this._config.bento_badges = this._getEffectiveBentoBadges();
-    }
-    const bentoBadges = this._config.bento_badges;
 
     const bgStyle = this._config.background_style || 'aurora';
     const bgMode = this._config.background_mode || 'auto';
@@ -661,7 +653,6 @@ export const settingsMethods = {
       <!-- Settings Navigation Tabs -->
       <div class="nav-tabs" style="display:flex;flex-wrap:wrap;gap:8px;border-bottom:1px solid var(--border-subtle);padding-bottom:12px;margin-bottom:16px;">
         <button class="nav-tab ${activeTab === 'rooms' ? 'active' : ''}" data-stab="rooms" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:home-outline" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('rooms_and_cards')} (${rooms.length})</button>
-        <button class="nav-tab ${activeTab === 'badges' ? 'active' : ''}" data-stab="badges" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:tag-outline" style="--mdc-icon-size:16px;"></ha-icon> Bento-Badges (${bentoBadges.length})</button>
         <button class="nav-tab ${activeTab === 'overlays' ? 'active' : ''}" data-stab="overlays" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:folder-outline" style="--mdc-icon-size:16px;"></ha-icon> Raum-Overlays</button>
         <button class="nav-tab ${activeTab === 'dock' ? 'active' : ''}" data-stab="dock" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:dock-bottom" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('dock_navigation')}</button>
         <button class="nav-tab ${activeTab === 'controls' ? 'active' : ''}" data-stab="controls" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:tune" style="--mdc-icon-size:16px;"></ha-icon> Helfer-Kontrollen</button>
@@ -817,8 +808,7 @@ export const settingsMethods = {
                         { type: 'light', label: 'Licht', icon: 'mdi:lightbulb', has: Boolean(r.light_entity) },
                         { type: 'climate', label: 'Heizung', icon: 'mdi:thermometer', has: Boolean(r.climate_entity) },
                         { type: 'media', label: 'Medien', icon: 'mdi:music', has: Boolean(r.media_entity || r.audio_entity || r.video_entity) },
-                        { type: 'lock', label: 'Schloss', icon: 'mdi:lock', has: Boolean(r.lock_entity) },
-                        { type: 'switch', label: 'Steckdose', icon: 'mdi:power-socket-eu', has: Boolean(r.switch_entity) }
+                        { type: 'lock', label: 'Schloss', icon: 'mdi:lock', has: Boolean(r.lock_entity) }
                       ];
                       return stdTypes.map(st => {
                         const configured = acts.find(a => a.type === st.type);
@@ -841,241 +831,81 @@ export const settingsMethods = {
                     if (customActs.length === 0) return '';
                     return `
                       <div style="display:flex;flex-direction:column;gap:6px;margin-top:8px;">
-                        ${customActs.map((ca, caIdx) => `
-                          <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
-                            <div id="roomActIconBox_${rIdx}_${caIdx}" style="width:28px;height:28px;border-radius:6px;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
-                              <ha-icon icon="${ca.icon || 'mdi:star'}" style="--mdc-icon-size:16px;"></ha-icon>
-                            </div>
-                            <input type="text" class="in-custom-act-title" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.title || ''}" placeholder="Titel (z.B. Ventilator)" style="width:130px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:12px;">
-                            <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px;">
-                              <input type="text" class="in-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.entity_id || ''}" placeholder="switch.xyz oder script.xyz" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:11px;font-family:monospace;">
-                              <button type="button" class="btn btn-sm btn-pick-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;">
-                                <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                        ${customActs.map((ca, caIdx) => {
+                          const safeIcon = (ca.icon && ca.icon.includes(':')) ? ca.icon : (MDI_ICON_MAP[ca.icon] || (ca.icon ? 'mdi:' + ca.icon : 'mdi:star'));
+                          return `
+                            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
+                              <div id="roomActIconBox_${rIdx}_${caIdx}" style="width:28px;height:28px;border-radius:6px;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                                <ha-icon icon="${safeIcon}" style="--mdc-icon-size:16px;"></ha-icon>
+                              </div>
+                              <input type="text" class="in-custom-act-title" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.title || ''}" placeholder="Titel (z.B. Ventilator)" style="width:130px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:12px;">
+                              <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px;">
+                                <input type="text" class="in-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" value="${ca.entity_id || ''}" placeholder="switch.xyz oder script.xyz" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:11px;font-family:monospace;">
+                                <button type="button" class="btn btn-sm btn-pick-custom-act-entity" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;">
+                                  <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                                </button>
+                              </div>
+                              <button type="button" class="btn btn-sm btn-pick-custom-act-icon" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                                <ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:13px;"></ha-icon> Icon
+                              </button>
+                              <button type="button" class="btn-micro btn-del-custom-act" data-ridx="${rIdx}" data-caidx="${caIdx}" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;">
+                                <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon>
                               </button>
                             </div>
-                            <button type="button" class="btn btn-sm btn-pick-custom-act-icon" data-ridx="${rIdx}" data-caidx="${caIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
-                              <ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:13px;"></ha-icon> Icon
-                            </button>
-                            <button type="button" class="btn-micro btn-del-custom-act" data-ridx="${rIdx}" data-caidx="${caIdx}" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;">
-                              <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon>
-                            </button>
-                          </div>
-                        `).join('')}
+                          `;
+                        }).join('')}
                       </div>
                     `;
                   })()}
                 </div>
 
-                <!-- Bento Card Badges Assignment -->
+                <!-- Bento Card Badges Configuration -->
                 <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
-                  <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:6px;">Sensor-Badges auf dieser Bento-Karte</label>
-                  <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                    ${(() => {
-                      const allBadges = this._getEffectiveBentoBadges();
-                      return allBadges.map(b => {
-                        const isChecked = !b.rooms || b.rooms.includes('all') || b.rooms.includes(r.id);
-                        return `
-                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg-surface);padding:5px 10px;border-radius:8px;border:1px solid var(--border-subtle);">
-                            <input type="checkbox" class="chk-bento-badge-for-room" data-ridx="${rIdx}" data-bid="${b.id}" ${isChecked ? 'checked' : ''}>
-                            <span style="color:${b.icon_color_light || 'var(--accent)'};display:inline-flex;">${this._icon(b.icon || 'star', { size: 14 })}</span>
-                            <span style="font-weight:600;">${b.name || b.id}</span>
-                          </label>
-                        `;
-                      }).join('');
-                    })()}
+                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">Sensor-Badges auf Bento-Karte</label>
+                    <button type="button" class="btn btn-sm btn-add-room-badge" data-ridx="${rIdx}" style="padding:4px 8px;font-size:11px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                      <ha-icon icon="mdi:plus" style="--mdc-icon-size:13px;"></ha-icon> Sensor-Badge hinzufügen
+                    </button>
                   </div>
+
+                  ${(() => {
+                    const badges = this._getRoomBentoBadges(r);
+                    if (!badges || badges.length === 0) {
+                      return `<div style="font-size:12px;color:var(--text-secondary);font-style:italic;">Keine Sensor-Badges für diesen Raum konfiguriert.</div>`;
+                    }
+                    return `
+                      <div style="display:flex;flex-direction:column;gap:6px;">
+                        ${badges.map((b, bIdx) => {
+                          const iconName = (b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline'));
+                          return `
+                            <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
+                              <div id="roomBadgeIconBox_${rIdx}_${bIdx}" style="width:28px;height:28px;border-radius:6px;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                                <ha-icon icon="${iconName}" style="--mdc-icon-size:16px;"></ha-icon>
+                              </div>
+                              <input type="text" class="in-room-badge-name" data-ridx="${rIdx}" data-bidx="${bIdx}" value="${b.name || ''}" placeholder="Titel (z.B. Temperatur)" style="width:130px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:12px;">
+                              <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px;">
+                                <input type="text" class="in-room-badge-entity" data-ridx="${rIdx}" data-bidx="${bIdx}" value="${b.entity_id || ''}" placeholder="sensor.xyz" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:11px;font-family:monospace;">
+                                <button type="button" class="btn btn-sm btn-pick-room-badge-entity" data-ridx="${rIdx}" data-bidx="${bIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;">
+                                  <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                                </button>
+                              </div>
+                              <button type="button" class="btn btn-sm btn-pick-room-badge-icon" data-ridx="${rIdx}" data-bidx="${bIdx}" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                                <ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:13px;"></ha-icon> Icon
+                              </button>
+                              <button type="button" class="btn-micro btn-del-room-badge" data-ridx="${rIdx}" data-bidx="${bIdx}" style="color:#ef4444;background:none;border:none;cursor:pointer;padding:2px 6px;">
+                                <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon>
+                              </button>
+                            </div>
+                          `;
+                        }).join('')}
+                      </div>
+                    `;
+                  })()}
                 </div>
               </div>
             </div>
           `).join('')}
         </div>
-      </div>
-
-      <!-- TAB: BENTO-BADGES -->
-      <div id="stabContentBadges" style="${activeTab === 'badges' ? '' : 'display:none;'}">
-        <div style="font-size:13px;color:var(--text-secondary);margin-bottom:14px;line-height:1.5;">
-          Hier konfigurierst du die Sensor-Badges für deine 3x3 Bento-Karten zentral. Jede Badge besitzt ein Icon, Iconfarbe, Hintergrund-, Rahmen- und Hover-Farben (getrennt für helles und dunkles Theme). Mit den Raum-Checkboxen wählst du direkt aus, auf welchen Bento-Karten die Badge erscheinen soll.
-        </div>
-
-        <div style="display:flex;flex-direction:column;gap:14px;" id="bentoBadgesList">
-          ${(bentoBadges || []).map((b, bIdx) => {
-            const isAll = !b.rooms || b.rooms.includes('all');
-            return `
-              <div class="card-box" style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:16px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:8px;flex-wrap:wrap;">
-                  <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:200px;">
-                    <div id="badgeHeaderIconBox_${bIdx}" style="width:34px;height:34px;border-radius:10px;background:rgba(56,189,248,0.15);border:1px solid rgba(56,189,248,0.3);display:flex;align-items:center;justify-content:center;color:var(--accent);">
-                      ${this._icon(b.icon || 'star', { size: 18 })}
-                    </div>
-                    <input type="text" class="in-badge-name" data-bidx="${bIdx}" value="${b.name || ''}" placeholder="Badge Name (z.B. Temperatur)" style="padding:6px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:14px;font-weight:700;flex:1;min-width:140px;">
-                  </div>
-                  <button type="button" class="btn btn-sm btn-del-bento-badge" data-bidx="${bIdx}" style="color:#ef4444;border-color:rgba(239,68,68,0.4);cursor:pointer;padding:6px 12px;display:inline-flex;align-items:center;gap:4px;">
-                    <ha-icon icon="mdi:close" style="--mdc-icon-size:14px;"></ha-icon> Badge löschen
-                  </button>
-                </div>
-
-                <!-- Live Preview Row: Light Mode & Dark Mode -->
-                <div style="display:flex;align-items:center;gap:12px;background:var(--bg-surface);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle);margin-bottom:12px;flex-wrap:wrap;">
-                  <div style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Live-Vorschau:</div>
-                  <div style="background:#f8fafc;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
-                    <ha-icon icon="mdi:weather-sunny" style="--mdc-icon-size:14px;color:#d97706;"></ha-icon>
-                    <span id="previewBadgeLight_${bIdx}" class="env-pill" style="color:${b.icon_color_light || '#ea580c'};background:${b.bg_light || 'rgba(234,88,12,0.1)'};border:1px solid ${b.border_light || 'rgba(234,88,12,0.25)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
-                      <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_light || '#ea580c' })}</span>
-                      <span class="preview-badge-text">${b.name || '21.5°C'}</span>
-                    </span>
-                  </div>
-                  <div style="background:#0b111e;padding:5px 10px;border-radius:8px;display:flex;align-items:center;gap:6px;box-shadow:0 1px 3px rgba(0,0,0,0.3);">
-                    <ha-icon icon="mdi:weather-night" style="--mdc-icon-size:14px;color:#38bdf8;"></ha-icon>
-                    <span id="previewBadgeDark_${bIdx}" class="env-pill" style="color:${b.icon_color_dark || '#fb923c'};background:${b.bg_dark || 'rgba(251,146,60,0.15)'};border:1px solid ${b.border_dark || 'rgba(251,146,60,0.35)'};display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border-radius:999px;font-size:12px;font-weight:600;">
-                      <span class="preview-badge-icon">${this._icon(b.icon || 'star', { size: 14, color: b.icon_color_dark || '#fb923c' })}</span>
-                      <span class="preview-badge-text">${b.name || '21.5°C'}</span>
-                    </span>
-                  </div>
-                </div>
-
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(220px, 1fr));gap:12px;margin-bottom:14px;">
-                  <div class="form-group">
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Entitäts-Zuordnung</label>
-                    <select class="sel-badge-entity-type" data-bidx="${bIdx}" style="width:100%;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-weight:600;cursor:pointer;">
-                      <option value="temp_entity" ${b.entity_prop === 'temp_entity' ? 'selected' : ''}>Raum-Temperatur (temp_entity)</option>
-                      <option value="humidity_entity" ${b.entity_prop === 'humidity_entity' ? 'selected' : ''}>Raum-Luftfeuchtigkeit (humidity_entity)</option>
-                      <option value="illuminance_entity" ${b.entity_prop === 'illuminance_entity' ? 'selected' : ''}>Raum-Helligkeit / Lux (illuminance_entity)</option>
-                      <option value="target_temp_entity" ${b.entity_prop === 'target_temp_entity' ? 'selected' : ''}>Raum-Zieltemperatur (target_temp_entity)</option>
-                      <option value="window_entity" ${b.entity_prop === 'window_entity' ? 'selected' : ''}>Raum-Fensterkontakt (window_entity)</option>
-                      <option value="presence_entity" ${b.entity_prop === 'presence_entity' ? 'selected' : ''}>Raum-Präsenzmelder (presence_entity)</option>
-                      <option value="custom" ${b.entity_prop === 'custom' ? 'selected' : ''}>Feste / Spezifische Entität</option>
-                    </select>
-                  </div>
-
-                  ${b.entity_prop === 'custom' ? `
-                    <div class="form-group">
-                      <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Spezifische Entität</label>
-                      <div style="display:flex;gap:6px;">
-                        <input type="text" class="in-badge-custom-entity" data-bidx="${bIdx}" value="${b.entity_id || ''}" placeholder="sensor.xyz" style="flex:1;padding:8px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
-                        <button type="button" class="btn btn-sm btn-pick-badge-entity" data-bidx="${bIdx}" style="padding:6px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;"><ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon></button>
-                      </div>
-                    </div>
-                  ` : ''}
-
-                  <div class="form-group">
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;margin-bottom:4px;">Icon (MDI oder Built-in)</label>
-                    <div style="display:flex;align-items:center;gap:6px;">
-                      <div id="badgeIconBox_${bIdx}" style="width:34px;height:34px;border-radius:8px;background:var(--bg-surface);border:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
-                        ${this._icon(b.icon || 'star', { size: 18 })}
-                      </div>
-                      <input type="text" class="in-badge-icon" data-bidx="${bIdx}" value="${b.icon || 'star'}" placeholder="mdi:thermometer oder star" style="flex:1;min-width:0;padding:7px 10px;border-radius:8px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:13px;font-family:monospace;">
-                      <button type="button" class="btn btn-sm btn-pick-badge-icon" data-bidx="${bIdx}" style="padding:7px 10px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.25);color:var(--accent);border-radius:8px;cursor:pointer;white-space:nowrap;font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:4px;">
-                        <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon> Icon
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Colors Configuration with Color Picker Swatches: Light & Dark Mode -->
-                <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(280px, 1fr));gap:12px;margin-bottom:14px;">
-                  <!-- Light Mode Colors -->
-                  <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
-                    <div style="font-size:12px;font-weight:700;color:#fbbf24;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      <ha-icon icon="mdi:weather-sunny" style="--mdc-icon-size:16px;"></ha-icon> Helles Theme (Farben)
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="icon_color_light" value="${toHexColor(b.icon_color_light || '#ea580c')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_light" value="${b.icon_color_light || '#ea580c'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="bg_light" value="${toHexColor(b.bg_light || 'rgba(234,88,12,0.1)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_light" value="${b.bg_light || 'rgba(234,88,12,0.1)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="border_light" value="${toHexColor(b.border_light || 'rgba(234,88,12,0.25)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_light" value="${b.border_light || 'rgba(234,88,12,0.25)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="hover_light" value="${toHexColor(b.hover_light || 'rgba(234,88,12,0.22)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_light" value="${b.hover_light || 'rgba(234,88,12,0.22)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Dark Mode Colors -->
-                  <div style="background:rgba(0,0,0,0.14);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
-                    <div style="font-size:12px;font-weight:700;color:#38bdf8;margin-bottom:8px;display:flex;align-items:center;gap:6px;">
-                      <ha-icon icon="mdi:weather-night" style="--mdc-icon-size:16px;"></ha-icon> Dunkles Theme (Farben)
-                    </div>
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Iconfarbe</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${toHexColor(b.icon_color_dark || '#fb923c')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="icon_color_dark" value="${b.icon_color_dark || '#fb923c'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hintergrund</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="bg_dark" value="${toHexColor(b.bg_dark || 'rgba(251,146,60,0.15)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="bg_dark" value="${b.bg_dark || 'rgba(251,146,60,0.15)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Rahmen</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="border_dark" value="${toHexColor(b.border_dark || 'rgba(251,146,60,0.35)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="border_dark" value="${b.border_dark || 'rgba(251,146,60,0.35)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                      <div>
-                        <label style="font-size:10px;color:var(--text-secondary);display:block;margin-bottom:2px;">Hover-Farbe</label>
-                        <div style="display:flex;align-items:center;gap:4px;">
-                          <input type="color" class="color-picker-swatch" data-bidx="${bIdx}" data-prop="hover_dark" value="${toHexColor(b.hover_dark || 'rgba(251,146,60,0.30)')}" style="width:28px;height:28px;padding:0;border:1px solid var(--border-subtle);border-radius:6px;cursor:pointer;background:none;flex-shrink:0;">
-                          <input type="text" class="in-badge-color" data-bidx="${bIdx}" data-prop="hover_dark" value="${b.hover_dark || 'rgba(251,146,60,0.30)'}" style="flex:1;min-width:0;padding:5px 6px;border-radius:6px;background:var(--bg-surface);color:var(--text-primary);border:1px solid var(--border-subtle);font-size:11px;font-family:monospace;box-sizing:border-box;">
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Room Assignment Checkboxes -->
-                <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border-subtle);border-radius:10px;padding:12px;">
-                  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <div style="font-size:12px;font-weight:700;color:var(--text-primary);display:inline-flex;align-items:center;gap:5px;">
-                      <ha-icon icon="mdi:checkbox-marked-outline" style="--mdc-icon-size:14px;color:var(--accent);"></ha-icon> Auf welchen Bento-Karten anzeigen?
-                    </div>
-                    <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--accent);">
-                      <input type="checkbox" class="chk-badge-room-all" data-bidx="${bIdx}" ${isAll ? 'checked' : ''}>
-                      <span>Auf allen Räumen</span>
-                    </label>
-                  </div>
-                  <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(130px, 1fr));gap:6px;">
-                    ${rooms.map(r => `
-                      <label style="font-size:12px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:4px 6px;border-radius:6px;background:rgba(255,255,255,0.02);">
-                        <input type="checkbox" class="chk-badge-room-one" data-bidx="${bIdx}" data-rid="${r.id}" ${(isAll || (b.rooms && b.rooms.includes(r.id))) ? 'checked' : ''} ${isAll ? 'disabled' : ''}>
-                        <span>${r.name || r.id}</span>
-                      </label>
-                    `).join('')}
-                  </div>
-                </div>
-              </div>
-            `;
-          }).join('')}
-        </div>
-
-        <button type="button" class="btn btn-sm btn-primary" id="btnAddBentoBadge" style="margin-top:14px;padding:8px 16px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
-          + Neue Bento-Badge anlegen
-        </button>
       </div>
 
       <!-- TAB 2: RAUM-OVERLAYS (KATEGORIEN) -->
@@ -2352,226 +2182,115 @@ export const settingsMethods = {
       };
     });
 
-    // Bento-Badge Assignment per Room Checkbox (Item 2)
-    container.querySelectorAll('.chk-bento-badge-for-room').forEach(chk => {
-      chk.onchange = () => {
-        const rIdx = parseInt(chk.getAttribute('data-ridx'));
-        const bId = chk.getAttribute('data-bid');
+    // Room Bento Badges Handlers
+    container.querySelectorAll('.btn-add-room-badge').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
         const room = this._config.rooms?.[rIdx];
         if (!room) return;
-        if (!this._config.bento_badges) {
-          this._config.bento_badges = this._getEffectiveBentoBadges();
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
         }
-        const badge = this._config.bento_badges.find(b => b.id === bId);
-        if (!badge) return;
-
-        const allRoomIds = (this._config.rooms || []).map(rm => rm.id);
-        if (!Array.isArray(badge.rooms)) badge.rooms = ['all'];
-
-        if (chk.checked) {
-          if (badge.rooms.includes('all')) {
-            // Already active for all
-          } else if (!badge.rooms.includes(room.id)) {
-            badge.rooms.push(room.id);
-            if (allRoomIds.length > 0 && allRoomIds.every(id => badge.rooms.includes(id))) {
-              badge.rooms = ['all'];
-            }
-          }
-        } else {
-          if (badge.rooms.includes('all')) {
-            badge.rooms = allRoomIds.filter(id => id !== room.id);
-          } else {
-            badge.rooms = badge.rooms.filter(id => id !== room.id);
-          }
-        }
-      };
-    });
-
-    // Bento-Badges Handlers
-    const btnAddBadge = container.querySelector('#btnAddBentoBadge');
-    if (btnAddBadge) {
-      btnAddBadge.onclick = () => {
-        if (!this._config.bento_badges) this._config.bento_badges = this._getEffectiveBentoBadges();
-        this._config.bento_badges.push({
+        room.bento_badges.push({
           id: 'badge_' + Date.now(),
-          name: 'Neue Badge',
-          entity_prop: 'temp_entity',
-          icon: 'star',
-          icon_color_light: '#0284c7',
-          icon_color_dark: '#38bdf8',
-          bg_light: 'rgba(2, 132, 199, 0.10)',
-          border_light: 'rgba(2, 132, 199, 0.25)',
-          hover_light: 'rgba(2, 132, 199, 0.22)',
-          bg_dark: 'rgba(56, 189, 248, 0.15)',
-          border_dark: 'rgba(56, 189, 248, 0.35)',
-          hover_dark: 'rgba(56, 189, 248, 0.30)',
-          rooms: ['all']
+          name: 'Sensor',
+          icon: 'mdi:chart-box-outline',
+          entity_id: ''
         });
         this._renderSettingsContent(container, isModal);
       };
-    }
+    });
 
-    container.querySelectorAll('.btn-del-bento-badge').forEach(btn => {
+    container.querySelectorAll('.btn-del-room-badge').forEach(btn => {
       btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
         const bIdx = parseInt(btn.getAttribute('data-bidx'));
-        if (this._config.bento_badges && this._config.bento_badges[bIdx]) {
-          this._config.bento_badges.splice(bIdx, 1);
-          this._renderSettingsContent(container, isModal);
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
         }
+        room.bento_badges.splice(bIdx, 1);
+        this._renderSettingsContent(container, isModal);
       };
     });
 
-    container.querySelectorAll('.in-badge-name').forEach(inp => {
+    container.querySelectorAll('.in-room-badge-name').forEach(inp => {
       inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
         const bIdx = parseInt(inp.getAttribute('data-bidx'));
-        if (this._config.bento_badges?.[bIdx]) {
-          this._config.bento_badges[bIdx].name = inp.value;
-          updateBadgeLivePreview(container, bIdx, this._config.bento_badges[bIdx], (name, opt) => this._icon(name, opt));
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
+        }
+        if (room.bento_badges[bIdx]) {
+          room.bento_badges[bIdx].name = inp.value;
         }
       };
     });
 
-    container.querySelectorAll('.sel-badge-entity-type').forEach(sel => {
-      sel.onchange = () => {
-        const bIdx = parseInt(sel.getAttribute('data-bidx'));
-        if (this._config.bento_badges?.[bIdx]) {
-          this._config.bento_badges[bIdx].entity_prop = sel.value;
-          this._renderSettingsContent(container, isModal);
-        }
-      };
-    });
-
-    container.querySelectorAll('.in-badge-custom-entity').forEach(inp => {
+    container.querySelectorAll('.in-room-badge-entity').forEach(inp => {
       inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
         const bIdx = parseInt(inp.getAttribute('data-bidx'));
-        if (this._config.bento_badges?.[bIdx]) {
-          this._config.bento_badges[bIdx].entity_id = inp.value.trim();
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
+        }
+        if (room.bento_badges[bIdx]) {
+          room.bento_badges[bIdx].entity_id = inp.value.trim();
         }
       };
     });
 
-    container.querySelectorAll('.btn-pick-badge-entity').forEach(btn => {
+    container.querySelectorAll('.btn-pick-room-badge-entity').forEach(btn => {
       btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
         const bIdx = parseInt(btn.getAttribute('data-bidx'));
-        const badge = this._config.bento_badges?.[bIdx];
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
+        }
+        const badge = room.bento_badges[bIdx];
         if (!badge) return;
         this._showEntityPicker({
           currentValue: badge.entity_id || '',
           defaultDomain: 'sensor',
+          roomId: room.id,
+          roomName: room.name,
           onSelect: (selectedId) => {
             badge.entity_id = selectedId;
+            if (!badge.name || badge.name === 'Sensor') {
+              const st = this._hass?.states[selectedId];
+              if (st?.attributes?.friendly_name) badge.name = st.attributes.friendly_name;
+            }
             this._renderSettingsContent(container, isModal);
           }
         });
       };
     });
 
-    container.querySelectorAll('.in-badge-icon').forEach(inp => {
-      inp.oninput = () => {
-        const bIdx = parseInt(inp.getAttribute('data-bidx'));
-        const badge = this._config.bento_badges?.[bIdx];
-        if (badge) {
-          badge.icon = inp.value.trim();
-          const box = container.querySelector('#badgeIconBox_' + bIdx);
-          if (box) box.innerHTML = this._icon(badge.icon || 'star', { size: 18 });
-          const headerBox = container.querySelector('#badgeHeaderIconBox_' + bIdx);
-          if (headerBox) headerBox.innerHTML = this._icon(badge.icon || 'star', { size: 18 });
-          updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
-        }
-      };
-    });
-
-    container.querySelectorAll('.btn-pick-badge-icon').forEach(btn => {
+    container.querySelectorAll('.btn-pick-room-badge-icon').forEach(btn => {
       btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
         const bIdx = parseInt(btn.getAttribute('data-bidx'));
-        const badge = this._config.bento_badges?.[bIdx];
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_badges)) {
+          room.bento_badges = [...this._getRoomBentoBadges(room)];
+        }
+        const badge = room.bento_badges[bIdx];
         if (!badge) return;
         this._showIconPicker({
-          currentValue: badge.icon || 'star',
+          currentValue: badge.icon || 'mdi:chart-box-outline',
           onSelect: (newIcon) => {
             badge.icon = newIcon;
             this._renderSettingsContent(container, isModal);
           }
         });
-      };
-    });
-
-    container.querySelectorAll('.color-picker-swatch').forEach(swatch => {
-      swatch.oninput = () => {
-        const bIdx = parseInt(swatch.getAttribute('data-bidx'));
-        const prop = swatch.getAttribute('data-prop');
-        const badge = this._config.bento_badges?.[bIdx];
-        if (!badge) return;
-        const hex = swatch.value;
-        const textInp = container.querySelector(`.in-badge-color[data-bidx="${bIdx}"][data-prop="${prop}"]`);
-
-        if (prop.startsWith('icon_color')) {
-          badge[prop] = hex;
-          if (textInp) textInp.value = hex;
-        } else if (prop.startsWith('bg')) {
-          const alpha = prop.includes('light') ? 0.12 : 0.16;
-          const rgba = hexToRgba(hex, alpha);
-          badge[prop] = rgba;
-          if (textInp) textInp.value = rgba;
-        } else if (prop.startsWith('border')) {
-          const alpha = prop.includes('light') ? 0.35 : 0.40;
-          const rgba = hexToRgba(hex, alpha);
-          badge[prop] = rgba;
-          if (textInp) textInp.value = rgba;
-        } else if (prop.startsWith('hover')) {
-          const alpha = prop.includes('light') ? 0.25 : 0.30;
-          const rgba = hexToRgba(hex, alpha);
-          badge[prop] = rgba;
-          if (textInp) textInp.value = rgba;
-        } else {
-          badge[prop] = hex;
-          if (textInp) textInp.value = hex;
-        }
-        updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
-      };
-    });
-
-    container.querySelectorAll('.in-badge-color').forEach(inp => {
-      inp.oninput = () => {
-        const bIdx = parseInt(inp.getAttribute('data-bidx'));
-        const prop = inp.getAttribute('data-prop');
-        const badge = this._config.bento_badges?.[bIdx];
-        if (!badge) return;
-        badge[prop] = inp.value;
-        const swatch = container.querySelector(`.color-picker-swatch[data-bidx="${bIdx}"][data-prop="${prop}"]`);
-        if (swatch) swatch.value = toHexColor(inp.value);
-        updateBadgeLivePreview(container, bIdx, badge, (name, opt) => this._icon(name, opt));
-      };
-    });
-
-    container.querySelectorAll('.chk-badge-room-all').forEach(chk => {
-      chk.onchange = () => {
-        const bIdx = parseInt(chk.getAttribute('data-bidx'));
-        const badge = this._config.bento_badges?.[bIdx];
-        if (!badge) return;
-        if (chk.checked) {
-          badge.rooms = ['all'];
-        } else {
-          badge.rooms = (this._config.rooms || []).map(r => r.id);
-        }
-        this._renderSettingsContent(container, isModal);
-      };
-    });
-
-    container.querySelectorAll('.chk-badge-room-one').forEach(chk => {
-      chk.onchange = () => {
-        const bIdx = parseInt(chk.getAttribute('data-bidx'));
-        const rId = chk.getAttribute('data-rid');
-        const badge = this._config.bento_badges?.[bIdx];
-        if (!badge) return;
-        if (!Array.isArray(badge.rooms) || badge.rooms.includes('all')) {
-          badge.rooms = (this._config.rooms || []).map(r => r.id);
-        }
-        if (chk.checked) {
-          if (!badge.rooms.includes(rId)) badge.rooms.push(rId);
-        } else {
-          badge.rooms = badge.rooms.filter(id => id !== rId);
-        }
       };
     });
 

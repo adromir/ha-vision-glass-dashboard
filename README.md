@@ -42,7 +42,7 @@ For the ultimate spatial glassmorphism experience across your entire Home Assist
 ## 💎 Core Features
 
 - 🪟 **Spatial Glassmorphism & Sidebar Theme Sync**: Translucent frosted acrylic surfaces with synchronized Home Assistant sidebar styling and automatic Day/Night switching (`sun.sun`).
-- 🎛️ **Configurable Bento Room Cards**: Drag/reorder rooms, customize icon slots and reusable multi-room Bento badges (dark & light color themes), humidity/lux chips, and instant heating quick-steppers (`-` / `+`).
+- 🎛️ **Configurable Bento Room Cards**: Drag/reorder rooms, configure custom action icons, inline sensor badges per room card, and instant heating quick-steppers (`-` / `+`).
 - 🛥️ **Customizable Floating Bottom Dock & Top Header Chips**: Built-in and custom dock modals/links/services, multi-row responsive settings/header chips, multi-person profile badges, Alarmo status, and dynamic dock visibility.
 - 📑 **Rich Interactive Popups**:
   - 💡 **Lighting & Scenes**
@@ -76,7 +76,7 @@ For the ultimate spatial glassmorphism experience across your entire Home Assist
 
 1. Open **Vision Glass** from the Home Assistant sidebar (`/vision-glass`) or navigate to your Home Assistant root URL (`/`) which automatically routes to Vision Glass.
 2. Click **⚙️ Settings** in the top-right header bar or bottom dock to customize:
-   - **Rooms & Bento Content** (order, primary entities, reusable badges, icon colors)
+   - **Rooms & Bento Content** (order, primary entities, inline room sensor badges, custom action icons)
    - **Room Overlays & Helper Controls**
    - **Top Header Chips & Bottom Dock Items**
    - **Theme Mode, Background Presets & Default Landing Page Settings**

@@ -1145,15 +1145,51 @@ class VisionGlassPanel extends HTMLElement {
 
   _getRoomBentoActions(room) {
     if (Array.isArray(room.bento_actions) && room.bento_actions.length > 0) {
-      return room.bento_actions;
+      return room.bento_actions.filter(a => a.type !== 'switch');
     }
     const def = [];
     if (room.light_entity && room.light_entity.trim()) def.push({ type: 'light', enabled: true, title: this._t('toggle_light') });
     if (room.climate_entity && room.climate_entity.trim()) def.push({ type: 'climate', enabled: true, title: this._t('open_climate') });
     if ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim())) def.push({ type: 'media', enabled: true, title: this._t('toggle_media') });
     if (room.lock_entity && room.lock_entity.trim()) def.push({ type: 'lock', enabled: true, title: this._t('toggle_lock') });
-    if (room.switch_entity && room.switch_entity.trim()) def.push({ type: 'switch', enabled: false, title: 'Steckdose' });
     return def;
+  }
+
+  _getRoomBentoBadges(room) {
+    if (!room) return [];
+    if (Array.isArray(room.bento_badges)) {
+      return room.bento_badges;
+    }
+    if (this._config && Array.isArray(this._config.bento_badges) && this._config.bento_badges.length > 0) {
+      const matching = this._config.bento_badges.filter(b => (!b.rooms || b.rooms.includes('all') || b.rooms.includes(room.id)));
+      if (matching.length > 0) return matching;
+    }
+    const badges = [];
+    if (room.temp_entity || room.climate_entity) {
+      badges.push({
+        id: 'badge_temp',
+        name: 'Temperatur',
+        icon: 'mdi:thermometer',
+        entity_id: room.temp_entity || (room.climate_entity || '')
+      });
+    }
+    if (room.humidity_entity) {
+      badges.push({
+        id: 'badge_humidity',
+        name: 'Luftfeuchtigkeit',
+        icon: 'mdi:water-percent',
+        entity_id: room.humidity_entity
+      });
+    }
+    if (room.illuminance_entity) {
+      badges.push({
+        id: 'badge_lux',
+        name: 'Helligkeit',
+        icon: 'mdi:brightness-6',
+        entity_id: room.illuminance_entity
+      });
+    }
+    return badges;
   }
 
   _getEffectiveBentoBadges() {
@@ -1211,18 +1247,19 @@ class VisionGlassPanel extends HTMLElement {
 
   _resolveBentoBadgeValue(badge, room) {
     if (!this._hass) return null;
-    let entityId = null;
-    if (badge.entity_prop && badge.entity_prop !== 'custom') {
+    let entityId = badge.entity_id;
+    if (!entityId && badge.entity_prop && badge.entity_prop !== 'custom') {
       entityId = room[badge.entity_prop];
-      if (!entityId && badge.entity_prop === 'temp_entity' && room.climate_entity && this._hass.states[room.climate_entity]) {
-        const cObj = this._hass.states[room.climate_entity];
-        const curTemp = cObj.attributes?.current_temperature ?? cObj.attributes?.temperature;
-        if (curTemp != null && !isNaN(parseFloat(curTemp))) {
-          return { text: `${parseFloat(curTemp).toFixed(1)}°C`, entityId: room.climate_entity };
-        }
+    }
+    if (!entityId && (badge.id === 'badge_temp' || badge.id === 'temp')) {
+      entityId = room.temp_entity;
+    }
+    if (!entityId && (badge.id === 'badge_temp' || badge.id === 'temp') && room.climate_entity && this._hass.states[room.climate_entity]) {
+      const cObj = this._hass.states[room.climate_entity];
+      const curTemp = cObj.attributes?.current_temperature ?? cObj.attributes?.temperature;
+      if (curTemp != null && !isNaN(parseFloat(curTemp))) {
+        return { text: `${parseFloat(curTemp).toFixed(1)}°C`, entityId: room.climate_entity };
       }
-    } else {
-      entityId = badge.entity_id;
     }
     if (!entityId || typeof entityId !== 'string' || !entityId.trim()) return null;
     const s = this._hass.states[entityId.trim()];
@@ -1232,11 +1269,11 @@ class VisionGlassPanel extends HTMLElement {
     const unit = s.attributes?.unit_of_measurement || '';
     if (!isNaN(parseFloat(s.state))) {
       const num = parseFloat(s.state);
-      if (unit === '°C' || unit === '°F' || badge.entity_prop === 'temp_entity') {
+      if (unit === '°C' || unit === '°F' || badge.id === 'badge_temp' || badge.id === 'temp' || badge.entity_prop === 'temp_entity') {
         displayVal = `${num.toFixed(1)}${unit || '°C'}`;
-      } else if (unit === '%' || badge.entity_prop === 'humidity_entity') {
+      } else if (unit === '%' || badge.id === 'badge_humidity' || badge.id === 'humidity' || badge.entity_prop === 'humidity_entity') {
         displayVal = `${Math.round(num)}%`;
-      } else if (unit === 'lx' || badge.entity_prop === 'illuminance_entity') {
+      } else if (unit === 'lx' || badge.id === 'badge_lux' || badge.id === 'lux' || badge.entity_prop === 'illuminance_entity') {
         displayVal = `${Math.round(num)} lx`;
       } else {
         displayVal = `${num} ${unit}`.trim();
@@ -1254,42 +1291,34 @@ class VisionGlassPanel extends HTMLElement {
     if (!card) return;
 
     // Configurable Bento Badges
-    const bentoBadges = this._getEffectiveBentoBadges();
-    const isLight = this._resolveEffectiveThemeMode() === 'light';
-    const badgesForRoom = bentoBadges.filter(b => (!b.rooms || b.rooms.includes('all') || b.rooms.includes(room.id)));
+    const badgesForRoom = this._getRoomBentoBadges(room);
     const envBar = card.querySelector('.room-env-bar');
 
     if (envBar) {
       // Remove any pills for badges that are no longer assigned to this room
       envBar.querySelectorAll('.bento-badge-pill').forEach(pill => {
         const bId = pill.id.replace(`badge_${idx}_`, '');
-        if (!badgesForRoom.some(b => b.id === bId)) {
+        if (!badgesForRoom.some((b, bIdx) => String(b.id || bIdx) === bId)) {
           pill.remove();
         }
       });
 
-      badgesForRoom.forEach(b => {
-        let bEl = card.querySelector(`#badge_${idx}_${b.id}`);
+      badgesForRoom.forEach((b, bIdx) => {
+        const bId = b.id || bIdx;
+        let bEl = card.querySelector(`#badge_${idx}_${bId}`);
         const valObj = this._resolveBentoBadgeValue(b, room);
         if (valObj && valObj.text) {
           if (!bEl) {
             bEl = document.createElement('span');
             bEl.className = 'env-pill bento-badge-pill';
-            bEl.id = `badge_${idx}_${b.id}`;
+            bEl.id = `badge_${idx}_${bId}`;
             const battWarn = envBar.querySelector('.env-batt-warn');
             if (battWarn) envBar.insertBefore(bEl, battWarn);
             else envBar.appendChild(bEl);
           }
-          const iconColor = isLight ? (b.icon_color_light || '#ea580c') : (b.icon_color_dark || '#fb923c');
-          const bgColor = isLight ? (b.bg_light || 'rgba(234,88,12,0.1)') : (b.bg_dark || 'rgba(251,146,60,0.15)');
-          const borderColor = isLight ? (b.border_light || 'rgba(234,88,12,0.25)') : (b.border_dark || 'rgba(251,146,60,0.35)');
-          const hoverColor = isLight ? (b.hover_light || 'rgba(234,88,12,0.22)') : (b.hover_dark || 'rgba(251,146,60,0.3)');
-
-          bEl.innerHTML = `${this._icon(b.icon || 'thermometer', { size: 11, color: iconColor, style: 'margin-right:3px;' })} <span>${valObj.text}</span>`;
+          const iconName = (b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline'));
+          bEl.innerHTML = `${this._icon(iconName, { size: 11, style: 'margin-right:3px;' })} <span>${valObj.text}</span>`;
           bEl.style.display = 'inline-flex';
-          bEl.style.background = bgColor;
-          bEl.style.borderColor = borderColor;
-          bEl.style.setProperty('--pill-hover-bg', hoverColor);
           bEl.title = `${b.name || 'Badge'}: ${valObj.text}`;
         } else if (bEl) {
           bEl.remove();
@@ -1407,13 +1436,6 @@ class VisionGlassPanel extends HTMLElement {
       const isLocked = this._hass.states[room.lock_entity].state === 'locked';
       lockBtn.classList.toggle('active-green', isLocked);
       lockBtn.innerHTML = isLocked ? this._icon('lock-closed', { size: 16, cls: 'icon-security' }) : this._icon('lock-open', { size: 16, cls: 'icon-security' });
-    }
-
-    // Switch
-    const switchBtn = card.querySelector('.action-switch');
-    if (switchBtn && room.switch_entity && this._hass.states[room.switch_entity]) {
-      const isOn = this._hass.states[room.switch_entity].state === 'on';
-      switchBtn.classList.toggle('active-blue', isOn);
     }
 
     // Custom Actions
@@ -1842,17 +1864,13 @@ class VisionGlassPanel extends HTMLElement {
                   <!-- Room Environmental Readings / Configurable Bento Badges -->
                   <div class="room-env-bar">
                     ${(() => {
-                      const bentoBadges = this._getEffectiveBentoBadges();
-                      const isLight = this._resolveEffectiveThemeMode() === 'light';
-                      const badgesForRoom = bentoBadges.filter(b => (!b.rooms || b.rooms.includes('all') || b.rooms.includes(room.id)));
-                      return badgesForRoom.map(b => {
+                      const badgesForRoom = this._getRoomBentoBadges(room);
+                      return badgesForRoom.map((b, bIdx) => {
                         const valObj = this._resolveBentoBadgeValue(b, room);
                         if (!valObj || !valObj.text) return '';
-                        const iconColor = isLight ? (b.icon_color_light || '#ea580c') : (b.icon_color_dark || '#fb923c');
-                        const bgColor = isLight ? (b.bg_light || 'rgba(234,88,12,0.1)') : (b.bg_dark || 'rgba(251,146,60,0.15)');
-                        const borderColor = isLight ? (b.border_light || 'rgba(234,88,12,0.25)') : (b.border_dark || 'rgba(251,146,60,0.35)');
-                        const hoverColor = isLight ? (b.hover_light || 'rgba(234,88,12,0.22)') : (b.hover_dark || 'rgba(251,146,60,0.3)');
-                        return `<span class="env-pill bento-badge-pill" id="badge_${idx}_${b.id}" style="display:inline-flex;background:${bgColor};border-color:${borderColor};--pill-hover-bg:${hoverColor};" title="${b.name || 'Badge'}: ${valObj.text}">${this._icon(b.icon || 'thermometer', { size: 11, color: iconColor, style: 'margin-right:3px;' })} <span>${valObj.text}</span></span>`;
+                        const bId = b.id || bIdx;
+                        const iconName = (b.icon && b.icon.includes(':')) ? b.icon : (MDI_ICON_MAP[b.icon] || (b.icon ? 'mdi:' + b.icon : 'mdi:chart-box-outline'));
+                        return `<span class="env-pill bento-badge-pill" id="badge_${idx}_${bId}" style="display:inline-flex;" title="${b.name || 'Badge'}: ${valObj.text}">${this._icon(iconName, { size: 11, style: 'margin-right:3px;' })} <span>${valObj.text}</span></span>`;
                       }).join('');
                     })()}
                   </div>
@@ -1873,8 +1891,6 @@ class VisionGlassPanel extends HTMLElement {
                             out.push(`<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>`);
                           } else if (a.type === 'lock' && room.lock_entity && room.lock_entity.trim()) {
                             out.push(`<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>`);
-                          } else if (a.type === 'switch' && room.switch_entity && room.switch_entity.trim()) {
-                            out.push(`<div class="action-circle action-switch" title="Steckdose" data-action="switch" data-idx="${idx}">${this._icon('power', { size: 16, cls: 'icon-switch' })}</div>`);
                           } else if (a.type === 'custom' && a.entity_id) {
                             const s = this._hass && this._hass.states[a.entity_id];
                             const isOn = s && (s.state === 'on' || s.state === 'open' || s.state === 'active' || s.state === 'playing');
