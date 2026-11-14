@@ -1,6 +1,7 @@
-# 🪟 Vision Glass for Home Assistant (v3.0.14)
+# 🪟 Vision Glass for Home Assistant
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-F16061?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/adromir)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/default)
 [![GitHub Release](https://img.shields.io/github/v/release/adromir/ha-vision-glass-dashboard?style=for-the-badge&color=blue)](https://github.com/adromir/ha-vision-glass-dashboard/releases)
 [![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2024.7%2B-18BCF2?style=for-the-badge&logo=home-assistant)](https://www.home-assistant.io/)
@@ -42,9 +43,11 @@ For the ultimate spatial glassmorphism experience across your entire Home Assist
 ## 💎 Core Features
 
 - 🪟 **Spatial Glassmorphism & Sidebar Theme Sync**: Translucent frosted acrylic surfaces with synchronized Home Assistant sidebar styling and automatic Day/Night switching (`sun.sun`).
-- 🎛️ **Configurable Bento Room Cards**: Drag/reorder rooms, configure custom action icons, inline sensor badges per room card, and instant heating quick-steppers (`-` / `+`).
-- 🛥️ **Customizable Floating Bottom Dock & Top Header Chips**: Built-in and custom dock modals/links/services, multi-row responsive settings/header chips, multi-person profile badges, Alarmo status, and dynamic dock visibility.
+- 🎛️ **Configurable Bento Room Cards**: Drag/reorder rooms, configure custom action icons with dynamic entity icon and active state inheritance, real-time reactive sensor badges (e.g. window/door open/closed status with warning amber styling), and instant heating quick-steppers (`-` / `+`).
+- 🛥️ **Customizable Floating Bottom Dock & Top Header Chips**: Standard Control Center ("Geräte & Helfer / Schaltzentrale") modal, custom dock modals/links/services, multi-row responsive settings/header chips, multi-person profile badges, Alarmo status, and dynamic dock visibility.
+- 🌐 **Full Trilingual Localization**: Complete native translations for German (`de`), English (`en`), and Indonesian (`id`).
 - 📑 **Rich Interactive Popups**:
+  - 🎚️ **Central Devices & Helpers Control Center (Schaltzentrale)**
   - 💡 **Lighting & Scenes**
   - 🌡️ **Climate & Heater Controls**
   - 📊 **Multi-Sensor Recorder Statistics**
