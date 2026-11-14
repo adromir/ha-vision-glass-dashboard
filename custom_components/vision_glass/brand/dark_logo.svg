@@ -1,0 +1,27 @@
+<svg width="1024" height="320" viewBox="0 0 1024 320" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(24, -16) scale(0.68)">
+    <g fill="#f8fafc" stroke="#f8fafc" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Top Bar Mock -->
+    <rect x="76" y="80" width="360" height="32" rx="10" fill="#f8fafc" stroke="none" />
+    <!-- Bento Cards Layout -->
+    <rect x="76" y="132" width="220" height="150" rx="18" fill="none" stroke-width="16" />
+    <rect x="316" y="132" width="120" height="150" rx="18" fill="none" stroke-width="16" />
+    <rect x="76" y="302" width="100" height="130" rx="18" fill="none" stroke-width="16" />
+    <rect x="196" y="302" width="240" height="130" rx="18" fill="none" stroke-width="16" />
+    <!-- Subtle Inner Elements -->
+    <circle cx="130" cy="180" r="16" fill="#f8fafc" stroke="none" />
+    <rect x="160" y="172" width="100" height="16" rx="6" fill="#f8fafc" stroke="none" />
+    <circle cx="376" cy="180" r="16" fill="#f8fafc" stroke="none" />
+    <circle cx="126" cy="350" r="14" fill="#f8fafc" stroke="none" />
+    <rect x="236" y="342" width="160" height="16" rx="6" fill="#f8fafc" stroke="none" />
+  </g>
+  </g>
+  <g transform="translate(370, 96)">
+    <text x="0" y="52" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="64" font-weight="700" fill="#ffffff" letter-spacing="-1">
+      Vision Glass <tspan fill="#38bdf8">Dashboard</tspan>
+    </text>
+    <text x="0" y="102" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="22" font-weight="500" fill="#cbd5e1" letter-spacing="0.5">
+      Spatial Glassmorphism Smart Home UI
+    </text>
+  </g>
+</svg>

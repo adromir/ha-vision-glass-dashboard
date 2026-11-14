@@ -640,6 +640,11 @@ export const settingsMethods = {
     const dock = this._config.dock;
     const allEntities = this._hass ? Object.keys(this._hass.states).sort() : [];
 
+    if (!this._cleanConfigSnapshot) {
+      this._cleanConfigSnapshot = JSON.parse(JSON.stringify(this._config));
+    }
+    this._isSettingsDirty = !!this._isSettingsDirty;
+
     const bgStyle = this._config.background_style || 'aurora';
     const bgMode = this._config.background_mode || 'auto';
     const colorScheme = this._config.color_scheme || 'auto';
@@ -684,9 +689,6 @@ export const settingsMethods = {
             <span style="font-size:11px;color:var(--accent);display:inline-flex;align-items:center;gap:4px;">
               <ha-icon icon="mdi:check-all" style="--mdc-icon-size:13px;"></ha-icon> Bereiche werden automatisch synchronisiert
             </span>
-          </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-sm btn-primary" id="btnSyncAreas" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('sync_areas_btn')}</button>
           </div>
         </div>
 
@@ -1664,6 +1666,22 @@ export const settingsMethods = {
         </div>
       </div>
 
+      <!-- Floating Vanilla HA Save Bar -->
+      <div id="settingsSaveBar" style="position:sticky;bottom:16px;margin-top:20px;z-index:9999;background:var(--ha-card-background, var(--card-background-color, #1e293b));border:1px solid var(--accent, #38bdf8);box-shadow:0 8px 32px rgba(0,0,0,0.45);border-radius:12px;padding:12px 20px;display:${this._isSettingsDirty ? 'flex' : 'none'};justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+        <span style="font-weight:600;font-size:13px;color:var(--primary-text-color,#fff);display:flex;align-items:center;gap:8px;">
+          <ha-icon icon="mdi:alert-circle-outline" style="--mdc-icon-size:20px;color:#f59e0b;"></ha-icon>
+          ${this._t('unsaved_changes')}
+        </span>
+        <div style="display:flex;gap:10px;">
+          <button type="button" class="btn btn-sm" id="btnDiscardSettings" style="background:transparent;border:1px solid var(--border-subtle, rgba(255,255,255,0.2));color:var(--text-secondary, #94a3b8);cursor:pointer;padding:7px 16px;border-radius:8px;font-weight:600;">
+            ${this._t('discard')}
+          </button>
+          <button type="button" class="btn btn-sm btn-primary" id="btnSaveFloatingSettings" style="background:var(--accent, #0284c7);color:white;border:none;cursor:pointer;padding:7px 20px;border-radius:8px;font-weight:700;display:inline-flex;align-items:center;gap:6px;">
+            <ha-icon icon="mdi:content-save" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('save_changes')}
+          </button>
+        </div>
+      </div>
+
       <!-- Footer Actions -->
       <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:14px;border-top:1px solid var(--border-subtle);flex-wrap:wrap;gap:12px;">
         <div id="settingsToast" style="display:none;font-size:13px;font-weight:600;color:#10b981;background:rgba(16,185,129,0.12);border:1px solid rgba(16,185,129,0.3);padding:6px 12px;border-radius:8px;">
@@ -1671,7 +1689,7 @@ export const settingsMethods = {
         </div>
         <div style="display:flex;gap:10px;margin-left:auto;">
           ${isModal ? `<button class="btn" id="btnCancelSettings">${this._t('cancel')}</button>` : ''}
-          <button class="btn btn-primary" id="btnSaveDashboardSettings" style="background:var(--accent);color:white;font-weight:700;padding:8px 20px;border-radius:10px;border:none;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          <button class="btn btn-primary" id="btnSaveDashboardSettings" style="display:${this._isSettingsDirty ? 'inline-flex' : 'none'};background:var(--accent);color:white;font-weight:700;padding:8px 20px;border-radius:10px;border:none;cursor:pointer;align-items:center;gap:6px;">
             <ha-icon icon="mdi:content-save" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('save_changes')}
           </button>
         </div>
@@ -1679,8 +1697,45 @@ export const settingsMethods = {
     `;
 
     // Hook up Event Listeners
+    if (!this._boundBeforeUnload) {
+      this._boundBeforeUnload = (e) => {
+        if (this._isSettingsDirty) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      };
+      window.addEventListener('beforeunload', this._boundBeforeUnload);
+    }
+
+    container.addEventListener('input', () => this._markSettingsDirty(container));
+    container.addEventListener('change', () => this._markSettingsDirty(container));
+
+    const discardBtn = container.querySelector('#btnDiscardSettings');
+    if (discardBtn) {
+      discardBtn.onclick = () => this._discardSettingsChanges(container, isModal);
+    }
+
+    const cancelBtn = container.querySelector('#btnCancelSettings');
+    if (cancelBtn) {
+      cancelBtn.onclick = () => {
+        if (this._isSettingsDirty) {
+          if (!confirm(this._t('confirm_unsaved_leave'))) return;
+          this._discardSettingsChanges(container, isModal);
+        }
+        if (typeof this._closeModal === 'function') this._closeModal();
+      };
+    }
+
     const backBtn = container.querySelector('#btnBackToDashboard');
-    if (backBtn) backBtn.onclick = () => this._setViewMode('home');
+    if (backBtn) {
+      backBtn.onclick = () => {
+        if (this._isSettingsDirty) {
+          if (!confirm(this._t('confirm_unsaved_leave'))) return;
+          this._discardSettingsChanges(container, isModal);
+        }
+        this._setViewMode('home');
+      };
+    }
     container.querySelectorAll('[data-stab]').forEach(tabBtn => {
       tabBtn.onclick = () => {
         this._settingsActiveTab = tabBtn.getAttribute('data-stab');
@@ -1881,24 +1936,6 @@ export const settingsMethods = {
       };
     });
 
-    // Sync Areas
-    const btnSync = container.querySelector('#btnSyncAreas');
-    if (btnSync) {
-      btnSync.onclick = async () => {
-        btnSync.disabled = true;
-        btnSync.innerHTML = '<ha-icon icon="mdi:loading" class="spin" style="--mdc-icon-size:16px;"></ha-icon> Synchronisiere...';
-        const res = await this._syncAreas();
-        btnSync.disabled = false;
-        btnSync.innerHTML = '<ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ' + this._t('sync_areas_btn');
-        this._renderSettingsContent(container);
-        const toast = container.querySelector('#settingsToast');
-        if (toast) {
-          toast.textContent = `${this._t('sync_areas_success')} (${res ? res.total : 0} Bereiche)`;
-          toast.style.display = 'block';
-          setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
-        }
-      };
-    }
 
     // Dock up / down / toggle / custom items
     container.querySelectorAll('.btn-set-dock-up').forEach(b => {
@@ -2736,233 +2773,261 @@ export const settingsMethods = {
       };
     });
 
-    // Save button
-    const btnSave = container.querySelector('#btnSaveDashboardSettings');
-    if (btnSave) {
-      btnSave.onclick = async () => {
-        // Collect room inputs
-        container.querySelectorAll('.in-room-prop').forEach(inp => {
-          const rIdx = parseInt(inp.getAttribute('data-ridx'));
-          const prop = inp.getAttribute('data-prop');
-          if (this._config.rooms && this._config.rooms[rIdx]) {
-            this._config.rooms[rIdx][prop] = inp.value.trim();
+    // Save handler
+    const doSave = async () => {
+      // Collect room inputs
+      container.querySelectorAll('.in-room-prop').forEach(inp => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const prop = inp.getAttribute('data-prop');
+        if (this._config.rooms && this._config.rooms[rIdx]) {
+          this._config.rooms[rIdx][prop] = inp.value.trim();
+        }
+      });
+
+      // Collect overlay category inputs
+      const rIdx = this._settingsOverlayRoomIdx || 0;
+      if (this._config.rooms && this._config.rooms[rIdx]?.overlay_categories) {
+        container.querySelectorAll('.in-cat-name').forEach(inp => {
+          const cIdx = parseInt(inp.getAttribute('data-cidx'));
+          if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
+            this._config.rooms[rIdx].overlay_categories[cIdx].name = inp.value.trim();
           }
         });
-
-        // Collect overlay category inputs
-        const rIdx = this._settingsOverlayRoomIdx || 0;
-        if (this._config.rooms && this._config.rooms[rIdx]?.overlay_categories) {
-          container.querySelectorAll('.in-cat-name').forEach(inp => {
-            const cIdx = parseInt(inp.getAttribute('data-cidx'));
-            if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
-              this._config.rooms[rIdx].overlay_categories[cIdx].name = inp.value.trim();
-            }
-          });
-          container.querySelectorAll('.in-cat-ents').forEach(inp => {
-            const cIdx = parseInt(inp.getAttribute('data-cidx'));
-            if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
-              this._config.rooms[rIdx].overlay_categories[cIdx].entities = inp.value.split(',').map(s => s.trim()).filter(Boolean);
-            }
-          });
-        }
-
-        // Collect general inputs
-        const tMode = container.querySelector('#cfgThemeMode');
-        if (tMode) this._config.theme_mode = tMode.value;
-
-        const bStyle = container.querySelector('#cfgBgStyle');
-        if (bStyle) this._config.background_style = bStyle.value;
-
-        const bUrl = container.querySelector('#cfgBgUrl');
-        if (bUrl) this._config.background_image_url = bUrl.value.trim();
-
-        const aSpeed = container.querySelector('#cfgAmbientSpeed');
-        if (aSpeed) this._config.ambient_speed = aSpeed.value;
-
-        const bMode = container.querySelector('#cfgBgMode');
-        if (bMode) this._config.background_mode = bMode.value;
-
-        const cScheme = container.querySelector('#cfgColorScheme');
-        if (cScheme) this._config.color_scheme = cScheme.value;
-
-        const cPri = container.querySelector('#cfgColorTextPrimary');
-        if (cPri) this._config.color_text_primary = cPri.value.trim();
-
-        const cSec = container.querySelector('#cfgColorTextSecondary');
-        if (cSec) this._config.color_text_secondary = cSec.value.trim();
-
-        const cModalBg = container.querySelector('#cfgColorModalBg');
-        if (cModalBg) this._config.color_modal_bg = cModalBg.value.trim();
-
-        const cPillBg = container.querySelector('#cfgColorPillBg');
-        if (cPillBg) this._config.color_pill_bg = cPillBg.value.trim();
-
-        delete this._config.title;
-
-        const cWeather = container.querySelector('#cfgWeather');
-        if (cWeather) this._config.weather_entity = cWeather.value.trim();
-
-        const cLock = container.querySelector('#cfgLock');
-        if (cLock) this._config.lock_entity = cLock.value.trim();
-
-        const cLights = container.querySelector('#cfgAllLights');
-        if (cLights) this._config.all_lights_entity = cLights.value.trim();
-
-        const cAutoDock = container.querySelector('#chkSettingsDockAutoDetect');
-        if (cAutoDock && this._config.dock) this._config.dock.auto_detect = cAutoDock.checked;
-
-        // Collect Top-Bar settings
-        const chkTPersons = container.querySelector('#chkTopPersons');
-        if (chkTPersons) this._config.top_bar_show_persons = chkTPersons.checked;
-        const chkTLights = container.querySelector('#chkTopLights');
-        if (chkTLights) this._config.top_bar_show_lights = chkTLights.checked;
-        const chkTClimate = container.querySelector('#chkTopClimate');
-        if (chkTClimate) this._config.top_bar_show_climate = chkTClimate.checked;
-        const chkTLock = container.querySelector('#chkTopLock');
-        if (chkTLock) this._config.top_bar_show_lock = chkTLock.checked;
-        const chkTAlarmo = container.querySelector('#chkTopAlarmo');
-        if (chkTAlarmo) this._config.top_bar_show_alarmo = chkTAlarmo.checked;
-        const chkTWeather = container.querySelector('#chkTopWeather');
-        if (chkTWeather) this._config.top_bar_show_weather = chkTWeather.checked;
-        const chkTWarn = container.querySelector('#chkTopWarnings');
-        if (chkTWarn) this._config.top_bar_show_warnings = chkTWarn.checked;
-        const chkTMedia = container.querySelector('#chkTopMedia');
-        if (chkTMedia) this._config.top_bar_show_media = chkTMedia.checked;
-
-        const selPersons = [];
-        container.querySelectorAll('.chk-person-select:checked').forEach(c => {
-          selPersons.push(c.getAttribute('data-person-id'));
+        container.querySelectorAll('.in-cat-ents').forEach(inp => {
+          const cIdx = parseInt(inp.getAttribute('data-cidx'));
+          if (this._config.rooms[rIdx].overlay_categories[cIdx]) {
+            this._config.rooms[rIdx].overlay_categories[cIdx].entities = inp.value.split(',').map(s => s.trim()).filter(Boolean);
+          }
         });
-        if (container.querySelector('#topPersonsSelection')) {
-          this._config.top_bar_persons = selPersons;
-        }
+      }
 
-        // Collect helper controls
-        const helperCtrls = {};
-        container.querySelectorAll('.sel-helper-ctrl').forEach(sel => {
-          const eId = sel.getAttribute('data-entity');
-          if (eId) helperCtrls[eId] = sel.value;
-        });
-        this._config.helper_controls = helperCtrls;
+      // Collect general inputs
+      const tMode = container.querySelector('#cfgThemeMode');
+      if (tMode) this._config.theme_mode = tMode.value;
 
-        // Collect stats settings
-        if (!this._config.stats) this._config.stats = {};
-        if (!this._config.stats.rooms) this._config.stats.rooms = {};
+      const bStyle = container.querySelector('#cfgBgStyle');
+      if (bStyle) this._config.background_style = bStyle.value;
 
-        container.querySelectorAll('.chk-stat-room').forEach(chk => {
-          const rId = chk.getAttribute('data-room-id');
+      const bUrl = container.querySelector('#cfgBgUrl');
+      if (bUrl) this._config.background_image_url = bUrl.value.trim();
+
+      const aSpeed = container.querySelector('#cfgAmbientSpeed');
+      if (aSpeed) this._config.ambient_speed = aSpeed.value;
+
+      const bMode = container.querySelector('#cfgBgMode');
+      if (bMode) this._config.background_mode = bMode.value;
+
+      const cScheme = container.querySelector('#cfgColorScheme');
+      if (cScheme) this._config.color_scheme = cScheme.value;
+
+      const cPri = container.querySelector('#cfgColorTextPrimary');
+      if (cPri) this._config.color_text_primary = cPri.value.trim();
+
+      const cSec = container.querySelector('#cfgColorTextSecondary');
+      if (cSec) this._config.color_text_secondary = cSec.value.trim();
+
+      const cModalBg = container.querySelector('#cfgColorModalBg');
+      if (cModalBg) this._config.color_modal_bg = cModalBg.value.trim();
+
+      const cPillBg = container.querySelector('#cfgColorPillBg');
+      if (cPillBg) this._config.color_pill_bg = cPillBg.value.trim();
+
+      delete this._config.title;
+
+      const cWeather = container.querySelector('#cfgWeather');
+      if (cWeather) this._config.weather_entity = cWeather.value.trim();
+
+      const cLock = container.querySelector('#cfgLock');
+      if (cLock) this._config.lock_entity = cLock.value.trim();
+
+      const cLights = container.querySelector('#cfgAllLights');
+      if (cLights) this._config.all_lights_entity = cLights.value.trim();
+
+      const cAutoDock = container.querySelector('#chkSettingsDockAutoDetect');
+      if (cAutoDock && this._config.dock) this._config.dock.auto_detect = cAutoDock.checked;
+
+      // Collect Top-Bar settings
+      const chkTPersons = container.querySelector('#chkTopPersons');
+      if (chkTPersons) this._config.top_bar_show_persons = chkTPersons.checked;
+      const chkTLights = container.querySelector('#chkTopLights');
+      if (chkTLights) this._config.top_bar_show_lights = chkTLights.checked;
+      const chkTClimate = container.querySelector('#chkTopClimate');
+      if (chkTClimate) this._config.top_bar_show_climate = chkTClimate.checked;
+      const chkTLock = container.querySelector('#chkTopLock');
+      if (chkTLock) this._config.top_bar_show_lock = chkTLock.checked;
+      const chkTAlarmo = container.querySelector('#chkTopAlarmo');
+      if (chkTAlarmo) this._config.top_bar_show_alarmo = chkTAlarmo.checked;
+      const chkTWeather = container.querySelector('#chkTopWeather');
+      if (chkTWeather) this._config.top_bar_show_weather = chkTWeather.checked;
+      const chkTWarn = container.querySelector('#chkTopWarnings');
+      if (chkTWarn) this._config.top_bar_show_warnings = chkTWarn.checked;
+      const chkTMedia = container.querySelector('#chkTopMedia');
+      if (chkTMedia) this._config.top_bar_show_media = chkTMedia.checked;
+
+      const selPersons = [];
+      container.querySelectorAll('.chk-person-select:checked').forEach(c => {
+        selPersons.push(c.getAttribute('data-person-id'));
+      });
+      if (container.querySelector('#topPersonsSelection')) {
+        this._config.top_bar_persons = selPersons;
+      }
+
+      // Collect helper controls
+      const helperCtrls = {};
+      container.querySelectorAll('.sel-helper-ctrl').forEach(sel => {
+        const eId = sel.getAttribute('data-entity');
+        if (eId) helperCtrls[eId] = sel.value;
+      });
+      this._config.helper_controls = helperCtrls;
+
+      // Collect stats settings
+      if (!this._config.stats) this._config.stats = {};
+      if (!this._config.stats.rooms) this._config.stats.rooms = {};
+
+      container.querySelectorAll('.chk-stat-room').forEach(chk => {
+        const rId = chk.getAttribute('data-room-id');
+        if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+        this._config.stats.rooms[rId].enabled = chk.checked;
+      });
+
+      // Collect checked temp entities
+      const tempByRoom = {};
+      container.querySelectorAll('.chk-stat-room-temp:checked').forEach(chk => {
+        const rId = chk.getAttribute('data-room-id');
+        const eId = chk.getAttribute('data-eid');
+        if (!tempByRoom[rId]) tempByRoom[rId] = [];
+        tempByRoom[rId].push(eId);
+      });
+      container.querySelectorAll('.chk-stat-room').forEach(chk => {
+        const rId = chk.getAttribute('data-room-id');
+        if (container.querySelector(`.chk-stat-room-temp[data-room-id="${rId}"]`)) {
           if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
-          this._config.stats.rooms[rId].enabled = chk.checked;
-        });
-
-        // Collect checked temp entities
-        const tempByRoom = {};
-        container.querySelectorAll('.chk-stat-room-temp:checked').forEach(chk => {
-          const rId = chk.getAttribute('data-room-id');
-          const eId = chk.getAttribute('data-eid');
-          if (!tempByRoom[rId]) tempByRoom[rId] = [];
-          tempByRoom[rId].push(eId);
-        });
-        container.querySelectorAll('.chk-stat-room').forEach(chk => {
-          const rId = chk.getAttribute('data-room-id');
-          if (container.querySelector(`.chk-stat-room-temp[data-room-id="${rId}"]`)) {
-            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
-            this._config.stats.rooms[rId].temp_entities = tempByRoom[rId] || [];
-          }
-        });
-
-        // Collect checked illum entities
-        const illumByRoom = {};
-        container.querySelectorAll('.chk-stat-room-illum:checked').forEach(chk => {
-          const rId = chk.getAttribute('data-room-id');
-          const eId = chk.getAttribute('data-eid');
-          if (!illumByRoom[rId]) illumByRoom[rId] = [];
-          illumByRoom[rId].push(eId);
-        });
-        container.querySelectorAll('.chk-stat-room').forEach(chk => {
-          const rId = chk.getAttribute('data-room-id');
-          if (container.querySelector(`.chk-stat-room-illum[data-room-id="${rId}"]`)) {
-            if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
-            this._config.stats.rooms[rId].illum_entities = illumByRoom[rId] || [];
-          }
-        });
-
-        const enabledList = Object.keys(this._config.stats.rooms).filter(rId => this._config.stats.rooms[rId].enabled !== false);
-        this._config.stats.enabled_rooms = enabledList;
-
-        const chkStatT = container.querySelector('#chkStatShowTemp');
-        if (chkStatT) this._config.stats.show_temperature = chkStatT.checked;
-        const chkStatI = container.querySelector('#chkStatShowIllum');
-        if (chkStatI) this._config.stats.show_illuminance = chkStatI.checked;
-        const chkStatB = container.querySelector('#chkStatShowBat');
-        if (chkStatB) this._config.stats.show_battery = chkStatB.checked;
-
-        // Custom stat sections inputs
-        container.querySelectorAll('.txt-stat-sec-title').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
-            this._config.stats.custom_sections[sIdx].title = inp.value.trim();
-          }
-        });
-        container.querySelectorAll('.txt-stat-sec-unit').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
-            this._config.stats.custom_sections[sIdx].unit = inp.value.trim();
-          }
-        });
-        container.querySelectorAll('.txt-stat-sec-icon').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
-            this._config.stats.custom_sections[sIdx].icon = inp.value.trim();
-          }
-        });
-        container.querySelectorAll('.txt-stat-ent-name').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          const eIdx = parseInt(inp.getAttribute('data-eidx'));
-          const sec = this._config.stats.custom_sections?.[sIdx];
-          if (sec && sec.entities && sec.entities[eIdx]) {
-            if (typeof sec.entities[eIdx] === 'string') {
-              sec.entities[eIdx] = { id: sec.entities[eIdx], name: inp.value.trim(), color: '#38bdf8' };
-            } else {
-              sec.entities[eIdx].name = inp.value.trim();
-            }
-          }
-        });
-        container.querySelectorAll('.txt-stat-ent-id').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          const eIdx = parseInt(inp.getAttribute('data-eidx'));
-          const sec = this._config.stats.custom_sections?.[sIdx];
-          if (sec && sec.entities && sec.entities[eIdx]) {
-            if (typeof sec.entities[eIdx] === 'string') {
-              sec.entities[eIdx] = { id: inp.value.trim(), name: '', color: '#38bdf8' };
-            } else {
-              sec.entities[eIdx].id = inp.value.trim();
-            }
-          }
-        });
-        container.querySelectorAll('.cp-stat-ent-color').forEach(inp => {
-          const sIdx = parseInt(inp.getAttribute('data-sidx'));
-          const eIdx = parseInt(inp.getAttribute('data-eidx'));
-          const sec = this._config.stats.custom_sections?.[sIdx];
-          if (sec && sec.entities && sec.entities[eIdx]) {
-            if (typeof sec.entities[eIdx] === 'string') {
-              sec.entities[eIdx] = { id: sec.entities[eIdx], name: '', color: inp.value };
-            } else {
-              sec.entities[eIdx].color = inp.value;
-            }
-          }
-        });
-
-        // Persist via WebSocket to Lovelace
-        await this._saveDashboardConfig(this._config);
-
-        // Toast feedback
-        const toast = container.querySelector('#settingsToast');
-        if (toast) {
-          toast.style.display = 'block';
-          setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+          this._config.stats.rooms[rId].temp_entities = tempByRoom[rId] || [];
         }
-      };
+      });
+
+      // Collect checked illum entities
+      const illumByRoom = {};
+      container.querySelectorAll('.chk-stat-room-illum:checked').forEach(chk => {
+        const rId = chk.getAttribute('data-room-id');
+        const eId = chk.getAttribute('data-eid');
+        if (!illumByRoom[rId]) illumByRoom[rId] = [];
+        illumByRoom[rId].push(eId);
+      });
+      container.querySelectorAll('.chk-stat-room').forEach(chk => {
+        const rId = chk.getAttribute('data-room-id');
+        if (container.querySelector(`.chk-stat-room-illum[data-room-id="${rId}"]`)) {
+          if (!this._config.stats.rooms[rId]) this._config.stats.rooms[rId] = {};
+          this._config.stats.rooms[rId].illum_entities = illumByRoom[rId] || [];
+        }
+      });
+
+      const enabledList = Object.keys(this._config.stats.rooms).filter(rId => this._config.stats.rooms[rId].enabled !== false);
+      this._config.stats.enabled_rooms = enabledList;
+
+      const chkStatT = container.querySelector('#chkStatShowTemp');
+      if (chkStatT) this._config.stats.show_temperature = chkStatT.checked;
+      const chkStatI = container.querySelector('#chkStatShowIllum');
+      if (chkStatI) this._config.stats.show_illuminance = chkStatI.checked;
+      const chkStatB = container.querySelector('#chkStatShowBat');
+      if (chkStatB) this._config.stats.show_battery = chkStatB.checked;
+
+      // Custom stat sections inputs
+      container.querySelectorAll('.txt-stat-sec-title').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+          this._config.stats.custom_sections[sIdx].title = inp.value.trim();
+        }
+      });
+      container.querySelectorAll('.txt-stat-sec-unit').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+          this._config.stats.custom_sections[sIdx].unit = inp.value.trim();
+        }
+      });
+      container.querySelectorAll('.txt-stat-sec-icon').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        if (this._config.stats.custom_sections && this._config.stats.custom_sections[sIdx]) {
+          this._config.stats.custom_sections[sIdx].icon = inp.value.trim();
+        }
+      });
+      container.querySelectorAll('.txt-stat-ent-name').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        const eIdx = parseInt(inp.getAttribute('data-eidx'));
+        const sec = this._config.stats.custom_sections?.[sIdx];
+        if (sec && sec.entities && sec.entities[eIdx]) {
+          if (typeof sec.entities[eIdx] === 'string') {
+            sec.entities[eIdx] = { id: sec.entities[eIdx], name: inp.value.trim(), color: '#38bdf8' };
+          } else {
+            sec.entities[eIdx].name = inp.value.trim();
+          }
+        }
+      });
+      container.querySelectorAll('.txt-stat-ent-id').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        const eIdx = parseInt(inp.getAttribute('data-eidx'));
+        const sec = this._config.stats.custom_sections?.[sIdx];
+        if (sec && sec.entities && sec.entities[eIdx]) {
+          if (typeof sec.entities[eIdx] === 'string') {
+            sec.entities[eIdx] = { id: inp.value.trim(), name: '', color: '#38bdf8' };
+          } else {
+            sec.entities[eIdx].id = inp.value.trim();
+          }
+        }
+      });
+      container.querySelectorAll('.cp-stat-ent-color').forEach(inp => {
+        const sIdx = parseInt(inp.getAttribute('data-sidx'));
+        const eIdx = parseInt(inp.getAttribute('data-eidx'));
+        const sec = this._config.stats.custom_sections?.[sIdx];
+        if (sec && sec.entities && sec.entities[eIdx]) {
+          if (typeof sec.entities[eIdx] === 'string') {
+            sec.entities[eIdx] = { id: sec.entities[eIdx], name: '', color: inp.value };
+          } else {
+            sec.entities[eIdx].color = inp.value;
+          }
+        }
+      });
+
+      // Persist via WebSocket to Lovelace
+      await this._saveDashboardConfig(this._config);
+      this._clearSettingsDirty(container);
+
+      // Toast feedback
+      const toast = container.querySelector('#settingsToast');
+      if (toast) {
+        toast.style.display = 'block';
+        setTimeout(() => { if (toast) toast.style.display = 'none'; }, 4000);
+      }
+    };
+
+    const btnSave = container.querySelector('#btnSaveDashboardSettings');
+    if (btnSave) btnSave.onclick = doSave;
+    const btnSaveFloat = container.querySelector('#btnSaveFloatingSettings');
+    if (btnSaveFloat) btnSaveFloat.onclick = doSave;
+  },
+
+  _markSettingsDirty(container) {
+    this._isSettingsDirty = true;
+    const bar = container?.querySelector('#settingsSaveBar') || this.shadowRoot?.querySelector('#settingsSaveBar');
+    if (bar) bar.style.display = 'flex';
+    const footerSave = container?.querySelector('#btnSaveDashboardSettings') || this.shadowRoot?.querySelector('#btnSaveDashboardSettings');
+    if (footerSave) footerSave.style.display = 'inline-flex';
+  },
+
+  _clearSettingsDirty(container) {
+    this._isSettingsDirty = false;
+    this._cleanConfigSnapshot = JSON.parse(JSON.stringify(this._config));
+    const bar = container?.querySelector('#settingsSaveBar') || this.shadowRoot?.querySelector('#settingsSaveBar');
+    if (bar) bar.style.display = 'none';
+    const footerSave = container?.querySelector('#btnSaveDashboardSettings') || this.shadowRoot?.querySelector('#btnSaveDashboardSettings');
+    if (footerSave) footerSave.style.display = 'none';
+  },
+
+  _discardSettingsChanges(container, isModal) {
+    if (this._cleanConfigSnapshot) {
+      this._config = JSON.parse(JSON.stringify(this._cleanConfigSnapshot));
     }
+    this._isSettingsDirty = false;
+    this._renderSettingsContent(container, isModal);
   }
 };

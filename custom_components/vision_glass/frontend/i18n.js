@@ -1,6 +1,9 @@
 export const I18N = {
       de: {
         welcome: 'Willkommen',
+        unsaved_changes: 'Ungespeicherte Änderungen',
+        discard: 'Verwerfen',
+        confirm_unsaved_leave: 'Es gibt ungespeicherte Änderungen. Möchtest du diese wirklich verwerfen und die Ansicht verlassen?',
         smart_home_center: 'Smart Home Zentrale',
         edit_banner_title: 'Vision Glass Dashboard Bearbeitungsmodus',
         edit_banner_subtitle: 'Räume, Bento-Kacheln, Overlays und Dock-Navigation werden zentral auf der Einstellungsseite konfiguriert.',
@@ -265,6 +268,9 @@ export const I18N = {
       },
       en: {
         welcome: 'Welcome',
+        unsaved_changes: 'Unsaved changes',
+        discard: 'Discard',
+        confirm_unsaved_leave: 'You have unsaved changes. Do you really want to discard them and leave?',
         smart_home_center: 'Smart Home Center',
         edit_banner_title: 'Vision Glass Dashboard Edit Mode',
         edit_banner_subtitle: 'Rooms, Bento tiles, overlays, and dock navigation are configured centrally on the dedicated settings page.',
@@ -529,6 +535,9 @@ export const I18N = {
       },
       id: {
         welcome: 'Selamat datang',
+        unsaved_changes: 'Perubahan belum disimpan',
+        discard: 'Buang',
+        confirm_unsaved_leave: 'Ada perubahan yang belum disimpan. Apakah Anda yakin ingin membuangnya dan keluar?',
         smart_home_center: 'Pusat Smart Home',
         edit_banner_title: 'Mode Edit Dasbor Vision Glass',
         edit_banner_subtitle: 'Ruangan, ubin Bento, overlay, dan navigasi dock dikonfigurasi secara terpusat di halaman pengaturan.',
