@@ -147,6 +147,7 @@ def _install_ha_stubs() -> None:
 
 _install_ha_stubs()
 
+from custom_components.vision_glass import async_set_default_dashboard
 from custom_components.vision_glass.aggregator import (  # noqa: E402
     _downsample_numeric_points,
     compute_summary,
@@ -303,6 +304,51 @@ class TestVisionGlassBackend(unittest.TestCase):
         self.assertEqual(added_cnt, 1)
         self.assertEqual(synced["rooms"][0]["name"], "Wohnzimmer Neu")
         self.assertEqual(synced["rooms"][1]["id"], "kitchen")
+        self.assertIn("kitchen", synced["stats"]["rooms"])
+
+    def test_sync_rooms_populates_missing_entities(self) -> None:
+        hass = _FakeHass(
+            states=[
+                _State("light.bedroom_ceiling", "off", {}),
+                _State("sensor.bedroom_temperature", "19.5", {"device_class": "temperature"}),
+            ],
+            areas=[_Area("bedroom", "Schlafzimmer")],
+            entities=[
+                _EntityEntry("light.bedroom_ceiling", area_id="bedroom"),
+                _EntityEntry("sensor.bedroom_temperature", area_id="bedroom"),
+            ],
+        )
+        # Room exists but has no light or temp configured yet
+        cfg = {
+            "rooms": [{"id": "bedroom", "name": "Schlafzimmer", "light_entity": None, "temp_entity": None}],
+            "stats": {"rooms": {}},
+        }
+        synced, updated_cnt, added_cnt = sync_rooms_with_areas(hass, cfg)
+        self.assertEqual(updated_cnt, 1)
+        self.assertEqual(added_cnt, 0)
+        self.assertEqual(synced["rooms"][0]["light_entity"], "light.bedroom_ceiling")
+        self.assertEqual(synced["rooms"][0]["temp_entity"], "sensor.bedroom_temperature")
+
+    def test_async_set_default_dashboard(self) -> None:
+        hass = _FakeHass()
+        user1 = types.SimpleNamespace(id="u123")
+        hass.auth = types.SimpleNamespace(async_get_users=lambda: asyncio.sleep(0, result=[user1]))
+
+        async def _run():
+            await async_set_default_dashboard(hass, True)
+            sys_store = hass._stores.get("frontend.system_data")
+            user_store = hass._stores.get("frontend.user_data_u123")
+            self.assertIsNotNone(sys_store)
+            self.assertEqual(sys_store["core"]["default_panel"], "vision-glass")
+            self.assertIsNotNone(user_store)
+            self.assertEqual(user_store["core"]["default_panel"], "vision-glass")
+
+            # Disable
+            await async_set_default_dashboard(hass, False)
+            self.assertEqual(hass._stores["frontend.system_data"]["core"]["default_panel"], "lovelace")
+            self.assertEqual(hass._stores["frontend.user_data_u123"]["core"]["default_panel"], "lovelace")
+
+        asyncio.run(_run())
 
     def test_compute_summary_and_downsampling(self) -> None:
         hass = _FakeHass(

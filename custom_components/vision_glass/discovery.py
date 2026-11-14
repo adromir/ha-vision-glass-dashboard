@@ -253,7 +253,7 @@ def build_initial_config(hass: HomeAssistant) -> dict[str, Any]:
 
 
 def sync_rooms_with_areas(hass: HomeAssistant, config: dict[str, Any]) -> tuple[dict[str, Any], int, int]:
-    """Update existing rooms from HA areas (name/picture/icon) and append newly discovered HA areas."""
+    """Update existing rooms from HA areas (name/picture/icon/missing entities) and append newly discovered HA areas."""
     discovery = get_area_entities_map(hass)
     states_map = {st.entity_id: st for st in hass.states.async_all()}
     areas_by_id = {area["area_id"]: area for area in discovery["areas"]}
@@ -271,20 +271,71 @@ def sync_rooms_with_areas(hass: HomeAssistant, config: dict[str, Any]) -> tuple[
         if area.get("name") and room.get("name") != area["name"]:
             room["name"] = area["name"]
             changed = True
-        if area.get("picture") != room.get("picture") and area.get("picture"):
-            room["picture"] = area["picture"]
+        if area.get("picture") != room.get("picture"):
+            room["picture"] = area.get("picture")
             changed = True
-        if area.get("icon") and not room.get("icon"):
+        if area.get("icon") != room.get("icon") and area.get("icon"):
             room["icon"] = area["icon"]
             changed = True
+
+        # Auto-populate unconfigured primary entities if new matching entities exist in this area
+        area_entities = area.get("entities", [])
+        if area_entities:
+            if not room.get("light_entity"):
+                cand = _first_matching(area_entities, states_map, "light")
+                if cand:
+                    room["light_entity"] = cand
+                    changed = True
+            if not room.get("climate_entity"):
+                cand = _first_matching(area_entities, states_map, "climate")
+                if cand:
+                    room["climate_entity"] = cand
+                    changed = True
+            if not room.get("temp_entity"):
+                cand = _first_matching(area_entities, states_map, "sensor", ("temperature",), ("temp", "temperatur"))
+                if cand:
+                    room["temp_entity"] = cand
+                    changed = True
+            if not room.get("humidity_entity"):
+                cand = _first_matching(area_entities, states_map, "sensor", ("humidity",), ("humidity", "feuchte", "feuchtigkeit"))
+                if cand:
+                    room["humidity_entity"] = cand
+                    changed = True
+            if not room.get("illuminance_entity"):
+                cand = _first_matching(area_entities, states_map, "sensor", ("illuminance",), ("lux", "illuminance", "helligkeit"))
+                if cand:
+                    room["illuminance_entity"] = cand
+                    changed = True
+            if not room.get("presence_entity"):
+                cand = _first_matching(area_entities, states_map, "binary_sensor", ("occupancy", "presence", "motion"), ("occupied", "presence", "motion", "anwesend", "bewegung"))
+                if cand:
+                    room["presence_entity"] = cand
+                    changed = True
+            if not room.get("window_entity"):
+                cand = _first_matching(area_entities, states_map, "binary_sensor", ("window", "door", "opening"), ("window", "fenster", "tuer", "door"))
+                if cand:
+                    room["window_entity"] = cand
+                    changed = True
+
         if changed:
             updated_count += 1
 
     added_count = 0
+    stats_rooms = updated_cfg.setdefault("stats", {}).setdefault("rooms", {})
     for area in discovery["areas"]:
         if area["area_id"] not in existing_ids:
-            rooms.append(_build_room_from_area(area, states_map))
+            new_room = _build_room_from_area(area, states_map)
+            rooms.append(new_room)
+            existing_ids.add(area["area_id"])
             added_count += 1
+            if area["area_id"] not in stats_rooms:
+                has_temp = bool(new_room.get("temp_entity") or new_room.get("climate_entity"))
+                has_illum = bool(new_room.get("illuminance_entity"))
+                stats_rooms[area["area_id"]] = {
+                    "enabled": has_temp or has_illum,
+                    "temp_entities": [new_room["temp_entity"]] if new_room.get("temp_entity") else ([new_room["climate_entity"]] if new_room.get("climate_entity") else []),
+                    "illum_entities": [new_room["illuminance_entity"]] if new_room.get("illuminance_entity") else [],
+                }
 
     updated_cfg["rooms"] = rooms
     return updated_cfg, updated_count, added_count

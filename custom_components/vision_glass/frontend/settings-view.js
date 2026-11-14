@@ -672,7 +672,12 @@ export const settingsMethods = {
       <!-- TAB 1: RÄUME & BENTO-KARTEN -->
       <div id="stabContentRooms" style="${activeTab === 'rooms' ? '' : 'display:none;'}">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px;">
-          <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="font-size:12px;color:var(--text-secondary);">${this._t('reorder_rooms')}</span>
+            <span style="font-size:11px;color:var(--accent);display:inline-flex;align-items:center;gap:4px;">
+              <ha-icon icon="mdi:check-all" style="--mdc-icon-size:13px;"></ha-icon> Bereiche werden automatisch synchronisiert
+            </span>
+          </div>
           <div style="display:flex;gap:8px;">
             <button class="btn btn-sm btn-primary" id="btnSyncAreas" style="display:inline-flex;align-items:center;gap:6px;"><ha-icon icon="mdi:refresh" style="--mdc-icon-size:16px;"></ha-icon> ${this._t('sync_areas_btn')}</button>
           </div>
@@ -1534,13 +1539,13 @@ export const settingsMethods = {
               <ha-icon icon="mdi:home-export-outline" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon> Standard-Startseite
             </div>
             <div style="font-size:12px;color:var(--text-secondary);margin-bottom:10px;">
-              Lege fest, ob Vision Glass beim Aufrufen von Home Assistant automatisch als primäres Dashboard geöffnet werden soll.
+              Vision Glass wird beim Aufrufen von Home Assistant im Browser und in der Companion App automatisch als primäres Dashboard geöffnet (system- und benutzerweit).
             </div>
             <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
               <button type="button" class="btn btn-sm btn-primary" id="btnSetAsDefaultDashboard" style="display:inline-flex;align-items:center;gap:6px;">
-                <ha-icon icon="mdi:check-circle-outline" style="--mdc-icon-size:16px;"></ha-icon> Vision Glass als Standard festlegen
+                <ha-icon icon="mdi:check-circle-outline" style="--mdc-icon-size:16px;"></ha-icon> Als Standard-Dashboard aktualisieren
               </button>
-              <span id="lblDefaultDashboardStatus" style="font-size:12px;font-weight:600;"></span>
+              <span id="lblDefaultDashboardStatus" style="font-size:12px;font-weight:600;color:#10b981;">✓ Standardmäßig aktiv</span>
             </div>
           </div>
         </div>
@@ -2667,6 +2672,9 @@ export const settingsMethods = {
         try {
           await this._hass.callWS({ type: 'frontend/set_user_data', key: 'core', value: { default_panel: 'vision-glass' } });
           await this._hass.callWS({ type: 'frontend/set_system_data', key: 'core', value: { default_panel: 'vision-glass' } });
+          try {
+            localStorage.setItem('defaultPanel', JSON.stringify('vision-glass'));
+          } catch (_) {}
           if (lblDefaultStatus) {
             lblDefaultStatus.textContent = '✓ Gespeichert! Vision Glass öffnet sich nun automatisch beim Start.';
             lblDefaultStatus.style.color = '#10b981';

@@ -1,4 +1,4 @@
-# 🪟 Vision Glass for Home Assistant (v3.0.0)
+# 🪟 Vision Glass for Home Assistant (v3.0.14)
 
 [![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=adromir&repository=ha-vision-glass-dashboard&category=integration)
 [![hacs_badge](https://img.shields.io/badge/HACS-Custom-41BDF5.svg?style=for-the-badge)](https://github.com/hacs/default)
@@ -28,6 +28,8 @@ For the ultimate spatial glassmorphism experience across your entire Home Assist
 ## ✨ Why Use Vision Glass?
 
 - 🚀 **Single All-in-One Integration**: No manual Lovelace resources or separate dashboard YAML files required—install once via HACS, add the integration in Home Assistant, and open **Vision Glass** straight from your sidebar.
+- 🎯 **Turnkey Default Dashboard & Instant Landing**: Automatically sets Vision Glass as Home Assistant's default landing page (`default_panel: vision-glass`) across system data, user profiles, and browsers so opening Home Assistant always launches Vision Glass directly.
+- 🔄 **Continuous Automatic Area Synchronization**: Native event listeners on Home Assistant's area registry immediately update renamed areas, sync pictures and icons, auto-populate unconfigured entities, and automatically discover newly added rooms without manual intervention.
 - 🧠 **Python-Offloaded Performance**:
   - **Exact Area/Device Registry Discovery**: Resolves area-to-entity mappings server-side (`vision_glass/discovery/rooms`) instead of brute-forcing entity lists in the browser.
   - **Server-Side Aggregation & Recorder Downsampling**: Computes active lights, heating counts, battery tiers, and downsampled SVG chart series (`vision_glass/stats/history`) in Python before sending compact payloads over WebSocket.
@@ -72,12 +74,12 @@ For the ultimate spatial glassmorphism experience across your entire Home Assist
 
 ## 🚀 Usage & Configuration
 
-1. Open **Vision Glass** from the Home Assistant sidebar (`/vision-glass`).
+1. Open **Vision Glass** from the Home Assistant sidebar (`/vision-glass`) or navigate to your Home Assistant root URL (`/`) which automatically routes to Vision Glass.
 2. Click **⚙️ Settings** in the top-right header bar or bottom dock to customize:
    - **Rooms & Bento Content** (order, primary entities, reusable badges, icon colors)
    - **Room Overlays & Helper Controls**
    - **Top Header Chips & Bottom Dock Items**
-   - **Theme Mode, Background Presets & Sync to Home Assistant Areas**
+   - **Theme Mode, Background Presets & Default Landing Page Settings**
 3. Changes save directly to Home Assistant `.storage/vision_glass.config` over WebSocket (`vision_glass/config/save`).
 
 ---

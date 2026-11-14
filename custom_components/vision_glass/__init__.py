@@ -14,14 +14,17 @@ from homeassistant.components import frontend, panel_custom, websocket_api
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers.storage import Store
 from homeassistant.helpers.typing import ConfigType
 
 from .aggregator import async_get_history, compute_summary
 from .const import (
+    CONF_DEFAULT_DASHBOARD,
     CONF_MIGRATE_LOVELACE,
     CONF_REQUIRE_ADMIN,
     CONF_SIDEBAR_ICON,
     CONF_SIDEBAR_TITLE,
+    DEFAULT_SET_DEFAULT_DASHBOARD,
     DEFAULT_SIDEBAR_ICON,
     DEFAULT_SIDEBAR_TITLE,
     DOMAIN,
@@ -58,6 +61,40 @@ def _compute_build_id() -> str:
     return digest.hexdigest()[:10] or VERSION
 
 
+async def async_set_default_dashboard(hass: HomeAssistant, enable: bool = True) -> None:
+    """Set or unset Vision Glass as the default dashboard in Home Assistant system and user data."""
+    target_panel = PANEL_URL if enable else "lovelace"
+
+    # 1. System-wide default panel in .storage/frontend.system_data
+    try:
+        sys_store = Store(hass, 1, "frontend.system_data")
+        sys_data = await sys_store.async_load() or {}
+        core_data = sys_data.setdefault("core", {})
+        if core_data.get("default_panel") != target_panel:
+            core_data["default_panel"] = target_panel
+            await sys_store.async_save(sys_data)
+    except Exception as err:
+        _LOGGER.warning("Could not set system default_panel: %s", err)
+
+    # 2. Per-user default panel in .storage/frontend.user_data_<user_id>
+    try:
+        auth = getattr(hass, "auth", None)
+        if auth and hasattr(auth, "async_get_users"):
+            auth_users = await auth.async_get_users()
+            for user in auth_users:
+                user_id = getattr(user, "id", None)
+                if not user_id:
+                    continue
+                u_store = Store(hass, 1, f"frontend.user_data_{user_id}")
+                u_data = await u_store.async_load() or {}
+                u_core = u_data.setdefault("core", {})
+                if u_core.get("default_panel") != target_panel:
+                    u_core["default_panel"] = target_panel
+                    await u_store.async_save(u_data)
+    except Exception as err:
+        _LOGGER.debug("Could not update user default_panel stores: %s", err)
+
+
 async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """Register WebSocket commands for the Vision Glass integration."""
     websocket_api.async_register_command(hass, ws_config_get)
@@ -82,6 +119,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         initial_cfg = build_initial_config(hass)
         await store.async_save(initial_cfg)
 
+    # Automatically synchronize existing rooms and append newly added areas
+    if store.data.get("_initialized"):
+        updated_cfg, updated_count, added_count = sync_rooms_with_areas(hass, store.data)
+        if updated_count > 0 or added_count > 0:
+            await store.async_save(updated_cfg)
+
+    # Listen to Home Assistant area registry updates for continuous synchronization
+    @callback
+    def _handle_area_registry_update(event: Any) -> None:
+        async def _async_sync() -> None:
+            if not store.data.get("_initialized"):
+                return
+            updated_cfg, u_count, a_count = sync_rooms_with_areas(hass, store.data)
+            if u_count > 0 or a_count > 0:
+                await store.async_save(updated_cfg)
+                hass.bus.async_fire("vision_glass_config_updated", {"updated": u_count, "added": a_count})
+
+        hass.async_create_task(_async_sync())
+
+    entry.async_on_unload(hass.bus.async_listen("area_registry_updated", _handle_area_registry_update))
+
     hass.data[DOMAIN] = {"store": store, "entry": entry}
 
     if not hass.data.get(f"{DOMAIN}_static_registered"):
@@ -95,6 +153,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     build_id = await hass.async_add_executor_job(_compute_build_id)
     module_url = f"{STATIC_URL}/vision-glass-panel.js?v={build_id}"
+
+    # Set Vision Glass as default dashboard (system-wide and per-user) if enabled
+    if store.data.get(CONF_DEFAULT_DASHBOARD, DEFAULT_SET_DEFAULT_DASHBOARD):
+        await async_set_default_dashboard(hass, True)
+
+    # Register global frontend script for seamless default-landing redirect
+    if hasattr(frontend, "add_extra_js_url") and not hass.data.get(f"{DOMAIN}_extra_js_registered"):
+        frontend.add_extra_js_url(hass, f"{STATIC_URL}/default-panel-sync.js?v={build_id}")
+        hass.data[f"{DOMAIN}_extra_js_registered"] = True
 
     sidebar_title = entry.options.get(
         CONF_SIDEBAR_TITLE, entry.data.get(CONF_SIDEBAR_TITLE, DEFAULT_SIDEBAR_TITLE)
@@ -135,12 +202,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
 
 @websocket_api.websocket_command({vol.Required("type"): "vision_glass/config/get"})
-@callback
-def ws_config_get(hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]) -> None:
-    """Return current Vision Glass config and pre-computed summary."""
+@websocket_api.async_response
+async def ws_config_get(
+    hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
+) -> None:
+    """Return current Vision Glass config and pre-computed summary with auto-sync."""
     domain_data = hass.data.get(DOMAIN) or {}
     store: VisionGlassStore | None = domain_data.get("store")
     config = store.data if store else {}
+    if store is not None and config.get("_initialized"):
+        updated_cfg, updated_count, added_count = sync_rooms_with_areas(hass, config)
+        if updated_count > 0 or added_count > 0:
+            config = await store.async_save(updated_cfg)
     summary = compute_summary(hass, config)
     connection.send_result(
         msg["id"],
@@ -162,7 +235,7 @@ def ws_config_get(hass: HomeAssistant, connection: websocket_api.ActiveConnectio
 async def ws_config_save(
     hass: HomeAssistant, connection: websocket_api.ActiveConnection, msg: dict[str, Any]
 ) -> None:
-    """Persist updated Vision Glass config and sync Home Assistant theme mode."""
+    """Persist updated Vision Glass config and sync Home Assistant theme mode and default dashboard."""
     domain_data = hass.data.get(DOMAIN) or {}
     store: VisionGlassStore | None = domain_data.get("store")
     if store is None:
@@ -170,6 +243,8 @@ async def ws_config_save(
         return
 
     saved = await store.async_save(msg["config"])
+    if "default_dashboard" in msg["config"]:
+        await async_set_default_dashboard(hass, bool(msg["config"]["default_dashboard"]))
     summary = compute_summary(hass, saved)
     connection.send_result(msg["id"], {"config": saved, "summary": summary})
 

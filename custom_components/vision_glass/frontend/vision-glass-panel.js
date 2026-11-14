@@ -295,10 +295,29 @@ class VisionGlassPanel extends HTMLElement {
 
   connectedCallback() {
     this._startClock();
+    try {
+      localStorage.setItem('defaultPanel', JSON.stringify('vision-glass'));
+    } catch (_) {}
+    if (this._hass && this._hass.connection && !this._unsubConfigEvents) {
+      this._hass.connection.subscribeEvents(
+        () => {
+          console.debug('[VisionGlass] Real-time area update event received. Refreshing backend config...');
+          this._loadBackendConfig();
+        },
+        'vision_glass_config_updated'
+      ).then((unsub) => {
+        this._unsubConfigEvents = unsub;
+      }).catch(() => {});
+    }
   }
 
   disconnectedCallback() {
     if (this._timer) clearInterval(this._timer);
+    const unsubEvents = this._unsubConfigEvents;
+    if (unsubEvents) {
+      try { unsubEvents(); } catch (_) {}
+      this._unsubConfigEvents = null;
+    }
     if (this._routeChangeHandler && typeof window !== 'undefined') {
       window.removeEventListener('location-changed', this._routeChangeHandler);
       window.removeEventListener('popstate', this._routeChangeHandler);
