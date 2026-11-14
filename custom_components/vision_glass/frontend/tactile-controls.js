@@ -242,7 +242,7 @@ export const tactileMethods = {
 
     const prefCtrl = this._config?.helper_controls?.[entityId];
 
-    if (domain === 'switch' || domain === 'input_boolean') {
+    if (domain === 'switch' || domain === 'input_boolean' || domain === 'light' || domain === 'fan' || domain === 'lock') {
       return this._renderSwitchControlRow(entityId, stateObj);
     }
 
@@ -558,6 +558,38 @@ export const tactileMethods = {
       `;
     }
 
+    if (domain === 'scene') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:10px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="font-size:13px;font-weight:600;color:var(--text-primary);">${name}</div>
+            ${battWarningHtml}
+          </div>
+          <button type="button" class="btn btn-sm btn-primary" data-dyn-action="${entityId}" data-dyn-domain="${domain}" data-dyn-service="turn_on">Aktivieren</button>
+        </div>
+      `;
+    }
+
+    if (domain === 'cover') {
+      return `
+        <div class="control-row" style="padding:10px 14px;min-height:48px;display:flex;align-items:center;justify-content:space-between;">
+          <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;margin-right:12px;">
+            <div style="flex-shrink:0;">${icon}</div>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:600;color:var(--text-primary);word-break:break-word;" title="${name}">${name}</div>
+              <div style="font-size:11px;color:var(--text-secondary);">${stateObj.state}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <button type="button" class="btn btn-sm btn-ghost" data-dyn-action="${entityId}" data-dyn-domain="cover" data-dyn-service="open_cover" title="Öffnen" style="padding:4px 8px;cursor:pointer;"><ha-icon icon="mdi:arrow-up" style="--mdc-icon-size:16px;"></ha-icon></button>
+            <button type="button" class="btn btn-sm btn-ghost" data-dyn-action="${entityId}" data-dyn-domain="cover" data-dyn-service="stop_cover" title="Stopp" style="padding:4px 8px;cursor:pointer;"><ha-icon icon="mdi:stop" style="--mdc-icon-size:16px;"></ha-icon></button>
+            <button type="button" class="btn btn-sm btn-ghost" data-dyn-action="${entityId}" data-dyn-domain="cover" data-dyn-service="close_cover" title="Schließen" style="padding:4px 8px;cursor:pointer;"><ha-icon icon="mdi:arrow-down" style="--mdc-icon-size:16px;"></ha-icon></button>
+          </div>
+        </div>
+      `;
+    }
+
     return `
       <div class="control-row" style="padding:10px 14px;min-height:48px;">
         <div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">
@@ -582,7 +614,11 @@ export const tactileMethods = {
         const wasActive = sw.classList.contains('active');
         sw.classList.toggle('active', !wasActive);
         sw.setAttribute('aria-checked', !wasActive ? 'true' : 'false');
-        this._callService(domain, 'toggle', { entity_id: entityId });
+        if (domain === 'lock') {
+          this._callService('lock', wasActive ? 'unlock' : 'lock', { entity_id: entityId });
+        } else {
+          this._callService(domain, 'toggle', { entity_id: entityId });
+        }
       };
     });
     rootEl.querySelectorAll('.vg-push-btn[data-push-entity]').forEach(btn => {
@@ -625,14 +661,14 @@ export const tactileMethods = {
         const opt = pill.getAttribute('data-seg-option');
         pill.parentElement.querySelectorAll('.vg-seg-pill').forEach(p => p.classList.remove('active'));
         pill.classList.add('active');
-        this._callService('input_select', 'select_option', { entity_id: eId, option: opt });
+        this._callService(eId.split('.')[0], 'select_option', { entity_id: eId, option: opt });
       };
     });
     rootEl.querySelectorAll('.vg-glass-select[data-select-entity]').forEach(sel => {
       sel.onchange = (e) => {
         e.stopPropagation();
         const eId = sel.getAttribute('data-select-entity');
-        this._callService('input_select', 'select_option', { entity_id: eId, option: sel.value });
+        this._callService(eId.split('.')[0], 'select_option', { entity_id: eId, option: sel.value });
       };
     });
     rootEl.querySelectorAll('.vg-time-input[data-time-entity]').forEach(ti => {
@@ -651,7 +687,7 @@ export const tactileMethods = {
         if (s && s.state != null) {
           const curVal = parseFloat(s.state) || 0;
           const newVal = Math.round((curVal + delta) * 2) / 2;
-          this._callService('input_number', 'set_value', { entity_id: hId, value: newVal });
+          this._callService(hId.split('.')[0], 'set_value', { entity_id: hId, value: newVal });
         }
       };
     });

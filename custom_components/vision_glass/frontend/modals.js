@@ -1586,6 +1586,172 @@ export const modalMethods = {
       `;
 
       this._bindInteractiveRows(body);
+    } else if (type === 'devices_helpers') {
+      title.innerHTML = `${this._icon('mdi:tune-vertical', { size: 22, style: 'color:var(--accent);margin-right:8px;' })} ${this._t('devices_helpers_title') || 'Geräte & Helfer (Schaltzentrale)'}`;
+
+      const targetDomains = [
+        'switch', 'light', 'input_boolean', 'input_button', 'button',
+        'input_select', 'select', 'input_number', 'number',
+        'fan', 'cover', 'lock', 'input_datetime', 'script', 'scene'
+      ];
+
+      const domainMeta = {
+        light: { label: 'Licht & Beleuchtung', icon: 'mdi:lightbulb' },
+        switch: { label: 'Schalter & Steckdosen', icon: 'mdi:power-socket-eu' },
+        input_boolean: { label: 'Helfer: Schalter (Boolean)', icon: 'mdi:toggle-switch' },
+        input_button: { label: 'Helfer: Taster (Button)', icon: 'mdi:gesture-tap-button' },
+        button: { label: 'Taster & Aktionen', icon: 'mdi:gesture-tap-button' },
+        input_select: { label: 'Helfer: Auswahllisten (Select)', icon: 'mdi:format-list-bulleted' },
+        select: { label: 'Auswahllisten (Select)', icon: 'mdi:format-list-bulleted' },
+        input_number: { label: 'Helfer: Zahlen & Schieberegler', icon: 'mdi:ray-vertex' },
+        number: { label: 'Zahlen & Schieberegler', icon: 'mdi:ray-vertex' },
+        fan: { label: 'Ventilatoren & Lüfter', icon: 'mdi:fan' },
+        cover: { label: 'Rollos & Jalousien', icon: 'mdi:window-shutter' },
+        lock: { label: 'Schlösser & Riegel', icon: 'mdi:lock' },
+        input_datetime: { label: 'Helfer: Zeit & Datum', icon: 'mdi:clock-outline' },
+        script: { label: 'Skripte', icon: 'mdi:script-text-outline' },
+        scene: { label: 'Szenen', icon: 'mdi:palette-outline' }
+      };
+
+      const groupMode = this._devicesModalGroupMode || 'area';
+      const searchQ = (this._devicesSearchQuery || '').toLowerCase().trim();
+
+      // Collect all matching entities from hass.states
+      const allEnts = Object.keys(this._hass.states).filter(eId => {
+        const domain = eId.split('.')[0];
+        if (!targetDomains.includes(domain)) return false;
+        if (eId.includes('update.') || eId.includes('device_tracker.')) return false;
+        if (searchQ) {
+          const s = this._hass.states[eId];
+          const fname = (s?.attributes?.friendly_name || '').toLowerCase();
+          if (!eId.toLowerCase().includes(searchQ) && !fname.includes(searchQ)) {
+            return false;
+          }
+        }
+        return true;
+      });
+
+      let contentHtml = '';
+
+      if (allEnts.length === 0) {
+        contentHtml = `<div style="text-align:center;padding:30px 10px;color:var(--text-secondary);font-size:13px;">${this._t('no_data_available') || 'Keine Geräte oder Helfer gefunden.'}</div>`;
+      } else if (groupMode === 'domain') {
+        contentHtml = targetDomains.map(dom => {
+          const domEnts = allEnts.filter(eId => eId.startsWith(dom + '.'));
+          if (domEnts.length === 0) return '';
+          const meta = domainMeta[dom] || { label: dom, icon: 'mdi:tune-vertical' };
+          return `
+            <div style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;margin-bottom:14px;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <ha-icon icon="${meta.icon}" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon>
+                  <span>${meta.label}</span>
+                </div>
+                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:10px;">${domEnts.length}</span>
+              </div>
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;">
+                ${domEnts.map(eId => this._renderGenericEntityRow(eId, this._hass.states[eId])).join('')}
+              </div>
+            </div>
+          `;
+        }).join('');
+      } else {
+        const areaMap = new Map();
+        allEnts.forEach(eId => {
+          const area = this._resolveEntityArea(eId);
+          if (!areaMap.has(area.id)) {
+            areaMap.set(area.id, { id: area.id, name: area.name, entities: [] });
+          }
+          areaMap.get(area.id).entities.push(eId);
+        });
+
+        const sortedAreas = Array.from(areaMap.values()).sort((a, b) => {
+          if (a.id === '_unassigned') return 1;
+          if (b.id === '_unassigned') return -1;
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
+        });
+
+        contentHtml = sortedAreas.map(area => {
+          const domSubgroups = targetDomains.map(dom => {
+            const ents = area.entities.filter(eId => eId.startsWith(dom + '.'));
+            if (ents.length === 0) return '';
+            const meta = domainMeta[dom] || { label: dom, icon: 'mdi:tune-vertical' };
+            return `
+              <div style="margin-top:10px;">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--accent);letter-spacing:0.5px;margin-bottom:6px;display:flex;align-items:center;gap:6px;">
+                  <ha-icon icon="${meta.icon}" style="--mdc-icon-size:14px;"></ha-icon>
+                  <span>${meta.label}</span>
+                </div>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px;">
+                  ${ents.map(eId => this._renderGenericEntityRow(eId, this._hass.states[eId])).join('')}
+                </div>
+              </div>
+            `;
+          }).join('');
+
+          return `
+            <div style="background:var(--bg-card);border:1px solid var(--border-glass);border-radius:14px;padding:14px 16px;margin-bottom:14px;">
+              <div style="font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <ha-icon icon="${area.id === '_unassigned' ? 'mdi:folder-outline' : 'mdi:home-outline'}" style="--mdc-icon-size:18px;color:var(--accent);"></ha-icon>
+                  <span>${area.name}</span>
+                </div>
+                <span style="font-size:11px;font-weight:600;color:var(--text-secondary);background:rgba(255,255,255,0.06);padding:2px 8px;border-radius:10px;">${area.entities.length}</span>
+              </div>
+              <div>${domSubgroups}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      body.innerHTML = `
+        <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);border:1px solid var(--border-subtle);border-radius:10px;padding:6px 12px;flex:1;min-width:200px;">
+            <ha-icon icon="mdi:magnify" style="--mdc-icon-size:18px;color:var(--accent);flex-shrink:0;"></ha-icon>
+            <input type="text" id="devicesSearchInp" value="${this._devicesSearchQuery || ''}" placeholder="Geräte & Helfer durchsuchen..." style="flex:1;background:transparent;border:none;outline:none;color:var(--text-primary);font-size:13px;">
+          </div>
+          <div class="vg-seg-group" style="display:inline-flex;gap:4px;background:rgba(255,255,255,0.04);padding:3px;border-radius:10px;border:1px solid var(--border-subtle);">
+            <button type="button" class="vg-seg-pill ${groupMode !== 'domain' ? 'active' : ''}" id="btnGroupArea" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;">
+              ${this._t('group_by_area') || 'Nach Bereich'}
+            </button>
+            <button type="button" class="vg-seg-pill ${groupMode === 'domain' ? 'active' : ''}" id="btnGroupDomain" style="padding:6px 12px;font-size:12px;font-weight:600;border-radius:8px;cursor:pointer;">
+              ${this._t('group_by_domain') || 'Nach Domäne'}
+            </button>
+          </div>
+        </div>
+        <div id="devicesModalListContainer">${contentHtml}</div>
+      `;
+
+      const sInp = body.querySelector('#devicesSearchInp');
+      if (sInp) {
+        sInp.oninput = (e) => {
+          this._devicesSearchQuery = e.target.value;
+          this._renderModalContent('devices_helpers');
+          const nextInp = body.querySelector('#devicesSearchInp');
+          if (nextInp) {
+            nextInp.focus();
+            nextInp.setSelectionRange(nextInp.value.length, nextInp.value.length);
+          }
+        };
+      }
+
+      const bArea = body.querySelector('#btnGroupArea');
+      if (bArea) {
+        bArea.onclick = () => {
+          this._devicesModalGroupMode = 'area';
+          this._renderModalContent('devices_helpers');
+        };
+      }
+
+      const bDomain = body.querySelector('#btnGroupDomain');
+      if (bDomain) {
+        bDomain.onclick = () => {
+          this._devicesModalGroupMode = 'domain';
+          this._renderModalContent('devices_helpers');
+        };
+      }
+
+      this._bindInteractiveRows(body);
     } else if (type === 'weather') {
       title.innerHTML = `${this._icon('weather-partlycloudy', { size: 22, cls: 'icon-weather', style: 'margin-right:8px;' })} ${this._t('weather_modal_title')}`;
 
@@ -2145,5 +2311,86 @@ export const modalMethods = {
         };
       }
     }
+  },
+
+  _resolveEntityArea(eId) {
+    let areaId = this._hass?.entities?.[eId]?.area_id;
+    if (!areaId) {
+      const devId = this._hass?.entities?.[eId]?.device_id;
+      if (devId) areaId = this._hass?.devices?.[devId]?.area_id;
+    }
+    if (!areaId && this._discovery?.entities?.[eId]?.area_id) {
+      areaId = this._discovery.entities[eId].area_id;
+    }
+    if (areaId) {
+      if (this._hass?.areas?.[areaId]) {
+        return { id: areaId, name: this._hass.areas[areaId].name || areaId };
+      }
+      const rMatch = (this._config?.rooms || []).find(r => r.id === areaId);
+      if (rMatch) return { id: areaId, name: rMatch.name || areaId };
+      return { id: areaId, name: areaId };
+    }
+    for (const r of (this._config?.rooms || [])) {
+      if (r.light_entity === eId || r.climate_entity === eId || r.media_entity === eId || r.audio_entity === eId || r.video_entity === eId || r.lock_entity === eId || r.switch_entity === eId) {
+        return { id: r.id, name: r.name || r.id };
+      }
+      const safeName = (r.name || '').toLowerCase();
+      const safeId = (r.id || '').toLowerCase();
+      const eLower = eId.toLowerCase();
+      if (safeId && eLower.includes(safeId)) return { id: r.id, name: r.name || r.id };
+      if (safeName && eLower.includes(safeName)) return { id: r.id, name: r.name || r.id };
+    }
+    return { id: '_unassigned', name: this._t('unassigned_area') || 'Ohne Bereich / Allgemein' };
+  },
+
+  _syncDevicesModalStates() {
+    const body = this.shadowRoot.getElementById('modalBody');
+    if (!body || !this._hass) return;
+
+    body.querySelectorAll('.vg-switch[data-vg-switch]').forEach(sw => {
+      const eId = sw.getAttribute('data-vg-switch');
+      const s = this._hass.states[eId];
+      if (!s) return;
+      const isOn = s.state === 'on' || s.state === 'open' || s.state === 'unlocked' || s.state === 'playing';
+      sw.classList.toggle('active', isOn);
+      sw.setAttribute('aria-checked', isOn ? 'true' : 'false');
+      const row = sw.closest('.control-row');
+      if (row) {
+        const sub = row.querySelector('div[style*="font-size:11px"]');
+        if (sub && (sub.textContent.includes('An') || sub.textContent.includes('Aus') || sub.textContent.includes('On') || sub.textContent.includes('Off'))) {
+          sub.textContent = isOn ? (this._t('on') || 'An') : (this._t('off') || 'Aus');
+        }
+      }
+    });
+
+    body.querySelectorAll('.vg-range-slider[data-slider-entity]').forEach(sl => {
+      if (document.activeElement === sl) return;
+      const eId = sl.getAttribute('data-slider-entity');
+      const s = this._hass.states[eId];
+      if (s && s.state != null && !isNaN(parseFloat(s.state))) {
+        sl.value = s.state;
+        const targetId = sl.getAttribute('data-slider-val-target');
+        const unit = sl.getAttribute('data-slider-unit') || '';
+        const valEl = body.querySelector('#' + targetId);
+        if (valEl) valEl.textContent = `${s.state}${unit ? ' ' + unit : ''}`;
+      }
+    });
+
+    body.querySelectorAll('.vg-seg-pill[data-seg-entity]').forEach(pill => {
+      const eId = pill.getAttribute('data-seg-entity');
+      const s = this._hass.states[eId];
+      if (s) {
+        pill.classList.toggle('active', s.state === pill.getAttribute('data-seg-option'));
+      }
+    });
+
+    body.querySelectorAll('.vg-glass-select[data-select-entity]').forEach(sel => {
+      if (document.activeElement === sel) return;
+      const eId = sel.getAttribute('data-select-entity');
+      const s = this._hass.states[eId];
+      if (s && s.state != null) {
+        sel.value = s.state;
+      }
+    });
   }
 };

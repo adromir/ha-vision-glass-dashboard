@@ -1133,6 +1133,8 @@ class VisionGlassPanel extends HTMLElement {
         this._updateWeatherModalValues();
       } else if (this._activeModal === 'alarmo') {
         this._updateAlarmoModalValues();
+      } else if (this._activeModal === 'devices_helpers' || (typeof this._activeModal === 'object' && this._activeModal?.type === 'devices_helpers')) {
+        this._syncDevicesModalStates();
       } else if (this._activeModal === 'stats') {
         // preserve stats modal without re-render flicker
       } else if (this._activeModal.type === 'person') {
@@ -1144,15 +1146,40 @@ class VisionGlassPanel extends HTMLElement {
   }
 
   _getRoomBentoActions(room) {
-    if (Array.isArray(room.bento_actions) && room.bento_actions.length > 0) {
-      return room.bento_actions.filter(a => a.type !== 'switch');
+    const stdDefaults = [
+      { type: 'light', enabled: Boolean(room?.light_entity && room.light_entity.trim()), title: this._t('toggle_light') || 'Licht', icon: 'mdi:lightbulb', entity_id: room?.light_entity || '' },
+      { type: 'climate', enabled: Boolean(room?.climate_entity && room.climate_entity.trim()), title: this._t('open_climate') || 'Heizung', icon: 'mdi:thermometer', entity_id: room?.climate_entity || '' },
+      { type: 'media', enabled: Boolean((room?.media_entity && room.media_entity.trim()) || (room?.audio_entity && room.audio_entity.trim()) || (room?.video_entity && room.video_entity.trim())), title: this._t('toggle_media') || 'Medien', icon: 'mdi:music', entity_id: room?.media_entity || room?.audio_entity || room?.video_entity || '' },
+      { type: 'lock', enabled: Boolean(room?.lock_entity && room.lock_entity.trim()), title: this._t('toggle_lock') || 'Schloss', icon: 'mdi:lock', entity_id: room?.lock_entity || '' },
+      { type: 'devices_helpers', enabled: true, title: this._t('devices_and_helpers') || 'Geräte & Helfer', icon: 'mdi:tune-vertical', entity_id: '' }
+    ];
+
+    if (!Array.isArray(room?.bento_actions) || room.bento_actions.length === 0) {
+      return stdDefaults;
     }
-    const def = [];
-    if (room.light_entity && room.light_entity.trim()) def.push({ type: 'light', enabled: true, title: this._t('toggle_light') });
-    if (room.climate_entity && room.climate_entity.trim()) def.push({ type: 'climate', enabled: true, title: this._t('open_climate') });
-    if ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim())) def.push({ type: 'media', enabled: true, title: this._t('toggle_media') });
-    if (room.lock_entity && room.lock_entity.trim()) def.push({ type: 'lock', enabled: true, title: this._t('toggle_lock') });
-    return def;
+
+    const acts = room.bento_actions.filter(a => a.type !== 'switch');
+    const result = [];
+    stdDefaults.forEach(def => {
+      const existing = acts.find(a => a.type === def.type);
+      if (existing) {
+        result.push({
+          ...def,
+          ...existing,
+          icon: existing.icon || def.icon,
+          title: existing.title || def.title,
+          entity_id: (existing.entity_id !== undefined && existing.entity_id !== null) ? existing.entity_id : def.entity_id
+        });
+      } else {
+        result.push({ ...def });
+      }
+    });
+
+    acts.filter(a => a.type === 'custom').forEach(ca => {
+      result.push(ca);
+    });
+
+    return result;
   }
 
   _getRoomBentoBadges(room) {
@@ -1883,14 +1910,37 @@ class VisionGlassPanel extends HTMLElement {
                         const out = [];
                         acts.forEach(a => {
                           if (a.enabled === false) return;
-                          if (a.type === 'light' && room.light_entity && room.light_entity.trim()) {
-                            out.push(`<div class="action-circle action-light" title="${this._t('toggle_light')}" data-action="light" data-idx="${idx}">${this._icon('light', { size: 16, cls: 'icon-light' })}</div>`);
-                          } else if (a.type === 'climate' && room.climate_entity && room.climate_entity.trim()) {
-                            out.push(`<div class="action-circle action-climate" title="${this._t('open_climate')}" data-action="climate" data-idx="${idx}">${this._icon('climate', { size: 16, cls: 'icon-climate' })}</div>`);
-                          } else if (a.type === 'media' && ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim()))) {
-                            out.push(`<div class="action-circle action-media" title="${this._t('toggle_media')}" data-action="media" data-idx="${idx}">${this._icon('music', { size: 16, cls: 'icon-media' })}</div>`);
-                          } else if (a.type === 'lock' && room.lock_entity && room.lock_entity.trim()) {
-                            out.push(`<div class="action-circle action-lock" title="${this._t('toggle_lock')}" data-action="lock" data-idx="${idx}">${this._icon('lock-closed', { size: 16, cls: 'icon-security' })}</div>`);
+                          const iconName = (a.icon && a.icon.includes(':')) ? a.icon : (MDI_ICON_MAP[a.icon] || (a.icon ? 'mdi:' + a.icon : ''));
+                          const title = a.title || '';
+
+                          if (a.type === 'light') {
+                            const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : (room.light_entity && room.light_entity.trim());
+                            if (ent) {
+                              const s = this._hass && this._hass.states[ent];
+                              const isOn = s && s.state === 'on';
+                              out.push(`<div class="action-circle action-light ${isOn ? 'active' : ''}" title="${title || this._t('toggle_light')}" data-action="light" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'light', { size: 16, cls: 'icon-light' })}</div>`);
+                            }
+                          } else if (a.type === 'climate') {
+                            const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : (room.climate_entity && room.climate_entity.trim());
+                            if (ent) {
+                              out.push(`<div class="action-circle action-climate" title="${title || this._t('open_climate')}" data-action="climate" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'climate', { size: 16, cls: 'icon-climate' })}</div>`);
+                            }
+                          } else if (a.type === 'media') {
+                            const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : ((room.media_entity && room.media_entity.trim()) || (room.audio_entity && room.audio_entity.trim()) || (room.video_entity && room.video_entity.trim()));
+                            if (ent) {
+                              const s = this._hass && this._hass.states[ent];
+                              const isOn = s && (s.state === 'playing' || s.state === 'on');
+                              out.push(`<div class="action-circle action-media ${isOn ? 'active' : ''}" title="${title || this._t('toggle_media')}" data-action="media" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'music', { size: 16, cls: 'icon-media' })}</div>`);
+                            }
+                          } else if (a.type === 'lock') {
+                            const ent = (a.entity_id && a.entity_id.trim()) ? a.entity_id.trim() : (room.lock_entity && room.lock_entity.trim());
+                            if (ent) {
+                              const s = this._hass && this._hass.states[ent];
+                              const isLocked = s && s.state === 'locked';
+                              out.push(`<div class="action-circle action-lock ${isLocked ? 'active' : ''}" title="${title || this._t('toggle_lock')}" data-action="lock" data-entity="${ent}" data-idx="${idx}">${this._icon(iconName || 'lock-closed', { size: 16, cls: 'icon-security' })}</div>`);
+                            }
+                          } else if (a.type === 'devices_helpers') {
+                            out.push(`<div class="action-circle action-devices-helpers" title="${title || (this._t('devices_and_helpers') || 'Geräte & Helfer')}" data-action="devices_helpers" data-idx="${idx}">${this._icon(iconName || 'mdi:tune-vertical', { size: 16 })}</div>`);
                           } else if (a.type === 'custom' && a.entity_id) {
                             const s = this._hass && this._hass.states[a.entity_id];
                             const isOn = s && (s.state === 'on' || s.state === 'open' || s.state === 'active' || s.state === 'playing');
@@ -1901,7 +1951,7 @@ class VisionGlassPanel extends HTMLElement {
                       })()}
                     </div>
 
-                    ${(room.climate_entity && room.climate_entity.trim()) ? `
+                    ${(room.show_temp_control !== false && (room.climate_entity || room.target_temp_entity)) ? `
                       <div class="quick-climate-stepper" title="${this._t('adjust_temp')}">
                         <button class="quick-step-btn" data-action="temp-minus" data-idx="${idx}" title="${this._t('temp_down')}" style="display:flex;align-items:center;justify-content:center;">${this._icon('minus', { size: 11 })}</button>
                         <span class="quick-step-val" id="targetTemp_${idx}">--°</span>
@@ -2070,17 +2120,23 @@ class VisionGlassPanel extends HTMLElement {
         const room = this._config.rooms[idx];
         if (!room) return;
 
-        if (action === 'light' && room.light_entity) {
-          this._callService('light', 'toggle', { entity_id: room.light_entity });
+        if (action === 'light') {
+          const lEnt = btn.getAttribute('data-entity') || room.light_entity;
+          if (lEnt) this._callService('light', 'toggle', { entity_id: lEnt });
         } else if (action === 'climate') {
           this._openModal('climate');
         } else if (action === 'media') {
-          const mEnt = room.media_entity || room.audio_entity || room.video_entity;
+          const mEnt = btn.getAttribute('data-entity') || room.media_entity || room.audio_entity || room.video_entity;
           if (mEnt) this._callService('media_player', 'media_play_pause', { entity_id: mEnt });
-        } else if (action === 'lock' && room.lock_entity) {
-          const lState = this._hass && this._hass.states[room.lock_entity];
-          const isLocked = lState && lState.state === 'locked';
-          this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: room.lock_entity });
+        } else if (action === 'lock') {
+          const lEnt = btn.getAttribute('data-entity') || room.lock_entity;
+          if (lEnt) {
+            const lState = this._hass && this._hass.states[lEnt];
+            const isLocked = lState && lState.state === 'locked';
+            this._callService('lock', isLocked ? 'unlock' : 'lock', { entity_id: lEnt });
+          }
+        } else if (action === 'devices_helpers') {
+          this._openModal('devices_helpers');
         } else if (action === 'switch' && room.switch_entity) {
           this._callService('switch', 'toggle', { entity_id: room.switch_entity });
         } else if (action === 'custom') {
@@ -2107,6 +2163,13 @@ class VisionGlassPanel extends HTMLElement {
             }
             const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
             if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
+          } else if (room.target_temp_entity && this._hass && this._hass.states[room.target_temp_entity]) {
+            const tObj = this._hass.states[room.target_temp_entity];
+            let curTarget = parseFloat(tObj.state) || 21.0;
+            const newTarget = Math.min(28.0, Math.round((curTarget + 0.5) * 10) / 10);
+            this._callService('input_number', 'set_value', { entity_id: room.target_temp_entity, value: newTarget });
+            const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
+            if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
           }
         } else if (action === 'temp-minus') {
           const cEntity = room.climate_entity;
@@ -2120,6 +2183,13 @@ class VisionGlassPanel extends HTMLElement {
             if (room.target_temp_entity && this._hass.states[room.target_temp_entity]) {
               this._callService('input_number', 'set_value', { entity_id: room.target_temp_entity, value: newTarget });
             }
+            const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
+            if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
+          } else if (room.target_temp_entity && this._hass && this._hass.states[room.target_temp_entity]) {
+            const tObj = this._hass.states[room.target_temp_entity];
+            let curTarget = parseFloat(tObj.state) || 21.0;
+            const newTarget = Math.max(14.0, Math.round((curTarget - 0.5) * 10) / 10);
+            this._callService('input_number', 'set_value', { entity_id: room.target_temp_entity, value: newTarget });
             const valEl = this.shadowRoot.getElementById(`targetTemp_${idx}`);
             if (valEl) valEl.textContent = `${newTarget.toFixed(1)}°`;
           }

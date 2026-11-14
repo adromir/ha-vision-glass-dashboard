@@ -98,15 +98,17 @@ export const settingsMethods = {
 
     const addIcon = (raw) => {
       if (!raw || typeof raw !== 'string') return;
-      let mdi = raw.trim();
-      if (!mdi.startsWith('mdi:') && !mdi.includes(':')) {
-        mdi = MDI_ICON_MAP[mdi] || `mdi:${mdi}`;
+      let trimmed = raw.trim();
+      let iconName = trimmed;
+      if (!trimmed.includes(':')) {
+        iconName = MDI_ICON_MAP[trimmed] || `mdi:${trimmed}`;
       }
-      if (!iconSet.has(mdi)) {
-        iconSet.add(mdi);
-        allIcons.push({ name: mdi, label: mdi.replace(/^mdi:/, '') });
+      if (!iconSet.has(iconName)) {
+        iconSet.add(iconName);
+        allIcons.push({ name: iconName, label: iconName.includes(':') ? iconName.split(':')[1] : iconName });
       }
     };
+    if (currentValue) addIcon(currentValue);
 
     // 1. All icons from POPULAR_HA_ICONS
     (POPULAR_HA_ICONS || []).forEach(cat => {
@@ -172,7 +174,7 @@ export const settingsMethods = {
         <div style="padding: 12px 20px; border-bottom: 1px solid var(--border-subtle, rgba(255,255,255,0.08)); display: flex; flex-direction: column; gap: 8px;">
           <div style="display:flex;align-items:center;gap:8px;background:rgba(255,255,255,0.04);padding:8px 12px;border-radius:10px;border:1px solid var(--border-subtle, rgba(255,255,255,0.1));">
             <ha-icon icon="mdi:magnify" style="--mdc-icon-size:20px;color:var(--accent,#38bdf8);flex-shrink:0;"></ha-icon>
-            <input type="text" id="iconPickerSearchInp" placeholder="Icon suchen oder mdi:name eingeben..." style="flex:1;background:transparent;border:none;outline:none;color:var(--text-primary,#ffffff);font-size:13px;">
+            <input type="text" id="iconPickerSearchInp" placeholder="Icon suchen oder beliebiges Icon (z.B. mdi:..., ci:..., phu:...) eingeben..." style="flex:1;background:transparent;border:none;outline:none;color:var(--text-primary,#ffffff);font-size:13px;">
           </div>
         </div>
 
@@ -192,9 +194,23 @@ export const settingsMethods = {
       if (!grid) return;
 
       let list = allIcons;
+      let topBannerHtml = '';
       if (searchQuery) {
-        const q = searchQuery.toLowerCase().replace(/^mdi:/, '');
-        list = list.filter(item => item.label.toLowerCase().includes(q) || item.name.toLowerCase().includes(q));
+        const typedIcon = searchQuery.includes(':') ? searchQuery : `mdi:${searchQuery}`;
+        topBannerHtml = `
+          <div style="grid-column: 1 / -1; margin-bottom: 8px; padding: 8px 12px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 10px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 13px;">
+              <ha-icon icon="${typedIcon}" style="--mdc-icon-size: 20px; color: var(--accent, #38bdf8);"></ha-icon>
+              <span>Eingabe: <code style="color:var(--accent,#38bdf8);font-weight:700;">${typedIcon}</code></span>
+            </div>
+            <button type="button" class="btn-select-icon" data-icon="${typedIcon}" style="padding: 5px 12px; border-radius: 6px; background: var(--accent, #38bdf8); color: #fff; border: none; font-size: 12px; font-weight: 600; cursor: pointer;">
+              Sofort verwenden
+            </button>
+          </div>
+        `;
+        const q = searchQuery.toLowerCase();
+        const qClean = q.includes(':') ? q.split(':')[1] : q;
+        list = list.filter(item => item.name.toLowerCase().includes(q) || item.label.toLowerCase().includes(qClean));
       }
 
       if (list.length === 0) {
@@ -217,7 +233,7 @@ export const settingsMethods = {
         return;
       }
 
-      grid.innerHTML = list.map(item => `
+      grid.innerHTML = topBannerHtml + list.map(item => `
         <button type="button" class="btn-select-icon" data-icon="${item.name}" style="
           display: flex;
           flex-direction: column;
@@ -418,7 +434,7 @@ export const settingsMethods = {
           <input type="text" id="pickerSearchInp" placeholder="Suchen nach Name oder entity_id..." style="width: 100%; padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border-glass, rgba(255,255,255,0.2)); background: rgba(255,255,255,0.07); color: var(--text-primary, #ffffff); font-size: 14px; outline: none; box-sizing: border-box;">
 
           <!-- Domain Pills -->
-          <div id="pickerDomainPills" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px;">
+          <div id="pickerDomainPills" style="display: flex; flex-wrap: wrap; gap: 6px; overflow-x: visible; padding-bottom: 2px;">
             ${domains.map(d => `
               <button type="button" class="domain-pill" data-domain="${d.id}" style="
                 padding: 4px 10px;
@@ -791,34 +807,62 @@ export const settingsMethods = {
                   </div>
                 </div>
 
+                <!-- Temperature Stepper on Bento Card Toggle -->
+                <div class="row" style="grid-column: 1 / -1; background: var(--bg-surface); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border-subtle); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 4px;">
+                  <label style="display:inline-flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600;">
+                    <input type="checkbox" class="chk-show-temp-control" data-ridx="${rIdx}" ${r.show_temp_control !== false ? 'checked' : ''} style="cursor:pointer;width:16px;height:16px;accent-color:var(--accent);">
+                    <span>${this._t('show_temp_control') || 'Temperatur-Schnellregler auf Bento-Karte anzeigen'}</span>
+                  </label>
+                  <span style="font-size:11px;color:var(--text-secondary);">${this._t('show_temp_control_hint') || 'Regelt Thermostat oder Zieltemp.-Helfer'}</span>
+                </div>
+
                 <!-- Bento Card Action Icons Configuration -->
                 <div style="margin-top:12px;padding-top:10px;border-top:1px dashed var(--border-subtle);grid-column:1 / -1;">
                   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">Aktions-Icons auf Bento-Karte</label>
+                    <label style="font-size:11px;font-weight:600;color:var(--text-secondary);text-transform:uppercase;display:block;">Standard- & eigene Aktions-Icons auf Bento-Karte</label>
                     <button type="button" class="btn btn-sm btn-add-custom-room-action" data-ridx="${rIdx}" style="padding:4px 8px;font-size:11px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
                       <ha-icon icon="mdi:plus" style="--mdc-icon-size:13px;"></ha-icon> Eigenes Aktions-Icon
                     </button>
                   </div>
 
-                  <!-- Standard Actions -->
-                  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+                  <!-- Standard Actions (Fully Editable) -->
+                  <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">
                     ${(() => {
                       const acts = this._getRoomBentoActions(r);
-                      const stdTypes = [
-                        { type: 'light', label: 'Licht', icon: 'mdi:lightbulb', has: Boolean(r.light_entity) },
-                        { type: 'climate', label: 'Heizung', icon: 'mdi:thermometer', has: Boolean(r.climate_entity) },
-                        { type: 'media', label: 'Medien', icon: 'mdi:music', has: Boolean(r.media_entity || r.audio_entity || r.video_entity) },
-                        { type: 'lock', label: 'Schloss', icon: 'mdi:lock', has: Boolean(r.lock_entity) }
+                      const stdDefs = [
+                        { type: 'light', label: 'Licht', defaultTitle: this._t('toggle_light') || 'Licht', defaultIcon: 'mdi:lightbulb', defaultEntity: r.light_entity || '' },
+                        { type: 'climate', label: 'Heizung', defaultTitle: this._t('open_climate') || 'Heizung', defaultIcon: 'mdi:thermometer', defaultEntity: r.climate_entity || '' },
+                        { type: 'media', label: 'Medien', defaultTitle: this._t('toggle_media') || 'Medien', defaultIcon: 'mdi:music', defaultEntity: r.media_entity || r.audio_entity || r.video_entity || '' },
+                        { type: 'lock', label: 'Schloss', defaultTitle: this._t('toggle_lock') || 'Schloss', defaultIcon: 'mdi:lock', defaultEntity: r.lock_entity || '' },
+                        { type: 'devices_helpers', label: 'Schaltzentrale', defaultTitle: this._t('devices_and_helpers') || 'Geräte & Helfer', defaultIcon: 'mdi:tune-vertical', defaultEntity: '' }
                       ];
-                      return stdTypes.map(st => {
-                        const configured = acts.find(a => a.type === st.type);
-                        const isChecked = configured ? configured.enabled !== false : st.has;
+                      return stdDefs.map(st => {
+                        const act = acts.find(a => a.type === st.type) || { type: st.type, enabled: true, title: st.defaultTitle, icon: st.defaultIcon, entity_id: st.defaultEntity };
+                        const isChecked = act.enabled !== false;
+                        const curIcon = act.icon || st.defaultIcon;
+                        const curTitle = act.title || st.defaultTitle;
+                        const curEntity = (act.entity_id !== undefined && act.entity_id !== null) ? act.entity_id : st.defaultEntity;
+                        const safeIcon = (curIcon && curIcon.includes(':')) ? curIcon : (MDI_ICON_MAP[curIcon] || (curIcon ? 'mdi:' + curIcon : st.defaultIcon));
                         return `
-                          <label style="font-size:12px;display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:var(--bg-surface);padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);">
-                            <input type="checkbox" class="chk-bento-action" data-ridx="${rIdx}" data-act-type="${st.type}" ${isChecked ? 'checked' : ''}>
-                            <ha-icon icon="${st.icon}" style="--mdc-icon-size:14px;color:var(--accent);"></ha-icon>
-                            <span>${st.label}</span>
-                          </label>
+                          <div style="display:flex;align-items:center;gap:8px;background:var(--bg-surface);padding:6px 10px;border-radius:8px;border:1px solid var(--border-subtle);flex-wrap:wrap;">
+                            <label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:600;min-width:110px;">
+                              <input type="checkbox" class="chk-bento-action" data-ridx="${rIdx}" data-act-type="${st.type}" ${isChecked ? 'checked' : ''} style="cursor:pointer;width:15px;height:15px;accent-color:var(--accent);">
+                              <span>${st.label}</span>
+                            </label>
+                            <div id="stdActIconBox_${rIdx}_${st.type}" style="width:28px;height:28px;border-radius:6px;background:rgba(56,189,248,0.12);display:flex;align-items:center;justify-content:center;color:var(--accent);flex-shrink:0;">
+                              <ha-icon icon="${safeIcon}" style="--mdc-icon-size:16px;"></ha-icon>
+                            </div>
+                            <input type="text" class="in-std-act-title" data-ridx="${rIdx}" data-act-type="${st.type}" value="${curTitle}" placeholder="Titel" style="width:130px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:12px;">
+                            <div style="display:flex;align-items:center;gap:4px;flex:1;min-width:180px;">
+                              <input type="text" class="in-std-act-entity" data-ridx="${rIdx}" data-act-type="${st.type}" value="${curEntity}" placeholder="${st.type === 'devices_helpers' ? '(Modal / Optional Bereich)' : 'Entität (Standard: ' + (st.defaultEntity || 'keine') + ')'}" style="flex:1;padding:4px 8px;border-radius:6px;border:1px solid var(--border-subtle);background:var(--bg-card);color:var(--text-primary);font-size:11px;font-family:monospace;">
+                              <button type="button" class="btn btn-sm btn-pick-std-act-entity" data-ridx="${rIdx}" data-act-type="${st.type}" title="Entität wählen" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;">
+                                <ha-icon icon="mdi:magnify" style="--mdc-icon-size:14px;"></ha-icon>
+                              </button>
+                            </div>
+                            <button type="button" class="btn btn-sm btn-pick-std-act-icon" data-ridx="${rIdx}" data-act-type="${st.type}" title="Icon wählen" style="padding:4px 8px;background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.3);color:var(--accent);border-radius:6px;cursor:pointer;font-size:11px;display:inline-flex;align-items:center;gap:4px;">
+                              <ha-icon icon="mdi:palette-outline" style="--mdc-icon-size:13px;"></ha-icon> Icon
+                            </button>
+                          </div>
                         `;
                       }).join('');
                     })()}
@@ -2078,6 +2122,107 @@ export const settingsMethods = {
         } else {
           act.enabled = chk.checked;
         }
+      };
+    });
+
+    // Temperature Quick Stepper Checkbox
+    container.querySelectorAll('.chk-show-temp-control').forEach(chk => {
+      chk.onchange = () => {
+        const rIdx = parseInt(chk.getAttribute('data-ridx'));
+        const room = this._config.rooms?.[rIdx];
+        if (room) {
+          room.show_temp_control = chk.checked;
+        }
+      };
+    });
+
+    // Standard Bento Action Fields Handlers
+    container.querySelectorAll('.in-std-act-title').forEach(inp => {
+      inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const actType = inp.getAttribute('data-act-type');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = [...this._getRoomBentoActions(room)];
+        }
+        let act = room.bento_actions.find(a => a.type === actType);
+        if (!act) {
+          act = { type: actType, enabled: true, title: inp.value };
+          room.bento_actions.push(act);
+        } else {
+          act.title = inp.value;
+        }
+      };
+    });
+
+    container.querySelectorAll('.in-std-act-entity').forEach(inp => {
+      inp.oninput = () => {
+        const rIdx = parseInt(inp.getAttribute('data-ridx'));
+        const actType = inp.getAttribute('data-act-type');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = [...this._getRoomBentoActions(room)];
+        }
+        let act = room.bento_actions.find(a => a.type === actType);
+        if (!act) {
+          act = { type: actType, enabled: true, entity_id: inp.value.trim() };
+          room.bento_actions.push(act);
+        } else {
+          act.entity_id = inp.value.trim();
+        }
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-std-act-entity').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const actType = btn.getAttribute('data-act-type');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = [...this._getRoomBentoActions(room)];
+        }
+        let act = room.bento_actions.find(a => a.type === actType);
+        if (!act) {
+          act = { type: actType, enabled: true };
+          room.bento_actions.push(act);
+        }
+        this._showEntityPicker({
+          currentValue: act.entity_id || '',
+          defaultDomain: actType === 'light' ? 'light' : (actType === 'climate' ? 'climate' : (actType === 'media' ? 'media_player' : (actType === 'lock' ? 'lock' : 'all'))),
+          roomId: room.id,
+          roomName: room.name,
+          onSelect: (selectedId) => {
+            act.entity_id = selectedId;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
+      };
+    });
+
+    container.querySelectorAll('.btn-pick-std-act-icon').forEach(btn => {
+      btn.onclick = () => {
+        const rIdx = parseInt(btn.getAttribute('data-ridx'));
+        const actType = btn.getAttribute('data-act-type');
+        const room = this._config.rooms?.[rIdx];
+        if (!room) return;
+        if (!Array.isArray(room.bento_actions)) {
+          room.bento_actions = [...this._getRoomBentoActions(room)];
+        }
+        let act = room.bento_actions.find(a => a.type === actType);
+        if (!act) {
+          act = { type: actType, enabled: true };
+          room.bento_actions.push(act);
+        }
+        this._showIconPicker({
+          currentValue: act.icon || '',
+          onSelect: (newIcon) => {
+            act.icon = newIcon;
+            this._renderSettingsContent(container, isModal);
+          }
+        });
       };
     });
 

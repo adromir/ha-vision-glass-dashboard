@@ -254,7 +254,14 @@ export const I18N = {
         toggle_lock: 'Schloss verriegeln/entriegeln',
         adjust_temp: 'Zieltemperatur anpassen',
         temp_down: 'Temperatur senken',
-        temp_up: 'Temperatur erhöhen'
+        temp_up: 'Temperatur erhöhen',
+        devices_and_helpers: 'Geräte & Helfer',
+        devices_helpers_title: 'Geräte & Helfer (Schaltzentrale)',
+        group_by_area: 'Nach Bereich',
+        group_by_domain: 'Nach Domäne',
+        unassigned_area: 'Ohne Bereich / Allgemein',
+        show_temp_control: 'Temperatur-Schnellregler auf Bento-Karte anzeigen',
+        show_temp_control_hint: 'Regelt wahlweise das Thermostat oder den Zieltemperatur-Helfer'
       },
       en: {
         welcome: 'Welcome',
@@ -511,7 +518,14 @@ export const I18N = {
         toggle_lock: 'Lock/unlock',
         adjust_temp: 'Adjust target temperature',
         temp_down: 'Lower temperature',
-        temp_up: 'Raise temperature'
+        temp_up: 'Raise temperature',
+        devices_and_helpers: 'Devices & Helpers',
+        devices_helpers_title: 'Devices & Helpers (Control Center)',
+        group_by_area: 'By Area',
+        group_by_domain: 'By Domain',
+        unassigned_area: 'No Area / General',
+        show_temp_control: 'Show quick temperature stepper on Bento card',
+        show_temp_control_hint: 'Controls thermostat or target temperature helper'
       },
       id: {
         welcome: 'Selamat datang',
@@ -768,6 +782,13 @@ export const I18N = {
         toggle_lock: 'Kunci/buka kunci',
         adjust_temp: 'Sesuaikan suhu target',
         temp_down: 'Turunkan suhu',
-        temp_up: 'Naikkan suhu'
+        temp_up: 'Naikkan suhu',
+        devices_and_helpers: 'Perangkat & Pembantu',
+        devices_helpers_title: 'Perangkat & Pembantu (Pusat Kendali)',
+        group_by_area: 'Berdasarkan Area',
+        group_by_domain: 'Berdasarkan Domain',
+        unassigned_area: 'Tanpa Area / Umum',
+        show_temp_control: 'Tampilkan kontrol suhu cepat di kartu Bento',
+        show_temp_control_hint: 'Mengontrol termostat atau pembantu suhu target'
       }
     };
